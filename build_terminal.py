@@ -36,6 +36,7 @@ import market_price_history
 import gilt_market
 import us_treasury_market
 import economic_forecasts
+import market_additions
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CACHE = ROOT / '.terminal_cache'
@@ -369,7 +370,13 @@ def build_quality(quotes,hist,movers,fundamentals,coverage,calendar,gilts,us_bon
       'retrievalWarnings':len(warnings),'generatedAt':today_utc().isoformat()}
 
 def build(opts):
-    if opts.demo: return demo_data()
+    if opts.demo:
+        demo=demo_data()
+        demo['credit_spreads']=[]
+        demo['market_valuations']=market_additions.market_valuation(demo['movers'],demo.get('fundamentals',[]),demo['companies'],demo['us_rates'],demo['uk_rates'])
+        demo['company_events']=[]
+        demo['companyEventCoverage']={'detailedProfiles':len(demo['companies']),'datedEvents':0,'issuerSourced':0}
+        return demo
     quotes=[];hist=[];warnings=[];cached_count=0
     print(f'Downloading {len(INSTRUMENTS)} market series ({opts.years} years requested) ...',flush=True)
     with concurrent.futures.ThreadPoolExecutor(max_workers=opts.workers) as ex:
@@ -484,8 +491,18 @@ def build(opts):
     warnings.extend(gilt_warnings)
     cached_count+=gilt_cached
     print(f'Gilts: {len(gilts)} DMO bonds ({sum(x.get("indexLinked",False) for x in gilts)} index-linked), {sum(x["quoted"] for x in gilts)} dated price quotes; {len(gilt_history)} saved observations',flush=True)
+    # Corporate spreads are sourced ICE/FRED OAS index levels, not single-bond yields.
+    credit_spreads,credit_warnings,credit_cached=market_additions.collect_credit(sys.modules[__name__],opts)
+    warnings.extend(credit_warnings);cached_count+=credit_cached
+    market_valuations=market_additions.market_valuation(movers,fundamentals,companies,us,uk,asof=today_utc().date().isoformat())
+    bulk_events,bulk_warnings=market_additions.collect_market_earnings(movers,companies,offline=opts.offline or opts.no_companies)
+    warnings.extend(bulk_warnings)
+    company_events,event_warnings,event_coverage=market_additions.issuer_events(companies,ROOT/'company_events.csv',bulk_events=bulk_events)
+    warnings.extend(event_warnings)
+    print(f'Credit: {len(credit_spreads)} / {len(market_additions.CREDIT_SERIES)} FRED series; market valuation: {len(market_valuations)} indices; issuer events: {len(company_events)}',flush=True)
     quality=build_quality(quotes,hist,movers,fundamentals,fcoverage,calendar,gilts,us_bonds,macro,warnings)
-    return {'quality':quality,'economicPrints':economic_prints,'forecastCoverage':{'sourced':forecast_count,'series':len(economic_prints)},
+    return {'credit_spreads':credit_spreads,'market_valuations':market_valuations,'company_events':company_events,'companyEventCoverage':event_coverage,
+            'quality':quality,'economicPrints':economic_prints,'forecastCoverage':{'sourced':forecast_count,'series':len(economic_prints)},
             'us_treasuries':us_bonds,'us_treasury_history':us_treasury_history,'gilts':gilts,'gilt_history':gilt_history,
 'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
             'priceHistorySymbols':history_symbols,'priceHistoryCoverage':history_coverage,
@@ -494,7 +511,7 @@ def build(opts):
         'companies':companies,'company_history':company_history,
        'movers':movers,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
        'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),'demo':False,
-       'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank','UK Debt Management Office D10B purchase/sale service prices (dated)','US Treasury FedInvest rates/prices (dated)'],
+       'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank','UK Debt Management Office D10B purchase/sale service prices (dated)','US Treasury FedInvest rates/prices (dated)','FRED / ICE BofA corporate OAS (third-party licensed)', 'Yahoo Finance / yfinance calendar (indicative issuer dates)'],
        'yearsRequested':opts.years,'cachedSeries':cached_count}
 
 def main():

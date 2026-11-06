@@ -71,28 +71,55 @@ def annual_income_rows(ticker):
     except Exception: return []
 
 
+def _calendar_events(calendar):
+    """Extract date-only Yahoo calendar fields. Any range is indicative."""
+    if not isinstance(calendar,dict): return []
+    def day(v):
+        if isinstance(v,dt.datetime):return v.date().isoformat()
+        if isinstance(v,dt.date):return v.isoformat()
+        if hasattr(v,'date'):
+            try:return v.date().isoformat()
+            except Exception:pass
+        try:return dt.date.fromisoformat(str(v)[:10]).isoformat()
+        except (ValueError,TypeError):return None
+    out=[]
+    estimates=calendar.get('Earnings Date') or []
+    if not isinstance(estimates,(list,tuple)):estimates=[estimates]
+    dates=sorted(set(filter(None,(day(x) for x in estimates))))
+    if dates:
+        out.append({'type':'earnings','title':'Earnings date (provider estimate)' if len(dates)==1 else 'Earnings window (provider estimate)',
+                    'date':dates[0],'endDate':dates[-1] if len(dates)>1 else None})
+    for label,typ,title in [('Ex-Dividend Date','ex-dividend','Ex-dividend date'),
+                             ('Dividend Date','dividend-payment','Dividend payment date')]:
+        d=day(calendar.get(label))
+        if d:out.append({'type':typ,'title':title,'date':d})
+    return out
+
+
 def financials_for(symbol, offline=False):
     if offline:
-        return {},[], 'No fundamentals fetched (offline mode)'
+        return {},[], 'No fundamentals fetched (offline mode)',[]
     try:
         import yfinance as yf
     except ImportError:
-        return {},[], 'Fundamental data unavailable: install the optional yfinance package'
+        return {},[], 'Fundamental data unavailable: install the optional yfinance package',[]
     try:
         t=yf.Ticker(symbol)
         info=t.get_info() or {}
         if not isinstance(info,dict):info={}
         rows=annual_income_rows(t)
         status='Yahoo Finance via yfinance (unofficial; figures unverified)'
-        return info,rows,status
+        try: calendar=_calendar_events(t.calendar)
+        except Exception:calendar=[]  # Calendar failure must never suppress financials.
+        return info,rows,status,calendar
     except Exception as e:
-        return {},[],f'Fundamentals fetch failed: {str(e)[:180]}'
+        return {},[],f'Fundamentals fetch failed: {str(e)[:180]}',[]
 
 
 def fetch_company(symbol,name,builder,opts):
     """Return a summary and annual income rows, plus separate daily price history."""
     q,history,_,error=builder.fetch_quote(('Companies',symbol,name,'equity'),opts)
-    info,annual,status=financials_for(symbol, opts.offline)
+    info,annual,status,events=financials_for(symbol, opts.offline)
     # Yahoo share price may be in GBp, while reported financials are USD/GBP.
     # Do not infer market capitalization currency from the reporting currency.
     quote_currency=(q or {}).get('currency') or info.get('currency') or ''
@@ -123,7 +150,7 @@ def fetch_company(symbol,name,builder,opts):
         'roePct':_num(info.get('returnOnEquity'))*100 if _num(info.get('returnOnEquity')) is not None else None,
         'revenue':latest.get('revenue'),'operatingProfit':latest.get('operatingProfit'),
         'netProfit':latest.get('netProfit'),'fiscalEnd':latest.get('fiscalEnd'),
-        'financialCurrency':financial_currency,'annual':annual,
+        'financialCurrency':financial_currency,'annual':annual,'events':events,
         'fundamentalSource':status,'priceSource':q['source'] if q else None,
         'warning':error or None,
     }

@@ -187,6 +187,24 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 #peer-coverage,#dq-alerts{overflow-wrap:anywhere}
 .phase-warning{color:#efb366}
 #compare-mode{max-width:min(100%,470px)}
+
+/* Corporate credit, equity valuation and issuer-event research. */
+.research-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.research-controls .field{min-width:130px;max-width:310px}
+.credit-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.credit-stat{background:#19191d;border:1px solid #34343b;border-radius:5px;padding:10px;display:grid;gap:6px}
+.credit-stat .key{font-size:10px;color:var(--amber)}.credit-stat .val{font-size:20px;font-weight:600}
+.credit-stat .note{font-size:10px}
+.valuation-scroll,.events-scroll{overflow:auto;max-width:100%}
+.valuation-scroll table{min-width:1100px}.events-scroll table{min-width:820px}
+.valuation-scroll td,.events-scroll td{font-size:11px}
+.research-hint{font-size:11px;color:#d8b580;line-height:1.5}
+.event-status{white-space:nowrap}.event-confirmed{color:#6fdb9b}.event-indicative{color:#e8b66b}
+@media(max-width:950px){.credit-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.credit-kpis{grid-template-columns:1fr 1fr}.credit-stat .val{font-size:16px}}
+.valuation-scroll .watch th:first-child,.valuation-scroll .watch td:first-child{position:sticky;left:0;z-index:2;background:#17171a;min-width:105px}
+.valuation-scroll .watch tr.selected td:first-child{background:#332411}
+
 </style>
 </head>
 <body>
@@ -299,12 +317,38 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   </div>
   <p class="note">Search covers the saved constituents of the S&amp;P 500, Nasdaq 100, FTSE 100 and FTSE 250. The collector prioritises companies with large daily moves, storing up to 10 years of share-price history for a small selection and gathering up to 40 new financial summaries per scheduled run. Historical accounts remain limited to preselected detailed profiles. The website is a static snapshot, not a live on-demand data API. Missing figures are shown as —; financial reports and share prices can use different currencies.</p>
 </section>
+<section class="panel" id="company-events-panel">
+  <div class="row"><div><h2>COMPANY EARNINGS &amp; CORPORATE EVENTS</h2>
+  <p class="note">Forthcoming results dates, ex-dividend and payment dates for collected company profiles. Yahoo dates are estimates until an issuer announcement confirms them.</p></div>
+  <span class="mini" id="events-coverage"></span></div>
+  <div class="research-controls"><label for="events-search" class="mini">COMPANY</label>
+    <input id="events-search" type="search" class="field" placeholder="Search company or ticker…" aria-label="Filter company events">
+    <label for="events-filter" class="mini">EVENT</label><select id="events-filter" class="field" aria-label="Event type"><option value="all">All types</option><option value="earnings">Earnings</option><option value="ex-dividend">Ex-dividend</option><option value="dividend-payment">Dividend payments</option><option value="issuer-announcement">Issuer announcements</option></select>
+    <button class="btn" id="events-selected-company" type="button">SHOW CURRENT COMPANY</button>
+    <button class="btn" id="events-all" type="button">CLEAR FILTER</button>
+  </div>
+  <div class="events-scroll"><table class="watch"><thead><tr><th>Date</th><th>Company</th><th>Type</th><th>Event</th><th>Reliability</th><th>Source</th></tr></thead><tbody id="events-rows"></tbody></table></div>
+  <p class="research-hint" id="events-note">Dates can change. Confirm with the issuer before trading.</p>
+  <p class="note">Coverage is limited to selected detailed profiles, not every S&amp;P 500 or FTSE constituent. Optional issuer-confirmed dates can be added through company_events.csv, with a dated company announcement link. No dates are inferred from quarterly reporting cycles.</p>
+</section>
 <section class="panel" id="peer-panel">
   <div class="row"><div><h2>COMPARE COMPANIES — PEER ANALYSIS</h2><p class="note">Choose up to four companies using the drop-down boxes below. Compare P/E, margins, yields, debt and cash flow. Blank figures mean no sourced data; monetary figures retain their reporting currencies.</p></div><button class="btn" id="peer-from-company" type="button">ADD CURRENT COMPANY</button></div>
   <div class="compare-pickers" id="peer-pickers"><select id="peer0" class="field" aria-label="Peer company one"></select><select id="peer1" class="field" aria-label="Peer company two"></select><select id="peer2" class="field" aria-label="Peer company three"></select><select id="peer3" class="field" aria-label="Peer company four"></select></div>
   <p class="note" id="peer-coverage"></p>
   <div class="constituents-scroll" style="max-height:none"><div id="peer-table"></div></div>
   <p class="note">P/E, margins and yields can be compared across currencies; absolute revenue and profit amounts cannot. Values are unverified provider summaries, with different reporting periods and retrieval dates. Blank does not mean zero.</p>
+</section>
+<section class="panel" id="market-valuations">
+  <div class="row"><div><h2>MARKET VALUATION DASHBOARD</h2>
+   <p class="note">Trailing and forward P/E estimates are calculated from the positive-earnings companies with usable market capitalisations. These are COVERED-CONSTITUENT PROXIES, not official complete-index valuations.</p></div>
+   <span class="mini" id="valuation-count"></span></div>
+  <div class="valuation-scroll"><table class="watch"><thead><tr>
+    <th>Equity index</th><th class="n">P/E coverage</th><th class="n">Trailing P/E proxy</th><th class="n">Forward P/E proxy</th>
+    <th class="n">Earnings yield</th><th class="n">Dividend yield proxy</th><th class="n">10Y sovereign yield</th><th class="n">Earnings minus 10Y</th><th>Financials retrieved</th>
+  </tr></thead><tbody id="valuation-rows"></tbody></table></div>
+  <div class="row"><span class="mini" id="valuation-selected"></span><button type="button" class="btn" id="valuation-to-constituents">OPEN INDEX CONSTITUENTS</button></div>
+  <p id="valuation-method" class="research-hint"></p>
+  <p class="note">P/E excludes companies with negative earnings or missing P/E. Weighting uses the reported market caps of the covered profitable companies; it is NOT the full index P/E and should not be compared with official index factsheets without checking coverage. The earnings-yield-minus-government-yield figure is a crude gap, not a forecast equity risk premium. There is no fabricated ten-year valuation history.</p>
 </section>
 <section class="panel" id="compare">
   <div class="row"><h2>CROSS-MARKET COMPARISON</h2><button id="export-compare" class="btn" type="button">EXPORT COMPARISON CSV</button></div>
@@ -321,6 +365,23 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <div class="note" id="compare-note">Series are rebased to 100, using the first available common period. Different currencies are NOT converted; dividends are NOT included.</div>
   <div class="chart" id="compare-chart"></div><div class="legend" id="compare-legend"></div>
   <div class="g2"><div class="small-scroll"><h3>HISTORICAL RISK METRICS</h3><div id="compare-stats" class="note"></div></div><div class="small-scroll"><h3>DAILY PRICE-CHANGE CORRELATIONS</h3><div id="compare-corr" class="note"></div></div></div>
+</section>
+<section class="panel" id="corporate-credit">
+  <div class="row"><div><h2>CORPORATE BOND CREDIT SPREADS</h2>
+   <p class="note">ICE BofA option-adjusted spreads from FRED. Basis points (bp) above matched Treasury or government spot curves; NOT a corporate-bond yield or price. Published daily with a lag. Available public series have approximately three years of history.</p></div>
+   <span class="mini" id="credit-count">Source-dependent</span></div>
+  <div class="credit-kpis" id="credit-kpis"></div>
+  <div class="research-controls">
+    <label class="mini" for="credit-main">PRIMARY SERIES</label><select id="credit-main" class="field" aria-label="Credit spread primary series"></select>
+    <label class="mini" for="credit-compare">COMPARE WITH</label><select id="credit-compare" class="field" aria-label="Credit spread comparison series"></select>
+  </div>
+  <div class="pills" id="credit-range" aria-label="Corporate credit history">
+    <button type="button" class="btn" data-credit-range="1M">1M</button><button type="button" class="btn" data-credit-range="3M">3M</button>
+    <button type="button" class="btn" data-credit-range="1Y">1Y</button><button type="button" class="btn active" data-credit-range="3Y">3Y</button><button type="button" class="btn" data-credit-range="MAX">MAX</button>
+  </div>
+  <div class="chart" id="credit-chart"></div><div id="credit-legend" class="legend"></div>
+  <p class="research-hint" id="credit-status">The collector will show dated public observations when the feed succeeds. Missing regions remain missing.</p>
+  <p class="note">UK sterling credit indices are not included: a consistent free, redistributable UK spread series has not been verified. Euro-area coverage currently includes high yield only. FRED credits ICE Data Indices; public redistribution of historical series may require separate rights.</p>
 </section>
 <section class="panel" id="gilts">
   <div class="row"><div><h2>UK GILTS — DMO DAILY BID / OFFER PRICES</h2>
@@ -1084,7 +1145,10 @@ function renderDataQuality(){
  ['Dividend-adjusted series',q.adjustedSeries??'—','Yahoo adjusted closes, not every index'],
  ['Stale market quotes',(q.staleQuotes||[]).length,'Older than 4 calendar days'],
  ['UK gilts priced',q.pricedGilts??'—','Dated, not real-time'],
- ['US Treasuries priced',q.pricedUSTreasuries??'—','Dated, not real-time']];
+ ['US Treasuries priced',q.pricedUSTreasuries??'—','Dated, not real-time'],
+ ['Corporate credit feeds',(D.credit_spreads||[]).length+' / 6','Dated FRED / ICE BofA OAS'],
+ ['Market valuation coverage',(D.market_valuations||[]).filter(v=>v.trailingPEProxy!=null).length+' / '+(D.market_valuations||[]).length,'Partial and positive earnings only'],
+ ['Company event dates',(D.company_events||[]).length,'Indicative unless issuer-sourced']];
  for(const [name,value,description] of tiles)host.append(researchTile(name,String(value),description));
  const indexHost=$('dq-indices');indexHost.replaceChildren();
  const rows=q.indexCoverage||[];if(rows.length){
@@ -1150,6 +1214,70 @@ function renderEconomicPrints(){
  }
 }
 
+// -- Bloomberg-style corporate credit, market valuations and issuer events --
+const creditState={primary:'US_IG',compare:'US_HY',range:'3Y'};
+let valuationSelection='SP500';
+const eventState={query:'',filter:'all'};
+function renderCredit(){
+  const rows=D.credit_spreads||[],host=$('credit-kpis');host.replaceChildren();
+  $('credit-count').textContent=rows.length+' / 6 public spread series';
+  const primary=$('credit-main'),secondary=$('credit-compare');
+  [primary,secondary].forEach((select,i)=>{
+    select.replaceChildren();if(i===1){const none=el('option','','No comparison');none.value='';select.append(none);}
+    rows.forEach(s=>{const option=el('option','',s.name);option.value=s.key;select.append(option);});
+  });
+  creditState.primary=rows.some(s=>s.key===creditState.primary)?creditState.primary:rows[0]?.key||'';
+  creditState.compare=rows.some(s=>s.key===creditState.compare)?creditState.compare:'';
+  primary.value=creditState.primary;secondary.value=creditState.compare;
+  for(const s of rows){const item=el('div','credit-stat');item.append(el('div','key',s.name),el('div','val',s.latestBp==null?'—':fmt(s.latestBp,0)+' bp'));
+    item.append(el('div','note',(s.date||'No date')+' · 1M: '+(s.change30Bp==null?'—':(s.change30Bp>0?'+':'')+fmt(s.change30Bp,0)+'bp')+' · 1Y: '+(s.change365Bp==null?'—':(s.change365Bp>0?'+':'')+fmt(s.change365Bp,0)+'bp')));
+    host.append(item);
+  }
+  if(!rows.length){empty('credit-chart','No corporate credit spreads were retrieved from FRED. See Data Quality for source warnings.');$('credit-status').textContent='Source unavailable — never estimated.';$('credit-legend').replaceChildren();return;}
+  const choices=[rows.find(s=>s.key===creditState.primary),rows.find(s=>s.key===creditState.compare)].filter(Boolean);
+  const series=choices.map((s,i)=>{
+    const points=(s.history||[]).filter(p=>p.date&&Number.isFinite(Number(p.bp))).map(p=>({date:p.date,v:Number(p.bp)}));
+    const end=points.at(-1)?.date,cutoff=end?new Date(end+'T12:00:00Z'):null;
+    if(cutoff&&creditState.range!=='MAX'){const months=creditState.range==='1M'?1:creditState.range==='3M'?3:creditState.range==='1Y'?12:36;cutoff.setUTCMonth(cutoff.getUTCMonth()-months);}
+    return {name:s.name,color:i===0?AMBER:BLUE,pts:cutoff?points.filter(p=>p.date>=cutoff.toISOString().slice(0,10)):points};
+  });
+  chart('credit-chart',series,{format:v=>fmt(v,0)+'bp',aria:'ICE BofA corporate option-adjusted credit spreads in basis points'});
+  const leg=$('credit-legend');leg.replaceChildren();series.forEach(s=>{const label=el('span');const sw=el('i','sw');sw.style.background=s.color;label.append(sw,document.createTextNode(s.name));leg.append(label);});
+  $('credit-status').textContent='Latest observation: '+(choices[0]?.date||'not available')+'. Percentage spreads are converted to basis points; 1.00% = 100bp. Widening = greater credit risk premium. Snapshot data, not executable yields.';
+  document.querySelectorAll('[data-credit-range]').forEach(b=>b.classList.toggle('active',b.dataset.creditRange===creditState.range));
+}
+function renderValuations(){
+  const rows=D.market_valuations||[],host=$('valuation-rows');host.replaceChildren();
+  const populated=rows.filter(r=>r.trailingPEProxy!=null).length;
+  $('valuation-count').textContent=populated+' / '+rows.length+' indices have covered-constituent P/E estimates';
+  if(!rows.length){const tr=el('tr');const cell=td(tr,'No valuation coverage: run a build with index constituents and fundamentals.');cell.colSpan=9;host.append(tr);$('valuation-selected').textContent='';$('valuation-method').textContent='';return;}
+  rows.forEach(r=>{
+    const tr=el('tr');tr.style.cursor='pointer';if(r.id===valuationSelection)tr.classList.add('selected');
+    const pePct=r.members?fmt(r.peCoveragePct,1)+'% ('+r.positivePERows+'/'+r.members+')':'—';
+    const values=[r.name,pePct,r.trailingPEProxy==null?'—':fmt(r.trailingPEProxy,1)+'×',r.forwardPEProxy==null?'—':fmt(r.forwardPEProxy,1)+'×',
+      r.earningsYieldPct==null?'—':fmt(r.earningsYieldPct,2)+'%',r.dividendYieldProxyPct==null?'—':fmt(r.dividendYieldProxyPct,2)+'%',
+      r.benchmark10yPct==null?'—':fmt(r.benchmark10yPct,2)+'%',r.earningsMinus10yPct==null?'—':(r.earningsMinus10yPct>0?'+':'')+fmt(r.earningsMinus10yPct,2)+'pp',r.financialRetrievedAsOf||'—'];
+    values.forEach((v,i)=>td(tr,v,i>0&&i<8?'n':''));tr.onclick=()=>{valuationSelection=r.id;renderValuations();};host.append(tr);
+  });
+  const selected=rows.find(r=>r.id===valuationSelection)||rows[0];valuationSelection=selected.id;
+  $('valuation-selected').textContent=selected.name+' · '+selected.positivePERows+' positive-P/E observations among '+selected.members+' members · P/E-eligible share of known market cap: '+(selected.capPositivePEPct==null?'—':fmt(selected.capPositivePEPct,1)+'%');
+  $('valuation-method').textContent='Important: the denominator excludes loss-makers and firms without P/E or market cap. Latest fundamentals were retrieved '+(selected.financialRetrievedAsOf||'on an unknown date')+'. '+(selected.method||'');
+}
+function renderCompanyEvents(){
+ const host=$('events-rows');host.replaceChildren();const all=D.company_events||[];
+ const match=all.filter(e=>(eventState.filter==='all'||e.type===eventState.filter)&&(!eventState.query||[e.company,e.symbol,e.type,e.title].join(' ').toLowerCase().includes(eventState.query)));
+ const coverage=D.companyEventCoverage||{};
+ $('events-coverage').textContent=all.length+' dated events · '+(coverage.issuerSourced||0)+' issuer-sourced';
+ if(!match.length){const tr=el('tr');const cell=td(tr,'No matching dated events. Yahoo calendars may not have returned dates; check the issuer investor-relations site.');cell.colSpan=6;host.append(tr);}
+ for(const e of match.slice(0,100)){
+   const tr=el('tr');td(tr,e.date+(e.endDate&&e.endDate!==e.date?' – '+e.endDate:''));
+   const name=td(tr,'');const link=el('button','constituent-open',e.company||e.symbol);link.type='button';link.onclick=()=>openConstituent(e.symbol);name.append(link);
+   td(tr,e.type||'—');td(tr,e.title||'—');td(tr,e.status||'Indicative',e.status==='Issuer-sourced'?'event-confirmed':'event-indicative');
+   const source=td(tr,'');if(e.sourceUrl&&e.sourceUrl.startsWith('https://')){const a=el('a','company-link','CHECK SOURCE');a.href=e.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';source.append(a);}else source.textContent='—';host.append(tr);
+ }
+ $('events-note').textContent=match.length+' matching events (showing first 100). Only detailed profiles have Yahoo calendar dates; third-party forecasts are not issuer confirmations. Source dates may change.';
+}
+
 function sources(){const w=D.warnings||[];$('source-summary').textContent=(D.quotes||[]).length+' market instruments; '+(D.history||[]).length+' daily closes; '+(D.uk_rates||[]).length+' UK rates dates; '+(D.us_rates||[]).length+' US rates dates; '+(D.eu_rates||[]).length+' euro rates dates; '+(D.macro||[]).length+' economic series; '+(D.movers||[]).length+' equity mover markets; '+(D.companies||[]).length+' detailed company profiles; '+(D.fundamentalsCoverage?.summaries||0)+' cached constituent financial summaries; '+(D.news||[]).length+' news headlines; '+(D.calendar||[]).length+' verified release dates; '+(D.sovereign_yields||[]).length+' sovereign-yield months. Data generated '+(D.generatedAt||'unknown')+'. Cached source series: '+(D.cachedSeries||0)+'.';
  $('warnings').textContent=w.length?(w.length+' retrieval warning(s): '+w.slice(0,9).join(' | ')+(w.length>9?' | plus '+(w.length-9)+' more':'')):'No reported retrieval failures. The underlying feeds may still contain delayed or stale prices.';
 }
@@ -1164,10 +1292,10 @@ function reorderSections(){
     ['overview','MARKET OVERVIEW','Headlines · indices · FX · key yields',['news','headline','overview-board']],
     ['fx','GLOBAL MARKET DATA','Major markets · prices · interactive historical charts',['monitor']],
     ['equities','EQUITY MARKETS','Daily movers · full index constituents',['movers','constituents']],
-    ['companies','COMPANY RESEARCH','Compare peers · individual prices · valuation · news',['peer-panel','companies']],
-    ['bonds','BONDS & RATES','UK gilts · US Treasuries · curves · real yields · spreads',['gilts','us-treasuries','rates','real','us-spread-panel','sovereign','cross-rates']],
+    ['companies','COMPANY RESEARCH','Peer analysis · earnings diary · company financials',['peer-panel','company-events-panel','companies']],
+    ['bonds','BONDS & RATES','Government bonds · corporate credit · yield curves',['gilts','us-treasuries','corporate-credit','rates','real','us-spread-panel','sovereign','cross-rates']],
     ['economics','ECONOMIC DATA','GDP · inflation · actuals versus forecasts · calendar',['macro','macro-surprise','calendar']],
-    ['analytics','MARKET COMPARISONS & RISK','Cross-market comparisons · volatility · correlations',['compare','score-panel']],
+    ['analytics','VALUATIONS & MARKET ANALYTICS','Index valuations · comparisons · volatility · correlations',['market-valuations','compare','score-panel']],
     ['quality','DATA QUALITY & SOURCES','Quote coverage · stale data · missing fundamentals · source warnings',['quality-panel','sources']]
   ];
   for(const [key,title,desc,ids] of config){
@@ -1250,16 +1378,16 @@ function renderSovereign(){
 
 const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics','quality'];
 let activeWorkspace='overview', searchHits=[], searchCursor=0;
-const workspaceForSection={'us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
+const workspaceForSection={'market-valuations':'analytics','corporate-credit':'bonds','company-events-panel':'companies','us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
 function paintWorkspace(key){
   switch(key){
     case 'overview': renderNews(); renderPulse(); break;
     case 'equities': renderMovers(); renderConstituents(); break;
-    case 'companies': renderCompany(); renderPeers(); break;
-    case 'bonds': renderGilts(); renderRates(); usSpread(); renderReal(); renderSovereign(); break;
+    case 'companies': renderCompany(); renderPeers(); renderCompanyEvents(); break;
+    case 'bonds': renderGilts(); renderCredit(); renderRates(); usSpread(); renderReal(); renderSovereign(); break;
     case 'economics': renderMacro(); renderEconomicPrints(); renderCalendar(); break;
     case 'fx': renderMain(); renderWatch(); break;
-    case 'analytics': renderCompare(); renderScore(); break;
+    case 'analytics': renderValuations(); renderCompare(); renderScore(); break;
     case 'quality': renderDataQuality(); sources(); break;
   }
 }
@@ -1555,6 +1683,14 @@ function init(){setLatest();reorderSections();
   $('compare-etf-preset').onclick=()=>selectComparison(['SPY','ACWI','EWU',''],'adjusted_gbp');
   $('compare-index-preset').onclick=()=>selectComparison(['^FTSE','^GSPC','ACWI',''],'price_local');
   initPeers();
+  $('credit-main').onchange=e=>{creditState.primary=e.target.value;renderCredit();};
+  $('credit-compare').onchange=e=>{creditState.compare=e.target.value;renderCredit();};
+  document.querySelectorAll('[data-credit-range]').forEach(b=>b.onclick=()=>{creditState.range=b.dataset.creditRange;renderCredit();});
+  $('valuation-to-constituents').onclick=()=>{state.constMarket=valuationSelection;activateWorkspace('equities',{scroll:false});$('const-market').value=valuationSelection;renderConstituents();$('constituents').scrollIntoView({behavior:'smooth',block:'start'});};
+  $('events-search').oninput=e=>{eventState.query=e.target.value.trim().toLowerCase();renderCompanyEvents();};
+  $('events-filter').onchange=e=>{eventState.filter=e.target.value;renderCompanyEvents();};
+  $('events-selected-company').onclick=()=>{eventState.query=state.companySymbol.toLowerCase();$('events-search').value=state.companySymbol;renderCompanyEvents();};
+  $('events-all').onclick=()=>{eventState.query='';eventState.filter='all';$('events-search').value='';$('events-filter').value='all';renderCompanyEvents();};
   $('movers-market').onchange=e=>{state.moversMarket=e.target.value;renderMovers();};
   $('const-market').onchange=e=>{state.constMarket=e.target.value;renderConstituents();};
   $('const-search').oninput=e=>{state.constSearch=e.target.value.trim().toLowerCase();renderConstituents();};
@@ -1566,7 +1702,7 @@ function init(){setLatest();reorderSections();
   $('company-go').onclick=()=>selectCompany($('company-query').value);
   $('company-query').onkeydown=e=>{if(e.key==='Enter')selectCompany(e.target.value);};
   $('add-compare').onclick=()=>{if(!qMap.has(state.sym))return;let slot=state.compare.findIndex(s=>!s);if(slot<0)slot=3;state.compare[slot]=state.sym;$('cmp'+slot).value=state.sym;activateWorkspace('analytics',{scroll:false});renderCompare();$('compare').scrollIntoView({behavior:'smooth'});};
-  renderDataQuality();renderEconomicPrints();headlines();renderNews();renderCalendar();renderMain();renderWatch();renderMovers();renderConstituents();renderCompany();renderCompare();renderRates();usSpread();renderScore();renderMacro();renderReal();renderSovereign();sources();initWorkspace();
+  renderCredit();renderValuations();renderCompanyEvents();renderDataQuality();renderEconomicPrints();headlines();renderNews();renderCalendar();renderMain();renderWatch();renderMovers();renderConstituents();renderCompany();renderCompare();renderRates();usSpread();renderScore();renderMacro();renderReal();renderSovereign();sources();initWorkspace();
 }
 init();
 })();
