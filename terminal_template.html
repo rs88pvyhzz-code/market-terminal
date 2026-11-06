@@ -840,7 +840,7 @@ function renderConstituents(){
     const mcCcy=q.currency==='GBp'||q.currency==='GBX'?'GBP':q.currency||'';
     const finCcy=f.financialCurrency||'';
     const tr=el('tr');
-    td(tr,q.name);td(tr,q.symbol);
+        tr.style.cursor='pointer';tr.onclick=e=>{if(!e.target.closest('button,a'))openConstituent(q.symbol);};td(tr,q.name);td(tr,q.symbol);
     td(tr,q.price==null?'—':fmt(q.price,q.price>=1000?1:q.price>=10?2:4)+' '+(q.currency||''),'n');
     td(tr,q.current?pc(q.changePct):'—','n '+(q.current?tone(q.changePct):'neutral'));
     td(tr,val(q,'trailingPE')==null?'—':fmt(val(q,'trailingPE'),1)+'×','n');
