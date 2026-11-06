@@ -101,7 +101,6 @@ def fetch_company(symbol,name,builder,opts):
     trailing=_num(info.get('trailingPE'))
     forward=_num(info.get('forwardPE'))
     div_yield=_num(info.get('dividendYield'))
-    if div_yield is not None: div_yield*=100  # yfinance decimal fraction
     latest=annual[0] if annual else {}
     # If a statement is missing, do not silently swap in TTM without relabelling.
     company={
