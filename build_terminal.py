@@ -360,7 +360,7 @@ def build(opts):
               'Bank of England','UK','policy',False,'https://www.bankofengland.co.uk/boeapps/database/Bank-Rate.asp'))
     warnings.extend(regional_warnings)
     order_macro={x[1]:i for i,x in enumerate(FRED_MACRO)}
-        macro.sort(key=lambda x:order_macro.get(x['key'], len(order_macro)))
+    macro.sort(key=lambda x:order_macro.get(x['key'], len(order_macro)))
     us,uswarn,n_us_cached=parse_us_rates(opts);cached_count+=n_us_cached
     warnings.extend('FRED '+w for w in uswarn)
     us_real,realwarn,n_real_cached=market_intelligence.collect_us_real(sys.modules[__name__],opts)
