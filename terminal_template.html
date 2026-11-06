@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Global Market Terminal — Seven Workspaces</title>
+<title>Global Market Terminal — Eight Workspaces</title>
 <style>
 :root{--bg:#09090b;--panel:#121215;--panel2:#17171b;--line:#2a2a30;--amber:#ffa028;--fg:#ececef;--muted:#96969f;--up:#51d284;--down:#ff665e;--blue:#5caeff;--purple:#c6a0ff;--aqua:#60d5ce;--font:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#060607;color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
@@ -127,7 +127,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 .company-news-links a:hover,.outside-search a:hover{background:#3b2b19}
 .outside-search{padding:12px;display:grid;gap:8px}
 .outside-search div{display:flex;gap:8px;flex-wrap:wrap}
-/* Seven-workspace navigation; the terminal remains a local self-contained HTML file. */
+/* Eight-workspace navigation; the terminal remains a local self-contained HTML file. */
 .commandbar{position:sticky;top:0;z-index:50;background:#09090bef;backdrop-filter:blur(16px);border-bottom:1px solid #38322b;padding:10px 0 8px;min-width:0}
 .commandline{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:1px 2px 9px}
 .commandline .label{font:11px var(--font);color:#b4b4bd;letter-spacing:.05em}
@@ -206,6 +206,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
     <button type="button" role="tab" id="tab-bonds" aria-controls="view-bonds" data-workspace="bonds" aria-selected="false">BONDS & RATES</button>
     <button type="button" role="tab" id="tab-economics" aria-controls="view-economics" data-workspace="economics" aria-selected="false">ECONOMICS</button>
     <button type="button" role="tab" id="tab-analytics" aria-controls="view-analytics" data-workspace="analytics" aria-selected="false">ANALYTICS</button>
+    <button type="button" role="tab" id="tab-quality" aria-controls="view-quality" data-workspace="quality" aria-selected="false">DATA QUALITY</button>
   </nav>
 </div>
 <div id="demo-banner" class="err" style="display:none">SYNTHETIC DEMONSTRATION — These figures are invented test data, NOT market prices. Run build_terminal.py without --demo for a real snapshot.</div>
@@ -213,7 +214,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 <section class="panel" id="overview-board">
   <div class="row"><h2>GLOBAL MARKET PULSE</h2><span class="mini">Select any market to open its chart or rates analysis</span></div>
   <div class="pulse-board" id="market-pulse"></div>
-  <div class="workspace-shortcuts"><button type="button" data-jump="equities">VIEW ALL INDEX CONSTITUENTS</button><button type="button" data-jump="bonds">COMPARE GOVERNMENT YIELDS</button><button type="button" data-jump="economics">VIEW ECONOMIC INDICATORS</button><button type="button" data-jump="analytics">CROSS-MARKET ANALYTICS</button></div>
+  <div class="workspace-shortcuts"><button type="button" data-jump="equities">VIEW ALL INDEX CONSTITUENTS</button><button type="button" data-jump="bonds">COMPARE GOVERNMENT YIELDS</button><button type="button" data-jump="economics">VIEW ECONOMIC INDICATORS</button><button type="button" data-jump="analytics">CROSS-MARKET ANALYTICS</button><button type="button" data-jump="quality">DATA QUALITY &amp; SOURCES</button></div>
   <p class="pulse-warning">Snapshot values; not streaming quotes. Most equity movements exclude dividends. Government-yield changes are basis points, not investment returns.</p>
 </section>
 <section class="panel" id="quality-panel">
@@ -299,7 +300,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <p class="note">Search covers the saved constituents of the S&amp;P 500, Nasdaq 100, FTSE 100 and FTSE 250. The collector prioritises companies with large daily moves, storing up to 10 years of share-price history for a small selection and gathering up to 40 new financial summaries per scheduled run. Historical accounts remain limited to preselected detailed profiles. The website is a static snapshot, not a live on-demand data API. Missing figures are shown as —; financial reports and share prices can use different currencies.</p>
 </section>
 <section class="panel" id="peer-panel">
-  <div class="row"><div><h2>COMPANY PEER COMPARISON</h2><p class="note">Compare up to four saved companies. Unavailable Yahoo fields remain blank; monetary figures retain their reporting currencies.</p></div><button class="btn" id="peer-from-company" type="button">ADD CURRENT COMPANY</button></div>
+  <div class="row"><div><h2>COMPARE COMPANIES — PEER ANALYSIS</h2><p class="note">Choose up to four companies using the drop-down boxes below. Compare P/E, margins, yields, debt and cash flow. Blank figures mean no sourced data; monetary figures retain their reporting currencies.</p></div><button class="btn" id="peer-from-company" type="button">ADD CURRENT COMPANY</button></div>
   <div class="compare-pickers" id="peer-pickers"><select id="peer0" class="field" aria-label="Peer company one"></select><select id="peer1" class="field" aria-label="Peer company two"></select><select id="peer2" class="field" aria-label="Peer company three"></select><select id="peer3" class="field" aria-label="Peer company four"></select></div>
   <p class="note" id="peer-coverage"></p>
   <div class="constituents-scroll" style="max-height:none"><div id="peer-table"></div></div>
@@ -1160,13 +1161,14 @@ function reorderSections(){
   if(pair){const children=[...pair.children];if(children[0]){children[0].id='us-spread-panel';wrap.insertBefore(children[0],pair);}
     if(children[1]){children[1].id='score-panel';wrap.insertBefore(children[1],pair);}pair.remove();}
   const config=[
-    ['overview','MARKET OVERVIEW','Headlines · indices · FX · key yields · data coverage',['news','headline','overview-board','quality-panel']],
+    ['overview','MARKET OVERVIEW','Headlines · indices · FX · key yields',['news','headline','overview-board']],
     ['fx','GLOBAL MARKET DATA','Major markets · prices · interactive historical charts',['monitor']],
     ['equities','EQUITY MARKETS','Daily movers · full index constituents',['movers','constituents']],
-    ['companies','COMPANY RESEARCH','Share-price history · valuation · peer comparison · news',['companies','peer-panel']],
+    ['companies','COMPANY RESEARCH','Compare peers · individual prices · valuation · news',['peer-panel','companies']],
     ['bonds','BONDS & RATES','UK gilts · US Treasuries · curves · real yields · spreads',['gilts','us-treasuries','rates','real','us-spread-panel','sovereign','cross-rates']],
     ['economics','ECONOMIC DATA','GDP · inflation · actuals versus forecasts · calendar',['macro','macro-surprise','calendar']],
-    ['analytics','MARKET COMPARISONS & RISK','Cross-market comparisons · volatility · correlations',['compare','score-panel','sources']]
+    ['analytics','MARKET COMPARISONS & RISK','Cross-market comparisons · volatility · correlations',['compare','score-panel']],
+    ['quality','DATA QUALITY & SOURCES','Quote coverage · stale data · missing fundamentals · source warnings',['quality-panel','sources']]
   ];
   for(const [key,title,desc,ids] of config){
     const view=el('div','workspace-view');view.id='view-'+key;view.dataset.workspace=key;view.setAttribute('role','tabpanel');view.setAttribute('aria-labelledby','tab-'+key);view.hidden=key!=='overview';
@@ -1246,18 +1248,19 @@ function renderSovereign(){
 }
 
 
-const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics'];
+const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics','quality'];
 let activeWorkspace='overview', searchHits=[], searchCursor=0;
-const workspaceForSection={'us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics',sources:'analytics'};
+const workspaceForSection={'us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
 function paintWorkspace(key){
   switch(key){
-    case 'overview': renderNews(); renderPulse(); renderDataQuality(); break;
+    case 'overview': renderNews(); renderPulse(); break;
     case 'equities': renderMovers(); renderConstituents(); break;
     case 'companies': renderCompany(); renderPeers(); break;
     case 'bonds': renderGilts(); renderRates(); usSpread(); renderReal(); renderSovereign(); break;
     case 'economics': renderMacro(); renderEconomicPrints(); renderCalendar(); break;
     case 'fx': renderMain(); renderWatch(); break;
     case 'analytics': renderCompare(); renderScore(); break;
+    case 'quality': renderDataQuality(); sources(); break;
   }
 }
 function activateWorkspace(key,options={}){
