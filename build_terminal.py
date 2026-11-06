@@ -37,6 +37,7 @@ import gilt_market
 import us_treasury_market
 import economic_forecasts
 import market_additions
+import personal_watchlist
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CACHE = ROOT / '.terminal_cache'
@@ -370,14 +371,33 @@ def build_quality(quotes,hist,movers,fundamentals,coverage,calendar,gilts,us_bon
       'retrievalWarnings':len(warnings),'generatedAt':today_utc().isoformat()}
 
 def build(opts):
+    watchlist,watch_errors=personal_watchlist.read_watchlist(ROOT/'personal_watchlist.csv')
     if opts.demo:
         demo=demo_data()
         demo['credit_spreads']=[]
         demo['market_valuations']=market_additions.market_valuation(demo['movers'],demo.get('fundamentals',[]),demo['companies'],demo['us_rates'],demo['uk_rates'])
+        # Demonstration uses only synthetic company data; never show invented facts as live.
+        demo_profiles={c['symbol']:c for c in demo['companies']}
+        demo_hist={}
+        for r in demo.get('company_history',[]):demo_hist.setdefault(r['symbol'],[]).append(r)
+        demo['personalWatchlist']=watchlist
+        demo['watchlist_quotes']=[{'symbol':w['symbol'],'name':w['name'],'kind':'equity','price':demo_profiles[w['symbol']]['price'],
+            'currency':demo_profiles[w['symbol']]['priceCurrency'],'changePct':demo_profiles[w['symbol']]['changePct'],
+            'asOf':'2026-11-05 16:30 UTC','source':'SYNTHETIC DEMO'} for w in watchlist if w['symbol'] in demo_profiles]
+        demo['watchlist_history']=[{'symbol':w['symbol'],'points':personal_watchlist.thin_history(demo_hist.get(w['symbol'],[]))} for w in watchlist if w['symbol'] in demo_hist]
+        demo['watchlist_news']=[]
+        demo['watchlistCoverage']=personal_watchlist.coverage(watchlist,demo['watchlist_quotes'],[],demo['watchlist_history'],demo['companies'])
         demo['company_events']=[]
         demo['companyEventCoverage']={'detailedProfiles':len(demo['companies']),'datedEvents':0,'issuerSourced':0}
         return demo
-    quotes=[];hist=[];warnings=[];cached_count=0
+    # Persist the visible watchlist in source control; it contains symbols only.
+    # The site's public repository must not receive personal position values.
+    existing={s.upper() for s in opts.companies}
+    for item in watchlist:
+        if item['assetType'] in ('stock','investment_trust') and item['symbol'].upper() not in existing:
+            opts.companies.append(item['symbol'])
+            existing.add(item['symbol'].upper())
+    quotes=[];hist=[];warnings=list(watch_errors);cached_count=0
     print(f'Downloading {len(INSTRUMENTS)} market series ({opts.years} years requested) ...',flush=True)
     with concurrent.futures.ThreadPoolExecutor(max_workers=opts.workers) as ex:
         futures={ex.submit(fetch_quote,rec,opts):rec[1] for rec in INSTRUMENTS}
@@ -469,6 +489,12 @@ def build(opts):
                     if err and len(warnings)<35:warnings.append('Mover history '+x['symbol']+': '+str(err)[:130])
                 except Exception as e:
                     if len(warnings)<35:warnings.append('Mover history '+x['symbol']+': '+str(e)[:130])
+    watch_quotes,watch_history,wqw,watch_cached=personal_watchlist.collect_quotes(sys.modules[__name__],opts,watchlist)
+    warnings.extend(wqw);cached_count+=watch_cached
+    watch_news,wnw,wn_cached=personal_watchlist.collect_news(sys.modules[__name__],opts,watchlist)
+    warnings.extend(wnw);cached_count+=wn_cached
+    watch_coverage=personal_watchlist.coverage(watchlist,watch_quotes,watch_news,watch_history,companies)
+    print(f'Personal watchlist: {watch_coverage["quoted"]}/{len(watchlist)} quotes, {watch_coverage["historical"]} charts, {watch_coverage["newsWithResults"]} news matches',flush=True)
     company_news,nwarn,nnews_cached=market_intelligence.collect_company_news(
         sys.modules[__name__],opts,movers,limit=opts.company_news_limit)
     warnings.extend(nwarn);cached_count+=nnews_cached
@@ -501,7 +527,10 @@ def build(opts):
     warnings.extend(event_warnings)
     print(f'Credit: {len(credit_spreads)} / {len(market_additions.CREDIT_SERIES)} FRED series; market valuation: {len(market_valuations)} indices; issuer events: {len(company_events)}',flush=True)
     quality=build_quality(quotes,hist,movers,fundamentals,fcoverage,calendar,gilts,us_bonds,macro,warnings)
-    return {'credit_spreads':credit_spreads,'market_valuations':market_valuations,'company_events':company_events,'companyEventCoverage':event_coverage,
+    quality['personalWatchlist']=watch_coverage
+    return {'personalWatchlist':watchlist,'watchlist_quotes':watch_quotes,'watchlist_history':watch_history,
+            'watchlist_news':watch_news,'watchlistCoverage':watch_coverage,
+            'credit_spreads':credit_spreads,'market_valuations':market_valuations,'company_events':company_events,'companyEventCoverage':event_coverage,
             'quality':quality,'economicPrints':economic_prints,'forecastCoverage':{'sourced':forecast_count,'series':len(economic_prints)},
             'us_treasuries':us_bonds,'us_treasury_history':us_treasury_history,'gilts':gilts,'gilt_history':gilt_history,
 'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
@@ -511,7 +540,7 @@ def build(opts):
         'companies':companies,'company_history':company_history,
        'movers':movers,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
        'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),'demo':False,
-       'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank','UK Debt Management Office D10B purchase/sale service prices (dated)','US Treasury FedInvest rates/prices (dated)','FRED / ICE BofA corporate OAS (third-party licensed)', 'Yahoo Finance / yfinance calendar (indicative issuer dates)'],
+       'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank','UK Debt Management Office D10B purchase/sale service prices (dated)','US Treasury FedInvest rates/prices (dated)','FRED / ICE BofA corporate OAS (third-party licensed)', 'Yahoo Finance / yfinance calendar (indicative issuer dates)','Personal watchlist: source tickers only; no holdings or valuations'],
        'yearsRequested':opts.years,'cachedSeries':cached_count}
 
 def main():

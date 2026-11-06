@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Global Market Terminal — Eight Workspaces</title>
+<title>Global Market Terminal — Nine Workspaces</title>
 <style>
 :root{--bg:#09090b;--panel:#121215;--panel2:#17171b;--line:#2a2a30;--amber:#ffa028;--fg:#ececef;--muted:#96969f;--up:#51d284;--down:#ff665e;--blue:#5caeff;--purple:#c6a0ff;--aqua:#60d5ce;--font:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#060607;color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
@@ -205,6 +205,40 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 .valuation-scroll .watch th:first-child,.valuation-scroll .watch td:first-child{position:sticky;left:0;z-index:2;background:#17171a;min-width:105px}
 .valuation-scroll .watch tr.selected td:first-child{background:#332411}
 
+/* Private-use ticker watchlist: public ticker metadata only, never holdings. */
+.watchlist-controls{display:grid;grid-template-columns:minmax(140px,2fr) minmax(120px,1fr) minmax(145px,1.1fr) auto;gap:7px;align-items:center}
+.watchlist-edit{text-decoration:none;white-space:nowrap;text-align:center}
+.watchlist-table-scroll{overflow:auto;max-height:570px;border:1px solid #303035;border-radius:5px}
+.watchlist-table-scroll .watch{min-width:1010px}
+.watchlist-table-scroll .watch th{position:sticky;top:0;z-index:3;background:#17171b}
+.watchlist-table-scroll .watch td:first-child{font-weight:600}
+.watchlist-table-scroll .watch tr{cursor:pointer}
+.watchlist-table-scroll .watch tr:hover td{background:#242025}
+.watchlist-table-scroll .watch tr.selected td{background:#302417}
+.watchlist-table-scroll .watch tr.selected td:first-child{color:#ffb253}
+.watchlist-selected-header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;border-top:1px solid #333038;padding:12px 0 2px}
+.watchlist-selected-header h3{font-size:17px;margin:0 0 4px}
+.watchlist-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.watchlist-stat{background:#1c1c21;border:1px solid #34343b;border-radius:5px;padding:9px;min-width:0}
+.watchlist-stat .k{font:10px var(--font);color:#ffa028;line-height:1.4}
+.watchlist-stat .v{font:16px var(--font);overflow-wrap:anywhere;white-space:normal;margin-top:5px;font-variant-numeric:tabular-nums}
+.watchlist-stat .d{font:10px var(--font);color:var(--muted);margin-top:4px}
+.watchlist-bottom{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(250px,1fr);gap:10px}
+.watchlist-news,.watchlist-events{background:#17171a;border:1px solid #373139;border-radius:6px;padding:13px;display:grid;align-content:start;gap:9px}
+.watchlist-news h3,.watchlist-events h3{font:600 13px var(--font);color:#ffa028;margin:0}
+.watchlist-events-list{display:grid;gap:8px}
+.watchlist-event{display:grid;gap:3px;padding:8px;border:1px solid #333337;background:#1d1d21;border-radius:4px;font:11px var(--font)}
+.watchlist-event .event-date{font-weight:600;color:#f5ba6b}
+.watchlist-ranges{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.watchlist-ranges button{width:auto;min-width:44px;padding:7px 10px}
+.watchlist-advanced{border:1px solid #38343a;border-radius:5px;padding:10px;background:#121215}
+.watchlist-advanced summary{color:#f1b55c;font:600 12px var(--font);cursor:pointer;margin-bottom:9px}
+.watchlist-advanced:not([open]) summary{margin-bottom:0}
+#watchlist-chart{min-height:310px}
+@media(max-width:1100px){.watchlist-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.watchlist-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.watchlist-bottom{grid-template-columns:1fr}.watchlist-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:460px){.watchlist-controls{grid-template-columns:1fr}.watchlist-selected-header h3{font-size:15px}}
+
 </style>
 </head>
 <body>
@@ -224,6 +258,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
     <button type="button" role="tab" id="tab-bonds" aria-controls="view-bonds" data-workspace="bonds" aria-selected="false">BONDS & RATES</button>
     <button type="button" role="tab" id="tab-economics" aria-controls="view-economics" data-workspace="economics" aria-selected="false">ECONOMICS</button>
     <button type="button" role="tab" id="tab-analytics" aria-controls="view-analytics" data-workspace="analytics" aria-selected="false">ANALYTICS</button>
+    <button type="button" role="tab" id="tab-watchlist" aria-controls="view-watchlist" data-workspace="watchlist" aria-selected="false">MY WATCHLIST</button>
     <button type="button" role="tab" id="tab-quality" aria-controls="view-quality" data-workspace="quality" aria-selected="false">DATA QUALITY</button>
   </nav>
 </div>
@@ -235,6 +270,55 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <div class="workspace-shortcuts"><button type="button" data-jump="equities">VIEW ALL INDEX CONSTITUENTS</button><button type="button" data-jump="bonds">COMPARE GOVERNMENT YIELDS</button><button type="button" data-jump="economics">VIEW ECONOMIC INDICATORS</button><button type="button" data-jump="analytics">CROSS-MARKET ANALYTICS</button><button type="button" data-jump="quality">DATA QUALITY &amp; SOURCES</button></div>
   <p class="pulse-warning">Snapshot values; not streaming quotes. Most equity movements exclude dividends. Government-yield changes are basis points, not investment returns.</p>
 </section>
+<section class="panel" id="personal-watchlist-panel">
+  <div class="row"><div><h2>MY WATCHLIST — MARKET RESEARCH</h2>
+    <p class="note">Prices, performance, financial indicators and company news. No holding values, quantities, cost bases, owner names or portfolio totals are collected or shown. Prices below are per security only.</p></div>
+    <span class="mini" id="watchlist-coverage"></span>
+  </div>
+  <div class="research-stats" id="watchlist-summary"></div>
+  <div class="watchlist-controls inputs">
+    <input class="field" id="watchlist-search" type="search" placeholder="Filter company, ticker or ETF…" aria-label="Search personal watchlist">
+    <select class="field" id="watchlist-kind" aria-label="Watchlist security type"><option value="all">All securities</option><option value="stock">Shares</option><option value="investment_trust">Investment trusts</option><option value="etf">ETFs</option></select>
+    <select class="field" id="watchlist-sort" aria-label="Sort personal watchlist"><option value="original">Saved list order</option><option value="name">Company A–Z</option><option value="up">Daily gain highest first</option><option value="down">Daily loss first</option><option value="pe">Lowest available P/E</option></select>
+    <a class="btn watchlist-edit" href="https://github.com/rs88pvyhzz-code/market-terminal/blob/main/personal_watchlist.csv" target="_blank" rel="noopener noreferrer">EDIT TICKER LIST</a>
+  </div>
+  <p class="note" id="watchlist-note" aria-live="polite"></p>
+  <div class="watchlist-table-scroll"><table class="watch"><thead><tr>
+    <th>Security</th><th>Ticker</th><th class="n">Last price</th><th class="n">Day</th><th class="n">YTD</th><th class="n">1Y</th><th class="n">P/E</th><th class="n">Dividend</th><th>Quote date</th>
+  </tr></thead><tbody id="watchlist-rows"></tbody></table></div>
+  <div class="watchlist-selected-header">
+    <div><h3 id="watchlist-selected-name">Select a security</h3><p class="mini" id="watchlist-selected-meta"></p></div>
+    <button type="button" class="btn" id="watchlist-open-company">OPEN COMPANY RESEARCH</button>
+  </div>
+  <div class="watchlist-kpis" id="watchlist-kpis"></div>
+  <div class="row"><div><h3>SECURITY PRICE HISTORY</h3><p id="watchlist-history-meta" class="note">Historical prices are dated closing quotations, not live prices.</p></div>
+    <select class="field" id="watchlist-basis" aria-label="Select price series and currency">
+      <option value="price_local">Price · quoted currency</option>
+      <option value="adjusted_local">Dividend-adjusted proxy · quoted currency</option>
+      <option value="price_gbp">Price · sterling per share</option>
+      <option value="adjusted_gbp">Dividend-adjusted proxy · sterling</option>
+    </select>
+  </div>
+  <div class="period-controls watchlist-ranges" id="watchlist-ranges" aria-label="Share price history period"></div>
+  <div class="chart" id="watchlist-chart" role="img" aria-label="Historical security price"></div>
+  <div class="watchlist-bottom">
+    <section class="watchlist-news" aria-label="News for selected security">
+      <div class="row"><h3>KEY COMPANY NEWS</h3><span class="mini" id="watchlist-news-time"></span></div>
+      <p class="note" id="watchlist-news-context">News articles may coincide with price changes, but are not proof of the cause.</p>
+      <div id="watchlist-news-stories" class="company-news-list"></div>
+      <div class="company-news-links"><a id="watchlist-news-live" href="https://news.google.com/" target="_blank" rel="noopener noreferrer">SEARCH LATEST NEWS</a>
+      <a id="watchlist-quote-link" href="https://finance.yahoo.com/" target="_blank" rel="noopener noreferrer">CHECK SOURCE QUOTE</a></div>
+    </section>
+    <section class="watchlist-events" aria-label="Upcoming company events">
+      <h3>RESULTS &amp; DIVIDEND DATES</h3><div id="watchlist-events" class="watchlist-events-list"></div>
+      <p class="note">Issuer-confirmed dates are distinguished from indicative third-party dates. None are inferred if missing.</p>
+    </section>
+  </div>
+  <details class="watchlist-advanced" id="watchlist-advanced"><summary>MORE FINANCIAL DATA — CASH FLOW, PROFITABILITY &amp; DEBT</summary><div class="watchlist-kpis" id="watchlist-extra-kpis"></div></details>
+  <p class="note" id="watchlist-source-warning">Prices and financial data can have different reporting dates and currencies. Dividend-adjusted prices are an unofficial proxy for total returns; figures are not a trading feed.</p>
+  <p class="note">This GitHub repository is public: the CSV discloses ticker names but never amounts held or position sizes. The saved list can be replaced at any time by editing <code>personal_watchlist.csv</code>.</p>
+</section>
+
 <section class="panel" id="quality-panel">
   <div class="row"><h2>DATA QUALITY &amp; COVERAGE</h2><span class="mini" id="dq-stamp">Snapshot validation</span></div>
   <div class="research-stats" id="dq-tiles"></div>
@@ -1296,6 +1380,7 @@ function reorderSections(){
     ['bonds','BONDS & RATES','Government bonds · corporate credit · yield curves',['gilts','us-treasuries','corporate-credit','rates','real','us-spread-panel','sovereign','cross-rates']],
     ['economics','ECONOMIC DATA','GDP · inflation · actuals versus forecasts · calendar',['macro','macro-surprise','calendar']],
     ['analytics','VALUATIONS & MARKET ANALYTICS','Index valuations · comparisons · volatility · correlations',['market-valuations','compare','score-panel']],
+    ['watchlist','PERSONAL WATCHLIST','Selected securities · prices · news · fundamentals',['personal-watchlist-panel']],
     ['quality','DATA QUALITY & SOURCES','Quote coverage · stale data · missing fundamentals · source warnings',['quality-panel','sources']]
   ];
   for(const [key,title,desc,ids] of config){
@@ -1376,9 +1461,197 @@ function renderSovereign(){
 }
 
 
-const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics','quality'];
+// Personal watchlist — only saved tickers, no holdings, cost basis or valuations.
+const watchlistRecords=Array.isArray(D.personalWatchlist)?D.personalWatchlist:[];
+const watchQuoteMap=new Map((D.watchlist_quotes||[]).map(q=>[q.symbol,q]));
+const watchHistoryMap=new Map((D.watchlist_history||[]).map(h=>[h.symbol,h.points||[]]));
+const watchNewsMap=new Map((D.watchlist_news||[]).map(n=>[n.symbol,n]));
+const watchState={symbol:watchlistRecords[0]?.symbol||'',query:'',kind:'all',sort:'original',range:'1Y',basis:'price_local'};
+const WATCH_RANGES=['1M','3M','6M','YTD','1Y','3Y','5Y','10Y','MAX'];
+function watchProfile(symbol){return companyMap.get(symbol)||fundamentalsMap.get(symbol)||null;}
+function watchFmtQuote(q){if(!q||q.price==null)return '—';return fmt(q.price,q.price>=1000?1:2)+' '+(q.currency||'');}
+function watchRows(){let rows=watchlistRecords.filter(w=>(watchState.kind==='all'||w.assetType===watchState.kind)&&
+  (!watchState.query||(w.name+' '+w.symbol).toLowerCase().includes(watchState.query)));
+ const val=(w,key)=>{const x=key==='changePct'?watchQuoteMap.get(w.symbol)?.changePct:watchProfile(w.symbol)?.[key];return x!=null&&Number.isFinite(Number(x))?Number(x):null;};
+ if(watchState.sort==='name')rows.sort((a,b)=>a.name.localeCompare(b.name));
+ if(watchState.sort==='up')rows.sort((a,b)=>(val(b,'changePct')??-Infinity)-(val(a,'changePct')??-Infinity));
+ if(watchState.sort==='down')rows.sort((a,b)=>(val(a,'changePct')??Infinity)-(val(b,'changePct')??Infinity));
+ if(watchState.sort==='pe')rows.sort((a,b)=>(val(a,'trailingPE')??Infinity)-(val(b,'trailingPE')??Infinity));
+ return rows;
+}
+function watchPriceRisk(symbol){
+ // Source observations only; 252-session realised price volatility and one-year drawdown.
+ const rows=(watchHistoryMap.get(symbol)||[]).filter(a=>Array.isArray(a)&&a[1]>0).map(a=>({date:a[0],price:Number(a[1])}));
+ if(rows.length<3)return {threeYear:null,volatility:null,maxDrawdown:null};
+ rows.sort((a,b)=>a.date.localeCompare(b.date));const last=rows.at(-1);
+ const date3=new Date(Date.parse(last.date+'T12:00:00Z')-3*365.25*86400000).toISOString().slice(0,10);
+ let ref=null;for(const r of rows){if(r.date<=date3)ref=r;else break;}
+ const threeYear=ref&&Math.abs((Date.parse(date3)-Date.parse(ref.date))/86400000)<=36?100*(last.price/ref.price-1):null;
+ const cutoff=new Date(Date.parse(last.date+'T12:00:00Z')-365*86400000).toISOString().slice(0,10);
+ const recent=rows.filter(x=>x.date>=cutoff),logs=[];let high=-Infinity,drawdown=0;
+ for(let i=0;i<recent.length;i++){const x=recent[i];high=Math.max(high,x.price);drawdown=Math.min(drawdown,100*(x.price/high-1));
+  if(i>0){const days=(Date.parse(x.date)-Date.parse(recent[i-1].date))/86400000;if(days<=7)logs.push(Math.log(x.price/recent[i-1].price));}}
+ let volatility=null;if(logs.length>=125){const mean=logs.reduce((a,b)=>a+b,0)/logs.length;
+  volatility=100*Math.sqrt(252*logs.reduce((v,x)=>v+(x-mean)*(x-mean),0)/(logs.length-1));}
+ return {threeYear,volatility,maxDrawdown:recent.length>=125?drawdown:null};
+}
+function watchValTile(label,value,info=''){
+ const box=el('div','watchlist-stat');box.append(el('div','k',label),el('div','v',value??'—'));
+ if(info)box.append(el('div','d',info));return box;
+}
+function renderWatchRows(){
+ const body=$('watchlist-rows');body.replaceChildren();const rows=watchRows();
+ $('watchlist-note').textContent=rows.length+' shown / '+watchlistRecords.length+' configured. Tap a security to see its chart, performance, financial data and sourced news. Missing figures are not estimated.';
+ for(const w of rows){const q=watchQuoteMap.get(w.symbol),f=watchProfile(w.symbol),tr=el('tr');
+  tr.tabIndex=0;tr.setAttribute('role','button');tr.setAttribute('aria-label','Open research for '+w.name);
+  if(watchState.symbol===w.symbol)tr.classList.add('selected');
+  const pct=(value)=>value==null?'—':pc(value);
+  td(tr,w.name);td(tr,w.symbol);td(tr,watchFmtQuote(q),'n');
+  td(tr,pct(q?.changePct),'n '+tone(q?.changePct));td(tr,pct(q?.ytdPct),'n '+tone(q?.ytdPct));
+  td(tr,pct(q?.yearPct),'n '+tone(q?.yearPct));
+  td(tr,f?.trailingPE!=null?fmt(f.trailingPE,1)+'×':'—','n');td(tr,pct(f?.dividendYieldPct),'n');
+  td(tr,q?.asOf?.slice(0,10)||'—');
+  tr.onclick=()=>{watchState.symbol=w.symbol;renderWatchlist();};
+  tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();watchState.symbol=w.symbol;renderWatchlist();}};
+  body.append(tr);
+ }
+ if(!rows.length){const tr=el('tr'),cell=td(tr,'No securities match this search.');cell.colSpan=9;body.append(tr);}
+}
+function watchSeries(w,q){
+ const rows=watchHistoryMap.get(w.symbol)||[];
+ const adj=watchState.basis.startsWith('adjusted'),gbp=watchState.basis.endsWith('gbp');
+ const native=rows.filter(x=>Array.isArray(x)&&/^\d{4}-\d{2}-\d{2}$/.test(x[0]))
+  .map(x=>({date:x[0],v:adj?(x[2]==null?null:Number(x[2])):Number(x[1])})).filter(x=>x.v!=null&&Number.isFinite(x.v)&&x.v>0);
+ if(!native.length)return {pts:[],error:w.assetType==='fund'?'This is a fund-platform code, not an exchange quote. Use a dated NAV from the provider.':adj?'No dividend-adjusted series supplied by the price source.':'Historical prices not retrieved for this security.'};
+ let pts=native;
+ if(gbp){pts=pts.map(x=>({date:x.date,v:priceToGBP(x.v,q?.currency||'',x.date)})).filter(x=>x.v!=null&&x.v>0);
+  if(pts.length<2)return {pts:[],error:'Matching historical FX data are missing or this currency is unsupported.'};}
+ const end=pts.at(-1).date,days={'1M':31,'3M':93,'6M':183,'1Y':365,'3Y':365*3,'5Y':365*5,'10Y':365*10};
+ if(watchState.range!=='MAX'){
+  const cutoff=watchState.range==='YTD'?end.slice(0,4)+'-01-01':new Date(Date.parse(end+'T12:00:00Z')-days[watchState.range]*86400000).toISOString().slice(0,10);
+  const within=pts.filter(p=>p.date>=cutoff);const prev=[...pts].reverse().find(p=>p.date<cutoff);
+  pts=prev?[prev,...within]:within;
+ }
+ return {pts,error:pts.length<2?'Too few price observations for the selected period.':null};
+}
+function renderWatchlistChart(w,q){
+ $('watchlist-basis').value=watchState.basis;
+ const controls=$('watchlist-ranges');controls.replaceChildren();
+ for(const range of WATCH_RANGES){const btn=el('button','btn'+(range===watchState.range?' active':''),range);
+  btn.type='button';btn.onclick=()=>{watchState.range=range;renderWatchlistChart(w,q);};controls.append(btn);}
+ const found=watchSeries(w,q),pts=found.pts;
+ const adj=watchState.basis.startsWith('adjusted'),gbp=watchState.basis.endsWith('gbp');
+ const units=gbp?'GBP per share':(q?.currency||'native quoted units');
+ if(found.error){empty('watchlist-chart',found.error);$('watchlist-history-meta').textContent=found.error;return;}
+ const move=100*(pts.at(-1).v/pts[0].v-1);
+ $('watchlist-history-meta').textContent=watchState.range+' · '+(adj?'Dividend-adjusted price proxy':'Price')+' move '+pc(move)+
+  ' · '+pts[0].date+' to '+pts.at(-1).date+' · '+units+' · price returns exclude dividends unless adjusted is selected; FX conversion uses dated historical observations.';
+ chart('watchlist-chart',[{name:w.name,pts,color:AMBER}],{area:true,format:v=>fmt(v,v>=1000?1:2),aria:w.name+' historical price'});
+}
+function watchlistNews(w,q){
+ const saved=watchNewsMap.get(w.symbol),fallback=(D.company_news||[]).find(x=>x.symbol===w.symbol);
+ const articles=saved?.articles?.length?saved.articles:(fallback?.articles||[]),host=$('watchlist-news-stories');host.replaceChildren();
+ $('watchlist-news-time').textContent=saved?'Retrieved '+(saved.retrievedAt||'date unavailable'):'No stored company news';
+ $('watchlist-news-context').textContent=(q?.changePct!=null?w.name+' '+pc(q.changePct)+' on '+(q.asOf||'unknown date')+'. ':'')+
+  'Related articles are search matches, not evidence that a story caused the share-price move. Verify company announcements and corporate actions.';
+ for(const article of articles.slice(0,4)){
+  if(!String(article.url||'').startsWith('https://'))continue;
+  const item=el('article','company-story'),a=el('a','',article.title||'Open news source');a.href=article.url;a.target='_blank';a.rel='noopener noreferrer';
+  item.append(a,el('span','',(article.source||'Publisher')+' · '+(article.published||'Date unavailable')));host.append(item);
+ }
+ if(!host.children.length)host.append(el('p','note','No verified company-specific headlines were retrieved. Use the latest-news search.'));
+ $('watchlist-news-live').href=companyNewsSearch(w.name);
+ $('watchlist-quote-link').href=w.assetType==='fund'?'https://www.vanguardinvestor.co.uk/investments':'https://finance.yahoo.com/quote/'+encodeURIComponent(w.symbol)+'/';
+}
+function renderWatchlistEvents(w){
+ const host=$('watchlist-events');host.replaceChildren();
+ const dates=(D.company_events||[]).filter(e=>e.symbol===w.symbol).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))).slice(0,6);
+ if(!dates.length){host.append(el('p','note','No dated results or dividend events were retrieved for this security. Check the issuer investor-relations site.'));return;}
+ for(const event of dates){const box=el('div','watchlist-event');box.append(el('span','event-date',(event.date||'Date unavailable')+' · '+(event.type||'Event')),
+  el('span','',event.title||'Company event'),el('span','mini',event.status||'Source not verified'));
+  if(String(event.sourceUrl||'').startsWith('https://')){const a=el('a','','SOURCE');a.href=event.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';box.append(a);}
+  host.append(box);
+ }
+}
+function renderWatchlist(){
+ if(!$('personal-watchlist-panel'))return;
+ const qcount=(D.watchlistCoverage?.quoted??(D.watchlist_quotes||[]).length);
+ $('watchlist-coverage').textContent=qcount+' / '+(D.watchlistCoverage?.quoteEligible??watchlistRecords.length)+' quoted securities · '+watchlistRecords.length+' on list';
+ const summary=$('watchlist-summary');summary.replaceChildren();
+ const cov=D.watchlistCoverage||{};
+ summary.append(researchTile('WATCHED SECURITIES',String(watchlistRecords.length),'Editable ticker list'),
+  researchTile('PRICE QUOTES',qcount+' / '+(cov.quoteEligible??watchlistRecords.length),'Exchange-traded securities only'),
+  researchTile('SHARE PRICE CHARTS',String(cov.historical??0),'History from source'),
+  researchTile('COMPANY NEWS',String(cov.newsWithResults??0),'Matches found, not verified causes'));
+ renderWatchRows();
+ const w=watchlistRecords.find(x=>x.symbol===watchState.symbol)||watchlistRecords[0];
+ if(!w){$('watchlist-selected-name').textContent='No securities configured';$('watchlist-selected-meta').textContent='Add symbols to personal_watchlist.csv in GitHub.';
+  $('watchlist-kpis').replaceChildren();empty('watchlist-chart','No symbols are saved in the watchlist.');$('watchlist-news-stories').replaceChildren();$('watchlist-events').replaceChildren();return;}
+ watchState.symbol=w.symbol;
+ const q=watchQuoteMap.get(w.symbol),c=watchProfile(w.symbol)||{},fundCcy=c.financialCurrency||'';
+ $('watchlist-selected-name').textContent=w.name+' · '+w.symbol;
+ $('watchlist-selected-meta').textContent=[w.assetType.replace('_',' '),c.sector,c.industry,q?.asOf?'Quote '+q.asOf:(w.assetType==='fund'?'Fund platform code: no exchange market quote':'Quote unavailable')].filter(Boolean).join(' · ');
+ const kpis=$('watchlist-kpis');kpis.replaceChildren();
+ const risk=watchPriceRisk(w.symbol);
+ const core=[
+  ['LAST QUOTED PRICE',watchFmtQuote(q),q?.source||'No verified exchange quote'],
+  ['DAILY PRICE MOVE',pc(q?.changePct),q?.asOf?.slice(0,10)||'No dated quote'],
+  ['YTD PRICE RETURN',pc(q?.ytdPct),'Price only · local currency'],
+  ['ONE-YEAR PRICE RETURN',pc(q?.yearPct),'Price only · dividends excluded']
+ ];
+ const riskMeasures=[
+  ['THREE-YEAR PRICE RETURN',pc(risk.threeYear),'Price only · quoted currency'],
+  ['ONE-YEAR VOLATILITY',pc(risk.volatility),'Realised price returns · annualised'],
+  ['ONE-YEAR MAX DRAWDOWN',pc(risk.maxDrawdown),'Observed closing prices'],
+  ['52-WEEK HIGH',q?.high52==null?'—':fmt(q.high52,2)+' '+(q.currency||''),'Quoted price units'],
+  ['52-WEEK LOW',q?.low52==null?'—':fmt(q.low52,2)+' '+(q.currency||''),'Quoted price units']
+ ];
+ const valuation=[
+  ['TRAILING P/E',c.trailingPE==null?'—':fmt(c.trailingPE,1)+'×','Earnings-based valuation'],
+  ['FORWARD P/E',c.forwardPE==null?'—':fmt(c.forwardPE,1)+'×','Third-party forecast'],
+  ['DIVIDEND YIELD',pc(c.dividendYieldPct),'Can lag the share-price date'],
+  ['MARKET CAPITALISATION',companyAmount(c.marketCap,c.marketCapCurrency||''),'Company size, not your holding'],
+  ['52-WEEK PRICE RANGE',q?.low52==null||q?.high52==null?'—':fmt(q.low52,2)+' – '+fmt(q.high52,2)+' '+(q.currency||''),'Exchange quote units']
+ ];
+ let data;
+ if(w.assetType==='stock'){
+  data=[...core,...valuation,...riskMeasures,
+    ['PROFIT MARGIN',pc(c.profitMarginPct),'Trailing company results'],
+    ['RETURN ON EQUITY',pc(c.roePct),'Reported company ratio'],
+    ['REVENUE · TTM',companyAmount(c.revenueTTM,fundCcy),'Financial reporting currency'],
+    ['NET PROFIT · TTM',companyAmount(c.netIncomeTTM,fundCcy),'Financial reporting currency'],
+    ['FREE CASH FLOW',companyAmount(c.freeCashflow,fundCcy),'Trailing reporting period'],
+    ['TOTAL DEBT',companyAmount(c.totalDebt,fundCcy),'Company debt; not portfolio debt'],
+    ['EV / EBITDA',c.enterpriseToEbitda==null?'—':fmt(c.enterpriseToEbitda,1)+'×','If sourced']];
+ }else if(w.assetType==='investment_trust'){
+  data=[...core,riskMeasures[0],['DIVIDEND YIELD',pc(c.dividendYieldPct),'If sourced · may lag'],
+   riskMeasures[1],riskMeasures[2],['DISCOUNT TO NAV','—','Not available from this free feed; cannot infer from P/E'],
+   riskMeasures[3],riskMeasures[4],['TRUST MARKET CAPITALISATION',companyAmount(c.marketCap,c.marketCapCurrency||''),'Trust market cap, not your holding']];
+ }else{
+  data=[...core,...riskMeasures,w.assetType==='fund'?
+   ['FUND NAV','—','A platform code is not an exchange ticker; use provider NAV']:
+   ['FUND FEES & HOLDINGS','CHECK ISSUER','Fund-level fees and holdings need a verified factsheet']];
+ }
+ for(const [label,value,info] of data.slice(0,9))kpis.append(watchValTile(label,value,info));
+ const extra=$('watchlist-extra-kpis');extra.replaceChildren();for(const [label,value,info] of data.slice(9))extra.append(watchValTile(label,value,info));
+ const btn=$('watchlist-open-company');const research=w.assetType!=='fund'&&(companyMap.has(w.symbol)||indexedStocks.has(w.symbol));
+ btn.textContent=research?'OPEN COMPANY RESEARCH':w.assetType==='fund'?'OPEN VANGUARD FUNDS':'OPEN SOURCE QUOTE';
+ btn.onclick=()=>research?openConstituent(w.symbol):window.open(w.assetType==='fund'?'https://www.vanguardinvestor.co.uk/investments':'https://finance.yahoo.com/quote/'+encodeURIComponent(w.symbol)+'/','_blank','noopener,noreferrer');
+ $('watchlist-source-warning').textContent='Price source: '+(q?.source||'not retrieved')+' · quoted '+(q?.asOf||'date unavailable')+
+  ' · financials: '+(c.fundamentalSource||c.source||'not sourced')+' · '+(c.financialAsOf||'financial retrieval date unavailable')+
+  '. Share prices and accounts can use different currencies. The table does not contain any share quantities, holding costs or invested amounts.';
+ renderWatchlistChart(w,q);watchlistNews(w,q);renderWatchlistEvents(w);
+}
+function initWatchlist(){
+ $('watchlist-search').oninput=e=>{watchState.query=e.target.value.trim().toLowerCase();renderWatchRows();};
+ $('watchlist-kind').onchange=e=>{watchState.kind=e.target.value;renderWatchRows();};
+ $('watchlist-sort').onchange=e=>{watchState.sort=e.target.value;renderWatchRows();};
+ $('watchlist-basis').onchange=e=>{watchState.basis=e.target.value;const w=watchlistRecords.find(r=>r.symbol===watchState.symbol);if(w)renderWatchlistChart(w,watchQuoteMap.get(w.symbol));};
+}
+
+const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics','watchlist','quality'];
 let activeWorkspace='overview', searchHits=[], searchCursor=0;
-const workspaceForSection={'market-valuations':'analytics','corporate-credit':'bonds','company-events-panel':'companies','us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
+const workspaceForSection={'personal-watchlist-panel':'watchlist','market-valuations':'analytics','corporate-credit':'bonds','company-events-panel':'companies','us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
 function paintWorkspace(key){
   switch(key){
     case 'overview': renderNews(); renderPulse(); break;
@@ -1388,6 +1661,7 @@ function paintWorkspace(key){
     case 'economics': renderMacro(); renderEconomicPrints(); renderCalendar(); break;
     case 'fx': renderMain(); renderWatch(); break;
     case 'analytics': renderValuations(); renderCompare(); renderScore(); break;
+    case 'watchlist': renderWatchlist(); break;
     case 'quality': renderDataQuality(); sources(); break;
   }
 }
@@ -1438,6 +1712,7 @@ function renderPulse(){
 function searchCatalogue(){
   const all=[];
   for(const market of D.movers||[])all.push({kind:'index',label:market.name,code:market.id,detail:'Index constituents · '+market.members+' companies'});
+  for(const w of watchlistRecords)all.push({kind:'watchlist',label:w.name,code:w.symbol,detail:'Personal watchlist · '+w.symbol});
   for(const item of savedCompanyList())all.push({kind:'company',label:item.name,code:item.symbol,detail:'Company · '+item.symbol});
   for(const q of D.quotes||[])all.push({kind:'instrument',label:q.name,code:q.symbol,detail:(q.group||'Market')+' · '+q.symbol});
   return all;
@@ -1468,7 +1743,8 @@ function chooseGlobalResult(item){if(!item)return;
     state.constMarket=item.code;state.moversMarket=item.code;
     activateWorkspace('equities',{scroll:false});renderConstituents();renderMovers();
     $('constituents').scrollIntoView({behavior:'smooth',block:'start'});
-  }else if(item.kind==='company'){openConstituent(item.code);}
+  }else if(item.kind==='watchlist'){watchState.symbol=item.code;activateWorkspace('watchlist',{scroll:false});renderWatchlist();}
+  else if(item.kind==='company'){openConstituent(item.code);}
   else{marketInstrument(item.code);}
 }
 function initWorkspace(){
@@ -1702,7 +1978,7 @@ function init(){setLatest();reorderSections();
   $('company-go').onclick=()=>selectCompany($('company-query').value);
   $('company-query').onkeydown=e=>{if(e.key==='Enter')selectCompany(e.target.value);};
   $('add-compare').onclick=()=>{if(!qMap.has(state.sym))return;let slot=state.compare.findIndex(s=>!s);if(slot<0)slot=3;state.compare[slot]=state.sym;$('cmp'+slot).value=state.sym;activateWorkspace('analytics',{scroll:false});renderCompare();$('compare').scrollIntoView({behavior:'smooth'});};
-  renderCredit();renderValuations();renderCompanyEvents();renderDataQuality();renderEconomicPrints();headlines();renderNews();renderCalendar();renderMain();renderWatch();renderMovers();renderConstituents();renderCompany();renderCompare();renderRates();usSpread();renderScore();renderMacro();renderReal();renderSovereign();sources();initWorkspace();
+  renderCredit();renderValuations();renderCompanyEvents();initWatchlist();renderWatchlist();renderDataQuality();renderEconomicPrints();headlines();renderNews();renderCalendar();renderMain();renderWatch();renderMovers();renderConstituents();renderCompany();renderCompare();renderRates();usSpread();renderScore();renderMacro();renderReal();renderSovereign();sources();initWorkspace();
 }
 init();
 })();
