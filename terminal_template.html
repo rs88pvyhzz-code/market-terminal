@@ -386,15 +386,46 @@ function openConstituent(symbol){
   const hasHistory=(companyHistory.get(symbol)||[]).length>1;
   const hasFundamental=!!companyFundamental(symbol)&&companyFundamental(symbol).trailingPE!=null;
   showCompanyAlert(isDetailed?'':
-    (hasHistory?'Multi-year price history saved. ':'Only a daily quote saved. ')+
+    (hasHistory?'Multi-year price history saved. ':historicAvailable.has(symbol)?'Ten-year chart available; loading when opened. ':'Historical price data not collected yet. ')+
     (hasFundamental?'Valuation summary available. ':'P/E and accounts may still be unavailable. ')+
     'For the latest company information use the source links below.');
   renderCompany();
   $('companies').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+const historicAvailable=new Set(D.priceHistorySymbols||[]);
+const historicRequests=new Set();
+const historicFailed=new Set();
 const companyHistory=new Map();(D.company_history||[]).forEach(r=>{if(!companyHistory.has(r.symbol))companyHistory.set(r.symbol,[]);companyHistory.get(r.symbol).push({date:r.date,v:Number(r.close)});});
 for(const pts of companyHistory.values())pts.sort((a,b)=>a.date.localeCompare(b.date));
+// Load one ticker's historical prices only when its research chart is opened.
+// The rest of the market snapshot stays small and loads normally on iPad.
+function loadCompanyHistory(symbol){
+  if(companyHistory.get(symbol)?.length>1||!historicAvailable.has(symbol)||historicRequests.has(symbol)||historicFailed.has(symbol))return;
+  historicRequests.add(symbol);
+  const url='stock_history/'+encodeURIComponent(symbol)+'.json?v='+encodeURIComponent(D.generatedAt||'1');
+  fetch(url).then(response=>{if(!response.ok)throw new Error('HTTP '+response.status);return response.json();})
+    .then(payload=>{
+      if(payload.symbol!==symbol||!Array.isArray(payload.points))throw new Error('Invalid company history');
+      const points=payload.points.filter(p=>Array.isArray(p)&&/^\d{4}-\d{2}-\d{2}$/.test(p[0])&&Number.isFinite(Number(p[1]))&&Number(p[1])>0)
+        .map(p=>({date:p[0],v:Number(p[1])})).sort((a,b)=>a.date.localeCompare(b.date));
+      if(points.length<2)throw new Error('Insufficient history');
+      companyHistory.set(symbol,points);
+      if(state.companySymbol===symbol){
+        const alert=$('company-alert');
+        if(alert.textContent.includes('Ten-year chart available; loading when opened.'))
+          alert.textContent=alert.textContent.replace('Ten-year chart available; loading when opened.','Ten-year price history loaded.');
+        renderCompany();
+      }
+    }).catch(err=>{
+      historicFailed.add(symbol);
+      if(state.companySymbol===symbol){
+        empty('company-chart','Could not load stored price history. Refresh Safari or check the source quote.');
+        $('company-performance').textContent='Historical price file unavailable: '+String(err.message||err);
+      }
+    }).finally(()=>historicRequests.delete(symbol));
+}
+
 const histMap=new Map();(D.history||[]).forEach(r=>{if(!histMap.has(r.symbol))histMap.set(r.symbol,[]);histMap.get(r.symbol).push({date:r.date,v:Number(r.close)});});
 for(const pts of histMap.values())pts.sort((a,b)=>a.date.localeCompare(b.date));
 const fmt=(x,d=2)=>x==null||!Number.isFinite(+x)?'—':Number(x).toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -750,10 +781,24 @@ function renderCompany(){
   $('company-dates').textContent='Price: '+(c.priceAsOf||'unavailable')+' · Financial reporting currency: '+(fundCCY||'unavailable')+' · Accounts FY ending '+(c.fiscalEnd||'unavailable')+' · Financial data checked: '+(c.financialAsOf||'not supplied')+' · Financial source: '+(c.fundamentalSource||'unavailable')+(c.warning?' · Price warning: '+c.warning:'');
   $('company-price-date').textContent='Quote units: '+(quoteCCY||'unknown');
   renderCompanyInsight(c);
+  const hasSavedHistory=(companyHistory.get(c.symbol)||[]).length>1;
+  if(!hasSavedHistory)loadCompanyHistory(c.symbol);
   const pts=periods(companyHistory.get(c.symbol)||[],'companyRange');
   const periodMove=pts.length>1&&pts[0].v>0?(pts.at(-1).v/pts[0].v-1)*100:null;
   $('company-performance').textContent=state.companyRange+' · price change '+pc(periodMove)+(pts.length?' · '+datefmt(pts[0].date)+' to '+datefmt(pts.at(-1).date):' · no observations in this range')+' · price return only, dividends excluded'+(pts.length?' · historical source starts '+datefmt((companyHistory.get(c.symbol)||[])[0].date):'');
-  chart('company-chart',[{name:c.name,color:AMBER,pts}],{format:v=>fmt(v,v>=1000?1:2)});
+  if(!hasSavedHistory&&historicAvailable.has(c.symbol)&&!historicFailed.has(c.symbol)){
+    empty('company-chart','Loading saved ten-year share-price history…');
+    $('company-performance').textContent='Loading historical daily prices for '+c.symbol+'…';
+  }else if(!hasSavedHistory&&historicFailed.has(c.symbol)){
+    empty('company-chart','Saved history could not be loaded. Refresh Safari and try again.');
+    $('company-performance').textContent='The saved chart file could not be retrieved for '+c.symbol+'.';
+  }else if(!hasSavedHistory&&!historicAvailable.has(c.symbol)){
+    empty('company-chart','Not downloaded yet. '+(D.priceHistoryCoverage?.available||0)+' of '+
+      (D.priceHistoryCoverage?.eligible||0)+' company histories saved. This increases each scheduled build.');
+    $('company-performance').textContent='Ten-year price history not yet available for '+c.symbol+'. More companies are collected at each update.';
+  }else{
+    chart('company-chart',[{name:c.name,color:AMBER,pts}],{format:v=>fmt(v,v>=1000?1:2)});
+  }
   const destination=$('company-annual');destination.replaceChildren();
   if(!c.annual||!c.annual.length){destination.append(el('div','empty','Annual income statements unavailable from the free feed.'));return;}
   const table=el('table');const header=el('tr');
