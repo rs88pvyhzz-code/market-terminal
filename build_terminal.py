@@ -440,7 +440,7 @@ def build(opts):
     gilts,gilt_history,gilt_warnings,gilt_cached=gilt_market.collect(sys.modules[__name__],opts)
     warnings.extend(gilt_warnings)
     cached_count+=gilt_cached
-    print(f'Gilts: {len(gilts)} conventional bonds, {sum(x["quoted"] for x in gilts)} dated clean-price quotes; {len(gilt_history)} saved observations',flush=True)
+    print(f'Gilts: {len(gilts)} DMO bonds ({sum(x.get("indexLinked",False) for x in gilts)} index-linked), {sum(x["quoted"] for x in gilts)} dated price quotes; {len(gilt_history)} saved observations',flush=True)
     return {'gilts':gilts,'gilt_history':gilt_history,
 'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
             'priceHistorySymbols':history_symbols,'priceHistoryCoverage':history_coverage,
@@ -449,7 +449,7 @@ def build(opts):
         'companies':companies,'company_history':company_history,
        'movers':movers,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
        'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),'demo':False,
-       'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank','Dividenddata public indicative gilt listings (optional)'],
+       'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank','UK Debt Management Office D10B purchase/sale service prices (dated)'],
        'yearsRequested':opts.years,'cachedSeries':cached_count}
 
 def main():

@@ -284,30 +284,30 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <div class="g2"><div class="small-scroll"><h3>HISTORICAL RISK METRICS</h3><div id="compare-stats" class="note"></div></div><div class="small-scroll"><h3>DAILY PRICE-CHANGE CORRELATIONS</h3><div id="compare-corr" class="note"></div></div></div>
 </section>
 <section class="panel" id="gilts">
-  <div class="row"><div><h2>UK GILT PRICES &amp; SECURITY ANALYTICS</h2>
-   <p class="note">Conventional fixed-rate gilts; quoted clean prices per £100 nominal. Public indicative data, <b>not</b> live dealing prices or official FTSE-Tradeweb marks.</p></div>
+  <div class="row"><div><h2>UK GILTS — DMO DAILY BID / OFFER PRICES</h2>
+   <p class="note">Official DMO Gilt Purchase and Sale Service snapshot. Prices are £ per £100 nominal; the date is shown for each quote. DMO <b>purchase = bid</b> (you sell), DMO <b>sale = offer</b> (you buy). Not live broker prices.</p></div>
    <span class="mini" id="gilt-coverage">Checking available quotes</span></div>
   <div class="inputs" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <label class="mini" for="gilt-search">FIND GILT</label>
-    <input class="field" id="gilt-search" type="search" placeholder="TN28, maturity, coupon..." style="flex:1 1 200px;max-width:440px" aria-label="Search UK gilts">
-    <a class="btn" href="https://www.dmo.gov.uk/data/gilt-market/gilts-in-issue/" target="_blank" rel="noopener noreferrer">DMO SECURITIES</a>
-    <a class="btn" href="https://www.tradeweb.com/our-markets/data-analytics/gilt-closing-prices/" target="_blank" rel="noopener noreferrer">TRADEWEB MARKS</a>
+    <input class="field" id="gilt-search" type="search" placeholder="Gilt name, ISIN, 2028, TN28..." style="flex:1 1 200px;max-width:440px" aria-label="Search UK gilts">
+    <select class="field" id="gilt-type" aria-label="Gilt type"><option value="all">All gilts</option><option value="conventional">Conventional</option><option value="linked">Index-linked</option></select>
+    <a class="btn" href="https://www.dmo.gov.uk/data/pdfdatareport?reportCode=D10B" target="_blank" rel="noopener noreferrer">OFFICIAL DMO REPORT</a>
   </div>
-  <div class="constituents-scroll" style="max-height:360px"><table class="watch" style="min-width:840px"><thead><tr>
-    <th>Gilt</th><th>Ticker</th><th>Maturity</th><th class="n">Coupon</th><th class="n">Clean price</th><th class="n">Published yield</th><th>Quote date</th>
+  <div class="constituents-scroll" style="max-height:380px"><table class="watch" style="min-width:1000px"><thead><tr>
+    <th>Gilt</th><th>ISIN / symbol</th><th>Maturity</th><th class="n">Coupon</th><th class="n">DMO bid (clean)</th><th class="n">DMO offer (clean)</th><th class="n">Gross YTM*</th><th>Quote date</th>
   </tr></thead><tbody id="gilt-rows"></tbody></table></div>
-  <p class="note" id="gilt-quality">If public indicative quotes cannot be verified, prices are blank. A manual clean price can still be used for calculation.</p>
+  <p class="note" id="gilt-quality">Prices are dated DMO retail-service references, not necessarily available through a stockbroker. *Gross yield is an approximate model calculation, not a DMO published yield.</p>
   <div class="row"><h3 id="gilt-selected">SELECT A GILT</h3><span class="mini" id="gilt-selected-source">—</span></div>
   <div class="inputs" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <label for="gilt-clean-input" class="mini">CLEAN PRICE (£ PER £100 NOMINAL)</label>
+    <label for="gilt-clean-input" class="mini">YOUR BUY CLEAN PRICE (£ PER £100 NOMINAL)</label>
     <input type="number" id="gilt-clean-input" class="field" min="1" max="250" step="0.01" placeholder="Enter price, e.g. 95.50" style="max-width:200px" inputmode="decimal" aria-label="Gilt clean purchase price">
     <span class="mini" id="gilt-price-basis">Enter a price or select a quoted gilt</span>
   </div>
   <div class="research-stats" id="gilt-stats"></div>
-  <p class="note" id="gilt-calc-note">Approximate semiannual gross yield and duration; dates and accrued interest are approximations. Settlement date is the snapshot date. Ex-dividend and settlement conventions, dealing charges and UK tax are not modelled. Confirm against a broker before trading.</p>
+  <p class="note" id="gilt-calc-note">Yield, accrued interest, duration and DV01 are <b>approximate</b>; the DMO spreadsheet has no published yield. The DMO price is a historical retail-service quote, not an executable offer. The valuation model does not reproduce all UK coupon, ex-dividend or settlement conventions, or include fees/taxes. Index-linked gilts have real clean prices and inflation-adjusted dirty prices; a nominal YTM is <b>not</b> calculated for them.</p>
   <div class="row"><h3>INDIVIDUAL GILT PRICE HISTORY</h3><div class="pills" id="gilt-period"><button class="btn" data-gilt-range="1M">1M</button><button class="btn" data-gilt-range="3M">3M</button><button class="btn" data-gilt-range="1Y">1Y</button><button class="btn active" data-gilt-range="MAX">MAX</button></div></div>
   <div class="chart" id="gilt-chart"></div><p class="note">Individual price history starts with this upgrade and grows as daily snapshots are saved. Existing benchmark yield history remains in the panels below; these are different series.</p>
-  <p class="note">Data sources: <a target="_blank" rel="noopener noreferrer" href="https://www.dividenddata.co.uk/uk-gilts-prices-yields.py">Dividenddata indicative public listing</a> (dated, optional), <a target="_blank" rel="noopener noreferrer" href="https://www.dmo.gov.uk/data/gilt-market/historical-prices-and-yields/">DMO / FTSE-Tradeweb reference prices</a> (separate, next-day, registration may be required). No public source is represented as a live executable quote.</p>
+  <p class="note">Source: <a target="_blank" rel="noopener noreferrer" href="https://www.dmo.gov.uk/data/pdfdatareport?reportCode=D10B">UK Debt Management Office, D10B daily Gilt Purchase and Sale Service</a>. Crown copyright under the Open Government Licence. Prices are retained with their original report date; missing automatic updates never become invented current prices.</p>
 </section>
 <section id="rates" class="panel">
   <div class="row"><h2>INTEREST RATES — UK / EURO AREA / UNITED STATES</h2>
@@ -1150,14 +1150,14 @@ function initWorkspace(){
 }
 
 // UK GILT SECURITY MONITOR — conventional UK gilts, quoted clean price when sourced.
-const giltState={symbol:(D.gilts||[]).find(x=>x.ticker==='TN28')?.ticker||(D.gilts||[])[0]?.ticker||'',range:'MAX',search:'',manual:new Map()};
+const giltState={symbol:(D.gilts||[]).find(x=>x.shortTicker==='TN28')?.ticker||(D.gilts||[])[0]?.ticker||'',range:'MAX',search:'',type:'all',manual:new Map()};
 const giltList=D.gilts||[],giltHist=D.gilt_history||[];
 function giltDay(s){const d=new Date(s+'T12:00:00Z');return Number.isFinite(d.valueOf())?d:null;}
 function giltMonths(date,delta){const y=date.getUTCFullYear(),m=date.getUTCMonth()+delta,day=date.getUTCDate();
   const first=new Date(Date.UTC(y,m,1,12)),lastDay=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0,12)).getUTCDate();
   return new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),Math.min(day,lastDay),12));}
-function giltCashflows(b){
-  const today=(D.generatedAt||'').slice(0,10),settle=giltDay(today),maturity=giltDay(b.maturity);
+function giltCashflows(b,valuationDate){
+  const today=valuationDate||(D.generatedAt||'').slice(0,10),settle=giltDay(today),maturity=giltDay(b.maturity);
   if(!settle||!maturity||settle>=maturity)return null;
   const day=24*3600*1000, c=b.coupon/2,dates=[];let d=maturity;
   for(let i=0;i<160&&d>settle;i++){dates.push(d);d=giltMonths(d,-6);}
@@ -1166,9 +1166,9 @@ function giltCashflows(b){
   const ai=Math.max(0,Math.min(c,c*(daysAccrual/daysTotal)));
   return {accrued:ai,settlement:today,flows:dates.reverse().map((date,i,a)=>({t:(date-settle)/day/365.25,amount:c+(i===a.length-1?100:0)}))};
 }
-function giltValuation(b,clean){
-  if(!(clean>0&&clean<300)||!Number.isFinite(clean))return null;
-  const f=giltCashflows(b);if(!f)return null;const dirty=clean+f.accrued;
+function giltValuation(b,clean,valuationDate){
+  if(b.indexLinked||!(clean>0&&clean<1000)||!Number.isFinite(clean))return null;
+  const f=giltCashflows(b,valuationDate);if(!f)return null;const dirty=clean+f.accrued;
   const pv=(rate)=>f.flows.reduce((s,p)=>s+p.amount/Math.pow(1+rate/200,2*p.t),0);
   let lo=-50,hi=150;if(pv(lo)<dirty||pv(hi)>dirty)return null;
   for(let i=0;i<90;i++){const mid=(lo+hi)/2;if(pv(mid)>dirty)lo=mid;else hi=mid;}
@@ -1178,51 +1178,61 @@ function giltValuation(b,clean){
 }
 function renderGilts(){
   const table=$('gilt-rows');table.replaceChildren();
-  const rows=giltList.filter(g=>!giltState.search||[g.name,g.ticker,g.maturity].join(' ').toLowerCase().includes(giltState.search));
-  const count=giltList.filter(g=>g.quoted).length;
-  $('gilt-coverage').textContent=`${count} / ${giltList.length} dated indicative price quotations`;
-  $('gilt-quality').textContent=count?`Latest public listing snapshot: ${giltList.find(x=>x.asOf)?.asOf||'date unavailable'}. Indicative clean prices; no executable bid/offer. Only source-validated quotes are displayed.`:
-    'Public indicative quotes were unavailable or stale. Gilt identities are provided for manual analysis; no market prices have been invented.';
-  if(!rows.length){const tr=el('tr');const cell=td(tr,'No gilts match this filter');cell.colSpan=7;table.append(tr);}
+  const rows=giltList.filter(g=>(giltState.type==='all'||(giltState.type==='linked'&&g.indexLinked)||(giltState.type==='conventional'&&!g.indexLinked))&&
+    (!giltState.search||[g.name,g.ticker,g.shortTicker,g.isin,g.maturity].join(' ').toLowerCase().includes(giltState.search)));
+  const count=giltList.filter(g=>g.quoted).length,linked=giltList.filter(g=>g.indexLinked).length;
+  const date=giltList.find(x=>x.asOf)?.asOf||'',age=date?Math.round((new Date((D.generatedAt||'').slice(0,10)+'T12:00:00Z')-new Date(date+'T12:00:00Z'))/86400000):null;
+  $('gilt-coverage').textContent=`${count} / ${giltList.length} dated DMO prices · ${linked} index-linked`;
+  $('gilt-quality').textContent=count?`Official DMO prices from ${date}${age>4?' — STALE: '+age+' calendar days old':''}. DMO purchase = investor sell / bid; DMO sale = investor buy / offer. These are retail-service reference prices, not live AJ Bell prices. Gross yields marked * are modelled, not published.`:
+    'No verified DMO quotes were returned. Enter your own price for conventional-gilt calculations.';
+  if(!rows.length){const tr=el('tr');const cell=td(tr,'No gilts match this filter');cell.colSpan=8;table.append(tr);}
   for(const g of rows){const tr=el('tr');tr.style.cursor='pointer';if(g.ticker===giltState.symbol)tr.classList.add('selected');
-    td(tr,g.name);td(tr,g.ticker);td(tr,g.maturity);td(tr,fmt(g.coupon,3)+'%','n');
-    td(tr,g.price!=null?fmt(g.price,2):'—','n');td(tr,g.yieldSource!=null?fmt(g.yieldSource,3)+'%':'—','n');td(tr,g.asOf||'—');
+    const model=!g.indexLinked&&g.askClean!=null?giltValuation(g,g.askClean,g.asOf):null;
+    td(tr,g.name);td(tr,g.shortTicker?g.shortTicker+' · '+g.isin:g.isin);td(tr,g.maturity);td(tr,fmt(g.coupon,3)+'%','n');
+    td(tr,g.bidClean!=null?fmt(g.bidClean,2):'—','n');td(tr,g.askClean!=null?fmt(g.askClean,2):'—','n');
+    td(tr,g.indexLinked?'Real gilt':model?fmt(model.ytm,3)+'%*':'—','n');td(tr,g.asOf||'—');
     tr.onclick=()=>{giltState.symbol=g.ticker;renderGilts();};table.append(tr);
   }
   const b=giltList.find(g=>g.ticker===giltState.symbol);
-  if(!b){$('gilt-selected').textContent='NO GILT DATA AVAILABLE';$('gilt-stats').replaceChildren();empty('gilt-chart','No bonds returned. Use the DMO and Tradeweb links above.');return;}
-  $('gilt-selected').textContent=b.name+'  ·  '+b.ticker;
-  $('gilt-selected-source').textContent=b.asOf?'Indicative source date: '+b.asOf:'No verified quoted price';
+  if(!b){$('gilt-selected').textContent='NO GILT DATA AVAILABLE';$('gilt-stats').replaceChildren();empty('gilt-chart','No bonds returned.');return;}
+  $('gilt-selected').textContent=b.name+'  ·  '+(b.shortTicker||b.isin);
+  $('gilt-selected-source').textContent=b.asOf?'DMO source date: '+b.asOf:'No verified DMO quotation';
   const input=$('gilt-clean-input'),user=giltState.manual.get(b.ticker);
-  input.value=user!=null?String(user):(b.price!=null?String(b.price):'');
-  $('gilt-price-basis').textContent=user!=null?'USER-ENTERED PRICE':b.quoted?'PUBLIC INDICATIVE QUOTE':'NO MARKET QUOTE';
-  const price=input.value!==''?Number(input.value):null, v=price!=null?giltValuation(b,price):null;
+  input.value=user!=null?String(user):(b.askClean!=null?String(b.askClean):'');
+  $('gilt-price-basis').textContent=user!=null?'USER PRICE (today)':b.quoted?'DMO HISTORICAL OFFER ('+b.asOf+')':'NO MARKET QUOTE';
+  const price=input.value!==''?Number(input.value):null;
+  const v=price!=null&&!b.indexLinked?giltValuation(b,price,user!=null?(D.generatedAt||'').slice(0,10):b.asOf):null;
+  const exact=b.quoted&&user==null;
   const host=$('gilt-stats');host.replaceChildren();
-  const stats=[['Maturity',b.maturity,'Conventional fixed rate'],['Coupon',fmt(b.coupon,3)+'%','Semiannual'],
-    ['Clean price',v?fmt(v.clean,3):'—','£ / £100 nominal'],
-    ['Accrued interest',v?fmt(v.accrued,3):'—','Approximate £ / £100'],
-    ['Dirty price',v?fmt(v.dirty,3):'—','Clean + accrued'],
-    ['Calculated gross YTM',v?fmt(v.ytm,3)+'%':'—','Approximate semiannual basis'],
-    ['Published quoted yield',b.yieldSource!=null?fmt(b.yieldSource,3)+'%':'—','May use different conventions'],
-    ['Running yield',v?fmt(v.running,3)+'%':'—','Coupon / clean price'],
+  const st=[['Maturity',b.maturity,b.indexLinked?'Index-linked gilt':'Conventional fixed rate'],['Coupon',fmt(b.coupon,3)+'%','Usually semiannual'],
+    ['DMO purchase clean / bid',b.bidClean!=null?fmt(b.bidClean,3):'—','£ / £100; investor sells'],
+    ['DMO sale clean / offer',b.askClean!=null?fmt(b.askClean,3):'—','£ / £100; investor buys'],
+    ['DMO sale dirty / offer',b.askDirty!=null?fmt(b.askDirty,5):'—','Official, including accrued interest / indexation'],
+    ['Quoted bid / offer spread',b.bidClean!=null&&b.askClean!=null?fmt(b.askClean-b.bidClean,3):'—','£ / £100'],
+    ['Your clean purchase price',price!=null?fmt(price,3):'—',exact?'DMO sale clean price':'Manual input'],
+    ['Model accrued interest',v?fmt(v.accrued,4):'—',b.indexLinked?'Not modelled for index-linked':'Approximate £ / £100'],
+    ['Model dirty price',v?fmt(v.dirty,4):'—','Approximate for conventional gilts'],
+    ['Model gross yield to maturity',v?fmt(v.ytm,3)+'%':'—',b.indexLinked?'Not appropriate without inflation assumptions':'Approximate, not published'],
+    ['Running yield',v?fmt(v.running,3)+'%':'—','Coupon / clean purchase price'],
     ['Modified duration',v?fmt(v.duration,2)+' years':'—','Approximate'],
     ['DV01 per £100 nominal',v?'£'+fmt(v.dv01,4):'—','Per +1 basis point'],
-    ['Capital gain at par',v?'£'+fmt(v.capitalGain,2):'—','Before taxes/fees']];
-  for(const [k,x,note] of stats)host.append(researchTile(k,x,note));
+    ['Capital gain at par',v?'£'+fmt(v.capitalGain,2):'—',b.indexLinked?'RPI-adjusted redemption, not £100':'Before taxes / fees']];
+  if(b.indexLinked)st.splice(4,0,['Index ratio',b.indexRatio!=null?fmt(b.indexRatio,5):'—',b.indexationLag?'Indexation lag '+b.indexationLag:'Index-linked']);
+  for(const [k,x,note] of st)host.append(researchTile(k,x,note));
   const raw=giltHist.filter(p=>p.ticker===b.ticker).sort((x,y)=>x.date.localeCompare(y.date));
   const dates=raw.map(p=>({date:p.date,v:p.close}));
-  const last=dates.at(-1)?.date, cutoff=last?new Date(last+'T12:00:00Z'):null;
+  const last=dates.at(-1)?.date,cutoff=last?new Date(last+'T12:00:00Z'):null;
   if(cutoff){if(giltState.range==='1M')cutoff.setUTCMonth(cutoff.getUTCMonth()-1);
     if(giltState.range==='3M')cutoff.setUTCMonth(cutoff.getUTCMonth()-3);
     if(giltState.range==='1Y')cutoff.setUTCFullYear(cutoff.getUTCFullYear()-1);}
   const pts=dates.filter(p=>giltState.range==='MAX'||!cutoff||p.date>=cutoff.toISOString().slice(0,10));
-  if(pts.length>=2)chart('gilt-chart',[{name:b.ticker+' clean price',color:AMBER,pts}],{format:x=>'£'+fmt(x,2),aria:b.name+' indicative clean-price snapshots'});
-  else empty('gilt-chart',dates.length===1?'Only one dated price saved so far. The chart will grow at later successful updates.':'No historical clean-price snapshots yet.');
+  if(pts.length>=2)chart('gilt-chart',[{name:(b.shortTicker||b.isin)+' DMO offer clean',color:AMBER,pts}],{format:x=>'£'+fmt(x,2),aria:b.name+' DMO dated offer clean prices'});
+  else empty('gilt-chart',dates.length===1?'One DMO observation saved; the chart grows when later dated DMO files are collected.':'No historical DMO price snapshots yet.');
   document.querySelectorAll('[data-gilt-range]').forEach(btn=>btn.classList.toggle('active',btn.dataset.giltRange===giltState.range));
 }
-
 function init(){setLatest();reorderSections();
   $('gilt-search').oninput=e=>{giltState.search=e.target.value.toLowerCase().trim();renderGilts();};
+  $('gilt-type').onchange=e=>{giltState.type=e.target.value;renderGilts();};
   $('gilt-clean-input').oninput=e=>{const raw=e.target.value,n=Number(raw);if(raw==='')giltState.manual.set(giltState.symbol,'');else if(Number.isFinite(n)&&n>0&&n<300)giltState.manual.set(giltState.symbol,n);else return;renderGilts();};
   document.querySelectorAll('[data-gilt-range]').forEach(b=>b.onclick=()=>{giltState.range=b.dataset.giltRange;renderGilts();});if(!D.quotes.length){empty('main-chart','No quote data embedded. Run: python build_terminal.py');empty('compare-chart','No quote data embedded.');}
   if(D.quotes.length&&!qMap.has(state.sym))state.sym=D.quotes[0].symbol;

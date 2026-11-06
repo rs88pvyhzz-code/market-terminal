@@ -228,6 +228,9 @@ def publish_cache(public, cache_dir=DEFAULT_DIR):
     gilt_cache=pathlib.Path(__file__).resolve().parent/'.terminal_gilt_history.json'
     if gilt_cache.exists():
         shutil.copyfile(gilt_cache,public/'gilt_history_cache.json')
+    dmo_latest=pathlib.Path(__file__).resolve().parent/'.terminal_dmo_latest.json'
+    if dmo_latest.exists():
+        shutil.copyfile(dmo_latest,public/'dmo_latest.json')
     print(f'Published {count} per-company history files and compressed cache',flush=True)
     return count
 
