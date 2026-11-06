@@ -309,6 +309,33 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <div class="chart" id="gilt-chart"></div><p class="note">Individual price history starts with this upgrade and grows as daily snapshots are saved. Existing benchmark yield history remains in the panels below; these are different series.</p>
   <p class="note">Source: <a target="_blank" rel="noopener noreferrer" href="https://www.dmo.gov.uk/data/pdfdatareport?reportCode=D10B">UK Debt Management Office, D10B daily Gilt Purchase and Sale Service</a>. Crown copyright under the Open Government Licence. Prices are retained with their original report date; missing automatic updates never become invented current prices.</p>
 </section>
+<section id="us-treasuries" class="panel">
+ <div class="row"><div><h2>US TREASURIES — FEDINVEST DAILY SECURITY PRICES</h2>
+  <p class="note">US Treasury FedInvest market-based bill, note, bond, TIPS and FRN reference prices. All prices in USD per $100 principal. They are <b>dated</b> reference prices, not live or executable dealer quotes. Bid = FedInvest SELL, offer = FedInvest BUY. Missing quotes are never estimated.</p></div>
+  <span id="ust-coverage" class="mini">Checking source</span></div>
+ <div class="inputs" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+  <label for="ust-search" class="mini">FIND TREASURY</label>
+  <input id="ust-search" class="field" type="search" aria-label="Find Treasury by CUSIP, coupon or maturity" placeholder="CUSIP, 2036, coupon..." style="flex:1 1 200px;max-width:410px">
+  <select id="ust-kind" class="field" aria-label="Treasury security type"><option value="all">All US Treasuries</option><option value="Bill">Bills</option><option value="Note">Notes</option><option value="Bond">Bonds</option><option value="TIPS">TIPS</option><option value="FRN">Floating-rate notes</option></select>
+  <a class="btn" href="https://www.treasurydirect.gov/GA-FI/FedInvest/todaySecurityPriceDate.htm" target="_blank" rel="noopener noreferrer">OFFICIAL US PRICES</a>
+ </div>
+ <div class="constituents-scroll" style="max-height:390px"><table class="watch" style="min-width:1080px"><thead><tr>
+ <th>Security</th><th>CUSIP</th><th>Maturity</th><th class="n">Coupon</th><th class="n">Bid / SELL</th><th class="n">Offer / BUY</th><th class="n">EOD price</th><th class="n">Est. gross YTM*</th><th>Quote date</th>
+ </tr></thead><tbody id="ust-rows"></tbody></table></div>
+ <p class="note" id="ust-quality">The free FedInvest file supplies official reference quotations, not guaranteed prices obtainable from an individual broker.</p>
+ <div class="row"><h3 id="ust-selected">SELECT A US TREASURY</h3><span id="ust-selected-date" class="mini">—</span></div>
+ <div class="inputs" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+  <label class="mini" for="ust-clean-input">YOUR PURCHASE PRICE ($ PER $100 PRINCIPAL)</label>
+  <input type="number" id="ust-clean-input" class="field" step="0.001" min="25" max="200" placeholder="Enter your broker price" style="max-width:220px" inputmode="decimal">
+  <span class="mini" id="ust-price-basis">Select a bond</span>
+ </div>
+ <div class="research-stats" id="ust-stats"></div>
+ <p class="note">*Estimated gross yield-to-maturity, accrued interest, duration and DV01 use a simplified semiannual valuation for fixed-rate notes/bonds, not the full Treasury settlement conventions. Bills show simple annualised investment yield and bank-discount yield. TIPS and floating-rate notes are <b>not</b> given a misleading nominal fixed-rate YTM. FedInvest quotations are not live broker quotes.</p>
+ <div class="row"><h3>INDIVIDUAL US TREASURY PRICE HISTORY</h3><div class="pills" id="ust-period"><button class="btn" data-ust-range="1M">1M</button><button class="btn" data-ust-range="3M">3M</button><button class="btn" data-ust-range="1Y">1Y</button><button class="btn" data-ust-range="5Y">5Y</button><button class="btn active" data-ust-range="MAX">MAX</button></div></div>
+ <div class="chart" id="ust-chart"></div>
+ <p class="note">Price histories begin with verified snapshots saved by this terminal and grow over subsequent successful downloads. Official par Treasury yields (including long histories) remain available in the yield-curve section below.</p>
+ <p class="note">Source: <a href="https://www.treasurydirect.gov/government/federal-investments-program/" target="_blank" rel="noopener noreferrer">US Treasury Federal Investments Program</a>; <a href="https://catalog.data.gov/dataset/federal-investments-program-rates-and-prices" target="_blank" rel="noopener noreferrer">data documentation</a>. Prices and actual source dates retained. If automatic retrieval fails, the display must say so.</p>
+</section>
 <section id="rates" class="panel">
   <div class="row"><h2>INTEREST RATES — UK / EURO AREA / UNITED STATES</h2>
    <div class="inputs"><label class="mini" for="rates-region">REGION</label><select class="field" id="rates-region" aria-label="Interest rate geography"><option value="ALL">Compare all three</option><option value="UK">United Kingdom</option><option value="EU">Euro area</option><option value="US">United States</option></select></div>
@@ -947,7 +974,7 @@ function reorderSections(){
     ['overview','MARKET OVERVIEW','Headlines · indices · FX · key yields',['news','headline','overview-board']],
     ['equities','GLOBAL EQUITIES','Index movers · constituent-level analysis',['movers','constituents']],
     ['companies','COMPANY RESEARCH','Share-price histories · valuation · accounts',['companies']],
-    ['bonds','FIXED INCOME','Individual gilts · yield curves · real yields · sovereign spreads',['gilts','rates','us-spread-panel','cross-rates','real','sovereign']],
+    ['bonds','FIXED INCOME','UK gilts · US Treasuries · yield curves · real yields · spreads',['gilts','us-treasuries','rates','us-spread-panel','cross-rates','real','sovereign']],
     ['economics','ECONOMIC DATA','GDP · inflation · policy · release calendar',['macro','calendar']],
     ['fx','MARKET EXPLORER','Currency · commodities · ETFs · index charts',['monitor']],
     ['analytics','MULTI-ASSET ANALYTICS','Comparisons · volatility · correlations',['compare','score-panel','sources']]
@@ -1032,7 +1059,7 @@ function renderSovereign(){
 
 const WORKSPACES=['overview','equities','companies','bonds','economics','fx','analytics'];
 let activeWorkspace='overview', searchHits=[], searchCursor=0;
-const workspaceForSection={gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics',sources:'analytics'};
+const workspaceForSection={'us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics',sources:'analytics'};
 function paintWorkspace(key){
   switch(key){
     case 'overview': renderNews(); renderPulse(); break;
@@ -1230,7 +1257,73 @@ function renderGilts(){
   else empty('gilt-chart',dates.length===1?'One DMO observation saved; the chart grows when later dated DMO files are collected.':'No historical DMO price snapshots yet.');
   document.querySelectorAll('[data-gilt-range]').forEach(btn=>btn.classList.toggle('active',btn.dataset.giltRange===giltState.range));
 }
+// U.S. TREASURY MONITOR — fixed-coupon YTM is a valuation model, not a quoted yield.
+const ustList=D.us_treasuries||[];
+const ustState={selected:ustList.find(b=>b.type==='Note')?.cusip||ustList[0]?.cusip||'',kind:'all',query:'',range:'MAX',manual:new Map(),hist:null,loading:false};
+function ustBill(b,price,date){
+  const start=giltDay(date),end=giltDay(b.maturity);
+  if(!start||!end||end<=start||!(price>0))return null;
+  const days=(end-start)/86400000;
+  return {days,discount:100*(100-price)/100*360/days,investment:100*(100/price-1)*365/days,capitalGain:100-price};
+}
+function ustModel(b,p,date){
+  if(!(p>0)||b.type==='TIPS'||b.type==='FRN')return null;
+  return b.type==='Bill'?ustBill(b,p,date):giltValuation(b,p,date);
+}
+function renderUST(){
+  const table=$('ust-rows');table.replaceChildren();
+  const filtered=ustList.filter(b=>(ustState.kind==='all'||b.type===ustState.kind)&&(!ustState.query||[b.cusip,b.name,b.maturity,b.coupon].join(' ').toLowerCase().includes(ustState.query)));
+  const valid=ustList.filter(b=>b.quoted).length;
+  const day=ustList[0]?.asOf,age=day?Math.max(0,Math.round((new Date((D.generatedAt||'').slice(0,10)+'T12:00:00Z')-new Date(day+'T12:00:00Z'))/86400000)):null;
+  $('ust-coverage').textContent=ustList.length?`${valid} / ${ustList.length} dated quotes · ${day||'date unavailable'}`:'No verified US security quotes';
+  $('ust-quality').textContent=ustList.length?`Official FedInvest prices dated ${day||'unknown'}${age>4?' — STALE '+age+' days':''}. SELL is the bid received; BUY is the offer paid; end-of-day is the published reference mark. These are not guaranteed broker dealing prices.`:'US security quote feed unavailable. The existing US yield-curve charts remain available. See official Treasury prices via the source link.';
+  if(!filtered.length){const tr=el('tr');const td0=td(tr,'No matching US Treasuries (or no source data)');td0.colSpan=9;table.append(tr);}
+  for(const b of filtered){const tr=el('tr');tr.style.cursor='pointer';if(b.cusip===ustState.selected)tr.classList.add('selected');
+    const p=b.ask??b.endOfDay??b.price;const v=p!=null?ustModel(b,p,b.asOf):null;
+    td(tr,b.name);td(tr,b.cusip);td(tr,b.maturity);td(tr,fmt(b.coupon,3)+'%','n');
+    td(tr,b.bid!=null?fmt(b.bid,5):'—','n');td(tr,b.ask!=null?fmt(b.ask,5):'—','n');td(tr,b.endOfDay!=null?fmt(b.endOfDay,5):'—','n');
+    td(tr,b.type==='TIPS'?'Real-indexed':b.type==='FRN'?'Floating':v?fmt(b.type==='Bill'?v.investment:v.ytm,3)+'%*':'—','n');td(tr,b.asOf||'—');
+    tr.onclick=()=>{ustState.selected=b.cusip;renderUST();};table.append(tr);
+  }
+  const b=ustList.find(b=>b.cusip===ustState.selected);
+  if(!b){$('ust-selected').textContent='NO US TREASURY QUOTES RETRIEVED';$('ust-selected-date').textContent='';$('ust-clean-input').value='';$('ust-stats').replaceChildren();empty('ust-chart','No verified individual US Treasury price history yet.');return;}
+  $('ust-selected').textContent=b.name+' · '+b.cusip;
+  $('ust-selected-date').textContent='FedInvest source date: '+b.asOf;
+  const manual=ustState.manual.get(b.cusip),q=b.ask??b.endOfDay??b.price;
+  const input=$('ust-clean-input');input.value=manual!=null?String(manual):(q!=null?String(q):'');
+  $('ust-price-basis').textContent=manual!=null?'YOUR MANUAL INPUT':q!=null?'OFFICIAL DATED '+(b.ask!=null?'BUY / OFFER':'REFERENCE MARK'):'NO OFFICIAL PRICE';
+  const p=input.value!==''?Number(input.value):null;
+  const v=p!=null?ustModel(b,p,manual!=null?(D.generatedAt||'').slice(0,10):b.asOf):null;
+  const host=$('ust-stats');host.replaceChildren();
+  const fields=[['CUSIP',b.cusip,'US security identifier'],['Security type',b.type,'Fixed rate, bill, inflation linked or floating'],['Maturity',b.maturity,'Redemption date'],['Coupon',fmt(b.coupon,3)+'%',b.type==='Bill'?'Zero coupon':'Annual nominal rate'],
+    ['FedInvest SELL / bid',b.bid!=null?'$'+fmt(b.bid,5):'—','Per $100; investor sells'],['FedInvest BUY / offer',b.ask!=null?'$'+fmt(b.ask,5):'—','Per $100; investor buys'],
+    ['FedInvest end of day',b.endOfDay!=null?'$'+fmt(b.endOfDay,5):'—','Published reference mark'],['Your price',p!=null?'$'+fmt(p,5):'—',manual!=null?'User entered':'Dated quote']];
+  if(v&&b.type==='Bill')fields.push(['Days remaining',fmt(v.days,0),'At quote/valuation date'],['Bill investment yield',fmt(v.investment,3)+'%','Simple annualised 365-day basis'],['Bill discount yield',fmt(v.discount,3)+'%','Discount basis, 360-day year'],['Gain at maturity','$'+fmt(v.capitalGain,4),'Per $100 before fees/tax']);
+  else if(v)fields.push(['Approximate gross YTM',fmt(v.ytm,3)+'%','Simplified semiannual coupon model'],['Approx accrued interest','$'+fmt(v.accrued,4),'Per $100'],['Approx dirty price','$'+fmt(v.dirty,4),'Clean + accrued'],['Modified duration',fmt(v.duration,2)+' years','Rate sensitivity'],['DV01 per $100','$'+fmt(v.dv01,4),'Estimated +1bp shock'],['Capital gain at par','$'+fmt(v.capitalGain,3),'Before fees and taxes']);
+  else fields.push(['Gross YTM','—',b.type==='TIPS'?'Real indexed, do not use nominal coupon formula':b.type==='FRN'?'Floating coupon, not fixed-rate': 'No usable price']);
+  for(const [label,value,detail] of fields)host.append(researchTile(label,value,detail));
+  const all=(ustState.hist?.[b.cusip]||[]).map(x=>({date:x[0],v:x[1]}));
+  const backup=(D.us_treasury_history||[]).filter(x=>x.cusip===b.cusip).map(x=>({date:x.date,v:x.close}));
+  const raw=all.length?all:backup;const now=raw.at(-1)?.date;
+  let cutoff=now?new Date(now+'T12:00:00Z'):null;
+  if(cutoff&&ustState.range!=='MAX'){const n=ustState.range==='1M'?1:ustState.range==='3M'?3:ustState.range==='1Y'?12:60;cutoff.setUTCMonth(cutoff.getUTCMonth()-n);}
+  const visible=raw.filter(x=>ustState.range==='MAX'||!cutoff||x.date>=cutoff.toISOString().slice(0,10));
+  if(visible.length>=2)chart('ust-chart',[{name:b.cusip+' FedInvest reference price',color:AMBER,pts:visible}],{format:x=>'$'+fmt(x,3),aria:b.name+' dated FedInvest price history'});
+  else empty('ust-chart',raw.length?'One valid observation. More dates will accumulate when the FedInvest download succeeds.':'No dated history for this security yet.');
+  document.querySelectorAll('[data-ust-range]').forEach(btn=>btn.classList.toggle('active',btn.dataset.ustRange===ustState.range));
+}
+function loadUSTHistory(){
+  if(ustState.loading)return;ustState.loading=true;
+  fetch('us_treasury_history_cache.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('No published cache');return r.json();}).then(data=>{
+    if(data&&typeof data==='object'&&!Array.isArray(data))ustState.hist=data;renderUST();
+  }).catch(()=>{});
+}
 function init(){setLatest();reorderSections();
+  $('ust-search').oninput=e=>{ustState.query=e.target.value.toLowerCase().trim();renderUST();};
+  $('ust-kind').onchange=e=>{ustState.kind=e.target.value;renderUST();};
+  $('ust-clean-input').oninput=e=>{const raw=e.target.value,n=Number(raw);if(raw==='')ustState.manual.delete(ustState.selected);else if(Number.isFinite(n)&&n>25&&n<200)ustState.manual.set(ustState.selected,n);else return;renderUST();};
+  document.querySelectorAll('[data-ust-range]').forEach(b=>b.onclick=()=>{ustState.range=b.dataset.ustRange;renderUST();});
+  renderUST();loadUSTHistory();
   $('gilt-search').oninput=e=>{giltState.search=e.target.value.toLowerCase().trim();renderGilts();};
   $('gilt-type').onchange=e=>{giltState.type=e.target.value;renderGilts();};
   $('gilt-clean-input').oninput=e=>{const raw=e.target.value,n=Number(raw);if(raw==='')giltState.manual.set(giltState.symbol,'');else if(Number.isFinite(n)&&n>0&&n<300)giltState.manual.set(giltState.symbol,n);else return;renderGilts();};

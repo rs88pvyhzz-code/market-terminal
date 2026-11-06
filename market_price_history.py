@@ -231,6 +231,11 @@ def publish_cache(public, cache_dir=DEFAULT_DIR):
     dmo_latest=pathlib.Path(__file__).resolve().parent/'.terminal_dmo_latest.json'
     if dmo_latest.exists():
         shutil.copyfile(dmo_latest,public/'dmo_latest.json')
+    # Persist dated US Treasury quotes/history across scheduled GitHub builds.
+    for src,dest in (( '.terminal_us_treasury_latest.json', 'us_treasury_latest.json'),
+                     ( '.terminal_us_treasury_history.json', 'us_treasury_history_cache.json')):
+        fp=pathlib.Path(__file__).resolve().parent/src
+        if fp.exists():shutil.copyfile(fp,public/dest)
     print(f'Published {count} per-company history files and compressed cache',flush=True)
     return count
 
