@@ -113,6 +113,20 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 .constituent-secondary{color:#8b8b90;font-size:11px}
 .constituent-stale{color:#d4ad71}
 
+/* Company move analysis: sourced headlines, never a fabricated explanation. */
+.company-news-panel{border:1px solid #59452b;background:#171513;border-radius:6px;padding:13px;display:grid;gap:9px}
+.company-news-panel h3{color:#ffa028;font:600 13px var(--font)}
+.company-move-summary{color:#eee;font:12px/1.5 var(--font)}
+.company-news-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:8px}
+.company-story{padding:10px;background:#1e1d1e;border:1px solid #373436;border-radius:5px;display:grid;gap:5px}
+.company-story a{color:#eee;text-decoration:none;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.company-story a:hover{color:#ffa028;text-decoration:underline}
+.company-story span{color:#9b9aa0;font:10px var(--font)}
+.company-news-links{display:flex;flex-wrap:wrap;gap:8px}
+.company-news-links a,.outside-search a{color:#ffc16a;font:11px var(--font);text-decoration:none;padding:6px 9px;border:1px solid #6a4a23;border-radius:4px;background:#282016}
+.company-news-links a:hover,.outside-search a:hover{background:#3b2b19}
+.outside-search{padding:12px;display:grid;gap:8px}
+.outside-search div{display:flex;gap:8px;flex-wrap:wrap}
 /* Seven-workspace navigation; the terminal remains a local self-contained HTML file. */
 .commandbar{position:sticky;top:0;z-index:50;background:#09090bef;backdrop-filter:blur(16px);border-bottom:1px solid #38322b;padding:10px 0 8px;min-width:0}
 .commandline{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:1px 2px 9px}
@@ -243,13 +257,20 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
     <div><strong id="company-name">Choose a company</strong><span class="company-symbol" id="company-symbol"></span><div class="note" id="company-sector"></div></div>
     <a id="company-source" class="company-link" target="_blank" rel="noopener noreferrer" href="https://finance.yahoo.com/">CHECK SOURCE QUOTE</a>
   </div>
-  <div class="company-kpis" id="company-kpis"></div>
+    <div class="company-kpis" id="company-kpis"></div>
+  <section class="company-news-panel" id="company-insight" aria-label="Share price movement and related company news">
+    <div class="row"><h3>WHY HAS IT MOVED? · COMPANY NEWS</h3><span class="mini" id="company-news-stamp"></span></div>
+    <p id="company-move-summary" class="company-move-summary">Select a company to inspect its latest price move and related headlines.</p>
+    <p class="note">Related headlines are <b>not proof of causation</b>. Check company announcements, dividends, splits and the quote date before attributing a move to a story.</p>
+    <div id="company-news-list" class="company-news-list"></div>
+    <div class="company-news-links"><a id="company-google-news" target="_blank" rel="noopener noreferrer" href="https://news.google.com/">SEARCH LATEST COMPANY NEWS</a><a id="company-yahoo-news" target="_blank" rel="noopener noreferrer" href="https://finance.yahoo.com/">YAHOO FINANCE COMPANY PAGE</a></div>
+  </section>
   <div class="company-stat-note" id="company-dates">Price data and accounts may have different reporting dates and currencies.</div>
   <div class="company-main">
     <div><div class="row"><h3>SHARE PRICE HISTORY</h3><span class="mini" id="company-price-date"></span></div><div class="period-controls" id="company-period"></div><p class="note" id="company-performance">Choose a time period.</p><div class="chart" id="company-chart"></div></div>
     <div class="company-fin"><h3>ANNUAL INCOME STATEMENT</h3><div id="company-annual"></div><p class="note" style="padding-top:9px">Revenue, operating profit and net profit are reported accounting figures, NOT necessarily trailing 12 months. All amounts use the company's financial reporting currency.</p></div>
   </div>
-  <p class="note">The Companies dropdown includes companies in the selected indices. Summary valuations are gathered progressively across scheduled refreshes; the first build will NOT have all P/E or earnings figures. Annual income-statement histories and 1/5/10-year company price charts are downloaded only for the separately selected detailed profiles. Adding more tickers to the detailed collector requires a new build. This is a public static page, not an on-demand financial-data server; unavailable figures show as —. Financials and share prices can use different currencies (for example, Shell reports in USD and trades in London in pence).</p>
+  <p class="note">Search covers the saved constituents of the S&amp;P 500, Nasdaq 100, FTSE 100 and FTSE 250. The collector prioritises companies with large daily moves, storing up to 10 years of share-price history for a small selection and gathering up to 40 new financial summaries per scheduled run. Historical accounts remain limited to preselected detailed profiles. The website is a static snapshot, not a live on-demand data API. Missing figures are shown as —; financial reports and share prices can use different currencies.</p>
 </section>
 <section class="panel" id="compare">
   <div class="row"><h2>CROSS-MARKET COMPARISON</h2><button id="export-compare" class="btn" type="button">EXPORT COMPARISON CSV</button></div>
@@ -348,10 +369,12 @@ function ensureCompany(symbol){
     marketCap:f.marketCap??null,marketCapCurrency:q.currency==='GBp'||q.currency==='GBX'?'GBP':q.currency||'',
     trailingPE:f.trailingPE??null,forwardPE:f.forwardPE??null,dividendYieldPct:f.dividendYieldPct??null,
     priceToBook:f.priceToBook??null,revenueTTM:f.revenueTTM??null,netIncomeTTM:f.netIncomeTTM??null,
-    profitMarginPct:f.profitMarginPct??null,sector:f.sector||null,
+    profitMarginPct:f.profitMarginPct??null,sector:f.sector||null,industry:f.industry||null,
+    epsTTM:f.epsTTM??null,ebitda:f.ebitda??null,enterpriseToEbitda:f.enterpriseToEbitda??null,
+    freeCashflow:f.freeCashflow??null,totalDebt:f.totalDebt??null,roePct:f.roePct??null,
     fundamentalSource:f.source||'Financial summary not yet downloaded',
     financialAsOf:f.asOf||null,financialCurrency:f.financialCurrency||'',annual:[],
-    warning:'Annual income statement and historical share-price chart not included for this constituent.'};
+    warning:'Annual accounts and any historical price series depend on what the free collector retrieved.'};
   companyMap.set(symbol,c);return c;
 }
 function openConstituent(symbol){
@@ -359,8 +382,13 @@ function openConstituent(symbol){
   state.companySymbol=symbol;
   activateWorkspace('companies',{scroll:false});
   $('company-pick').value=symbol;
-  showCompanyAlert((D.companies||[]).some(x=>x.symbol===symbol)?'':
-    'Only daily price data are saved for this constituent. Financial accounts, P/E and multi-year history are not available here; use CHECK SOURCE QUOTE for more.');
+  const isDetailed=(D.companies||[]).some(x=>x.symbol===symbol);
+  const hasHistory=(companyHistory.get(symbol)||[]).length>1;
+  const hasFundamental=!!companyFundamental(symbol)&&companyFundamental(symbol).trailingPE!=null;
+  showCompanyAlert(isDetailed?'':
+    (hasHistory?'Multi-year price history saved. ':'Only a daily quote saved. ')+
+    (hasFundamental?'Valuation summary available. ':'P/E and accounts may still be unavailable. ')+
+    'For the latest company information use the source links below.');
   renderCompany();
   $('companies').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -661,23 +689,30 @@ async function selectCompany(query){
   const prefix=entries.filter(c=>c.symbol.toLowerCase().startsWith(term)||c.name.toLowerCase().startsWith(term));
   if(exact||prefix.length===1){openConstituent((exact||prefix[0]).symbol);if(companyMap.has((exact||prefix[0]).symbol)){$('company-pick').value=state.companySymbol;renderCompany();}return;}
   if(prefix.length>1){showCompanyAlert('Several companies match. Select one from the company dropdown.');return;}
-  if(location.protocol==='http:'||location.protocol==='https:'){
-    showCompanyAlert('Checking selected ticker / company name…');
-    try{
-      const response=await fetch('/api/company?query='+encodeURIComponent(query),{headers:{Accept:'application/json'}});
-      const type=response.headers.get('content-type')||'';
-      if(!type.includes('application/json'))throw Error('This is a static website: no on-demand research API is connected.');
-      const result=await response.json();
-      if(!response.ok||!result.company)throw Error(result.error||'Data source unavailable');
-      const c=result.company;
-      if(!Array.isArray(D.companies))D.companies=[];
-      D.companies=D.companies.filter(x=>x.symbol!==c.symbol);D.companies.push(c);
-      companyMap.set(c.symbol,c);
-      companyHistory.set(c.symbol,(result.history||[]).map(r=>({date:r.date,v:Number(r.close)})).sort((a,b)=>a.date.localeCompare(b.date)));
-      state.companySymbol=c.symbol;companySuggestions();showCompanyAlert('');renderCompany();return;
-    }catch(err){showCompanyAlert('Online lookup unavailable: '+err.message+' For a static page, rebuild with --companies '+query+'.');return;}
+  showCompanyAlert('Not in this market snapshot: '+query+'. The static website cannot download new company accounts on demand. You can open an up-to-date external search from the top search bar or use the source links below.');
+  window.open(companyNewsSearch(query),'_blank','noopener,noreferrer');
+}
+function companyNewsSearch(name){return 'https://news.google.com/search?'+new URLSearchParams({q:'"'+name+'" shares when:7d',hl:'en-GB',gl:'GB',ceid:'GB:en'}).toString();}
+function renderCompanyInsight(c){
+  const panel=$('company-news-list');panel.replaceChildren();
+  const snapshot=(D.company_news||[]).find(item=>item.symbol===c.symbol);
+  const rows=snapshot?.articles||[];
+  const q=indexedStocks.get(c.symbol);
+  const when=c.priceAsOf||q?.asOf||'date unavailable';
+  let message=c.changePct==null?'No confirmed daily share-price move in this snapshot.':
+    c.name+' '+pc(c.changePct)+' on '+when+' (price change, not dividend-adjusted).';
+  if(c.changePct!=null&&Math.abs(c.changePct)>=8)message+=' Large moves may reflect announcements, corporate actions, or a pricing error; verify the source.';
+  $('company-move-summary').textContent=message;
+  $('company-news-stamp').textContent=snapshot?'News retrieved '+snapshot.retrievedAt:'No stored company headlines';
+  if(!rows.length)panel.append(el('p','note','No company-specific headlines are saved in this snapshot. Use the latest-news link below. This is not evidence that there was no news.'));
+  else for(const row of rows.slice(0,5)){
+    if(!String(row.url||'').startsWith('https://'))continue;
+    const card=el('article','company-story');const link=el('a','',row.title);
+    link.href=row.url;link.target='_blank';link.rel='noopener noreferrer';
+    card.append(link,el('span','',(row.source||'Publisher')+' · '+(row.published||'date unavailable')));panel.append(card);
   }
-  showCompanyAlert('Not saved in this snapshot: '+query+'. Add its exchange ticker to --companies and rebuild the HTML; arbitrary online lookup requires a connected server.');
+  $('company-google-news').href=companyNewsSearch(c.name);
+  $('company-yahoo-news').href='https://finance.yahoo.com/quote/'+encodeURIComponent(c.symbol)+'/news/';
 }
 function renderCompany(){
   const c=ensureCompany(state.companySymbol);
@@ -703,11 +738,18 @@ function renderCompany(){
     ['NET PROFIT · TTM',companyAmount(c.netIncomeTTM,fundCCY)],
     ['PROFIT MARGIN · TTM',pc(c.profitMarginPct)],
     ['PRICE / BOOK',c.priceToBook==null?'—':fmt(c.priceToBook,2)+'×'],
+    ['EPS · TTM (UNITS UNVERIFIED)',c.epsTTM==null?'—':fmt(c.epsTTM,2)],
+    ['EV / EBITDA',c.enterpriseToEbitda==null?'—':fmt(c.enterpriseToEbitda,2)+'×'],
+    ['EBITDA · TTM',companyAmount(c.ebitda,fundCCY)],
+    ['FREE CASH FLOW · TTM',companyAmount(c.freeCashflow,fundCCY)],
+    ['TOTAL DEBT',companyAmount(c.totalDebt,fundCCY)],
+    ['RETURN ON EQUITY',pc(c.roePct)],
   ];
   const host=$('company-kpis');host.replaceChildren();for(const [label,value] of kpis){
     const tile=el('div','company-kpi');tile.append(el('div','k',label),el('div','v',value));host.append(tile);}
   $('company-dates').textContent='Price: '+(c.priceAsOf||'unavailable')+' · Financial reporting currency: '+(fundCCY||'unavailable')+' · Accounts FY ending '+(c.fiscalEnd||'unavailable')+' · Financial data checked: '+(c.financialAsOf||'not supplied')+' · Financial source: '+(c.fundamentalSource||'unavailable')+(c.warning?' · Price warning: '+c.warning:'');
   $('company-price-date').textContent='Quote units: '+(quoteCCY||'unknown');
+  renderCompanyInsight(c);
   const pts=periods(companyHistory.get(c.symbol)||[],'companyRange');
   const periodMove=pts.length>1&&pts[0].v>0?(pts.at(-1).v/pts[0].v-1)*100:null;
   $('company-performance').textContent=state.companyRange+' · price change '+pc(periodMove)+(pts.length?' · '+datefmt(pts[0].date)+' to '+datefmt(pts.at(-1).date):' · no observations in this range')+' · price return only, dividends excluded'+(pts.length?' · historical source starts '+datefmt((companyHistory.get(c.symbol)||[])[0].date):'');
@@ -991,7 +1033,12 @@ function showGlobalResults(){
     const score=code===term||label===term?0:code.startsWith(term)?1:label.startsWith(term)?2:label.includes(term)?3:code.includes(term)?4:99;
     return {...item,score};}).filter(v=>v.score<99).sort((a,b)=>a.score-b.score||a.label.localeCompare(b.label)).slice(0,9);
   searchHits=matches;
-  if(!matches.length){host.append(el('div','search-empty','No saved match. Company summaries are collected gradually.'));}
+  if(!matches.length){
+    const box=el('div','outside-search');box.append(el('span','','Not in the downloaded indices. Search an external source:'));
+    const row=el('div');const news=el('a','','GOOGLE NEWS');news.href=companyNewsSearch(term);news.target='_blank';news.rel='noopener noreferrer';
+    const quote=el('a','','SEARCH YAHOO FINANCE');quote.href='https://www.google.com/search?'+new URLSearchParams({q:term+' site:finance.yahoo.com/quote/'}).toString();quote.target='_blank';quote.rel='noopener noreferrer';
+    row.append(news,quote);box.append(row);host.append(box);
+  }
   else matches.forEach((item,i)=>{const button=el('button','search-choice'+(i===searchCursor?' selected':''));button.type='button';button.setAttribute('role','option');button.setAttribute('aria-selected',String(i===searchCursor));button.append(el('span','',item.label),el('span','subtext',item.detail));
     button.onclick=()=>chooseGlobalResult(item);host.append(button);});
   host.hidden=false;$('global-search').setAttribute('aria-expanded','true');

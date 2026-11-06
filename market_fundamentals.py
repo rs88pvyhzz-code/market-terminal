@@ -51,6 +51,13 @@ def convert(symbol, info, collected):
         'profitMarginPct':100*margin if margin is not None else None,
         'financialCurrency':currency,
         'sector':info.get('sector') or None,
+        'industry':info.get('industry') or None,
+        'epsTTM':finite(info.get('trailingEps')),
+        'ebitda':finite(info.get('ebitda')),
+        'enterpriseToEbitda':finite(info.get('enterpriseToEbitda')),
+        'freeCashflow':finite(info.get('freeCashflow')),
+        'totalDebt':finite(info.get('totalDebt')),
+        'roePct':(100*finite(info.get('returnOnEquity')) if finite(info.get('returnOnEquity')) is not None else None),
         'earningsReportedDate':None,
     }
     # Only retain non-empty summaries; a symbol that returned blanks is not 'covered'.
@@ -78,7 +85,12 @@ def previous_site_snapshot():
         page=json.loads(json_source)
         if page.get('demo') is not False:return {}
         data={x['symbol']:x for x in page.get('fundamentals',[]) if isinstance(x,dict) and x.get('symbol')}
-        return {'records':data,'attempts':{s:r.get('asOf','') for s,r in data.items()}}
+        existing=page.get('fundamentalsCoverage') or {}
+        prior_attempts=existing.get('attempts') if isinstance(existing,dict) else None
+        if not isinstance(prior_attempts,dict):prior_attempts={}
+        # Failed Yahoo queries must retain their cooldown too. Otherwise each
+        # scheduled job gets stuck retrying the same ticker and never progresses.
+        return {'records':data,'attempts':{**{s:r.get('asOf','') for s,r in data.items()},**prior_attempts}}
     except Exception:
         return {}
 
@@ -109,6 +121,15 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
                 for q in market.get('constituents',[]):
                     seen.setdefault(q['symbol'],q.get('name',q['symbol']))
     universe=list(seen)
+    # Get financial summaries for the most important daily market movers FIRST.
+    # The full indexed universe is still retained, but requests are bounded per run.
+    hot=[]
+    for market in movers:
+        for row in (market.get('gainers',[])+market.get('losers',[])):
+            if row.get('symbol') in seen and row.get('date')==market.get('date'):
+                hot.append((abs(finite(row.get('changePct')) or 0),row['symbol']))
+    priority=[s for _,s in sorted(hot,reverse=True)]
+    lookup_order=list(dict.fromkeys(priority+universe))
     records={k:v for k,v in previous.get('records',{}).items() if k in seen and isinstance(v,dict)}
     attempts={k:v for k,v in previous.get('attempts',{}).items() if k in seen}
     # Detailed profiles (e.g. Shell) have priority over summary-only snapshots.
@@ -116,7 +137,8 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
         sym=c.get('symbol')
         if sym not in seen:continue
         vals={k:c.get(k) for k in ('trailingPE','forwardPE','marketCap','priceToBook',
-             'dividendYieldPct','revenueTTM','netIncomeTTM','profitMarginPct','financialCurrency','sector')}
+             'dividendYieldPct','revenueTTM','netIncomeTTM','profitMarginPct','financialCurrency','sector',
+             'industry','epsTTM','ebitda','enterpriseToEbitda','freeCashflow','totalDebt','roePct')}
         if not any(vals.get(k) is not None for k in ('trailingPE','forwardPE','marketCap','revenueTTM','netIncomeTTM')):continue
         records[sym]={'symbol':sym,'asOf':stamp,'source':'Detailed company profile (Yahoo Finance via yfinance)',**vals}
         attempts[sym]=stamp
@@ -127,7 +149,7 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
         last=attempts.get(sym,'')
         if sym in records:return age_days(records[sym].get('asOf',''))>=30 and age_days(last)>=2
         return age_days(last)>=2
-    pending=[s for s in universe if needs_update(s)][:max(0,batch_size)]
+    pending=[s for s in lookup_order if needs_update(s)][:max(0,batch_size)]
     warnings=[]
     if pending and not offline:
         if provider is None:
@@ -148,6 +170,7 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
                 elif err and len(warnings)<8:warnings.append('Fundamentals '+sym+': '+err)
     output=[records[s] for s in universe if s in records]
     coverage={'eligible':len(universe),'available':sum(1 for obj in output if obj.get('trailingPE') is not None),
-              'summaries':len(output),'fetchedThisRun':len(pending) if not offline else 0,'updatedAt':stamp}
+              'summaries':len(output),'fetchedThisRun':len(pending) if not offline else 0,
+              'updatedAt':stamp,'attempts':attempts}
     path.write_text(json.dumps({'records':records,'attempts':attempts},separators=(',',':')),encoding='utf-8')
     return output,coverage,warnings

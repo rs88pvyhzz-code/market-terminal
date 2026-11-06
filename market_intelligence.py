@@ -234,3 +234,43 @@ def demo_extras(end,days=730):
             (11,'US','https://www.bls.gov/schedule/')]]
     return {'news':demo_news,'calendar':demo_calendar,'us_real':us_real,
             'sovereign_yields':sovereign}
+
+
+# Company-specific headlines are separate from market headlines: they are evidence
+# to inspect, not automatic claims about the cause of a share-price move.
+def focus_movers(movers, limit=12):
+    seen={}
+    for market in movers:
+        for row in market.get('gainers',[])+market.get('losers',[]):
+            symbol=row.get('symbol')
+            if symbol and row.get('date')==market.get('date'):
+                score=abs(float(row.get('changePct') or 0))
+                if symbol not in seen or seen[symbol]['score']<score:
+                    seen[symbol]={'symbol':symbol,'name':row.get('name') or symbol,
+                                  'score':score,'date':row.get('date')}
+    return sorted(seen.values(),key=lambda r:(-r['score'],r['symbol']))[:max(0,limit)]
+
+
+def collect_company_news(core, opts, movers, limit=12):
+    out=[];warnings=[];cached=0
+    now=dt.datetime.now(dt.timezone.utc)
+    for company in focus_movers(movers,limit):
+        symbol,name=company['symbol'],company['name']
+        # Prefer specific company names to loose tickers like V or IT.
+        name=re.sub(r'\s+',' ',name).strip()[:100]
+        query='"'+name.replace('"','')+'" shares when:4d'
+        url='https://news.google.com/rss/search?'+urllib.parse.urlencode(
+            {'q':query,'hl':'en-GB','gl':'GB','ceid':'GB:en'})
+        articles=[]
+        if not getattr(opts,'offline',False):
+            try:
+                raw,used,msg=core.get_bytes(url,'company_news_'+re.sub(r'[^a-zA-Z0-9]','_',symbol),opts.offline,opts.cache_hours)
+                articles=rss_articles(raw,'COMPANY',generated=now)[:5]
+                cached+=int(used)
+                if 'stale cache' in msg:warnings.append('Company news '+symbol+': stale cache')
+            except Exception as exc:
+                if len(warnings)<10:warnings.append('Company news '+symbol+': '+str(exc)[:120])
+        out.append({'symbol':symbol,'name':name,'articles':articles,
+                    'retrievedAt':now.strftime('%Y-%m-%d %H:%M UTC'),
+                    'source':'Google News RSS search (unofficial)'})
+    return out,warnings,cached

@@ -321,7 +321,9 @@ def demo_data():
               'marketCap':c.get('marketCap'),'dividendYieldPct':c.get('dividendYieldPct'),
               'revenueTTM':c.get('revenueTTM'),'netIncomeTTM':c.get('netIncomeTTM'),
               'financialCurrency':c.get('financialCurrency'),'asOf':'SYNTHETIC DEMO'} for c in companies]
-    return {**extras,'fundamentals':demo_f,'fundamentalsCoverage':{'eligible':0,'available':0,'summaries':len(demo_f),'fetchedThisRun':0},'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
+    demo_news=[{'symbol':'SHEL.L','name':'Shell plc','articles':[],
+                'retrievedAt':'SYNTHETIC DEMO','source':'SYNTHETIC DEMO'}]
+    return {**extras,'company_news':demo_news,'fundamentals':demo_f,'fundamentalsCoverage':{'eligible':0,'available':0,'summaries':len(demo_f),'fetchedThisRun':0},'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
             'companies':companies,'company_history':company_history,
             'movers':market_movers.demo_movers(),'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),
             'demo':True,'warnings':['DEMONSTRATION ONLY: all values and historical series are synthetic.'],
@@ -400,12 +402,34 @@ def build(opts):
                 except Exception as exc: warnings.append(f'Company {sym}: {exc}')
         company_order={sym:i for i,(sym,_) in enumerate(selections)}
         companies.sort(key=lambda r:company_order.get(r['symbol'],9999))
+    # Save historical prices for the most unusual movers, without needing a paid
+    # API or downloading financial statements for every index constituent.
+    focus=market_intelligence.focus_movers(movers,limit=opts.mover_history_limit)
+    detailed_syms={c['symbol'] for c in companies}
+    price_targets=[c for c in focus if c['symbol'] not in detailed_syms]
+    if price_targets and not opts.offline:
+        import copy
+        hist_opts=copy.copy(opts);hist_opts.years=min(opts.years,10)
+        print(f'Mover price history: retrieving {len(price_targets)} ticker histories ...',flush=True)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(2,opts.workers)) as pool:
+            tasks={pool.submit(fetch_quote,('Companies',x['symbol'],x['name'],'equity'),hist_opts):x for x in price_targets}
+            for fut in concurrent.futures.as_completed(tasks):
+                x=tasks[fut]
+                try:
+                    q,hh,msg,err=fut.result()
+                    if hh: company_history.extend(hh)
+                    if err and len(warnings)<35:warnings.append('Mover history '+x['symbol']+': '+str(err)[:130])
+                except Exception as e:
+                    if len(warnings)<35:warnings.append('Mover history '+x['symbol']+': '+str(e)[:130])
+    company_news,nwarn,nnews_cached=market_intelligence.collect_company_news(
+        sys.modules[__name__],opts,movers,limit=opts.company_news_limit)
+    warnings.extend(nwarn);cached_count+=nnews_cached
     fundamentals, fcoverage, fwarnings=market_fundamentals.collect(
         movers,companies, ROOT/'.terminal_fundamentals', batch_size=opts.fundamentals_batch,
         offline=opts.offline or opts.no_fundamentals)
     warnings.extend(fwarnings)
     print(f'Fundamentals: {fcoverage["summaries"]} of {fcoverage["eligible"]} unique constituents have summaries; {fcoverage["available"]} have P/E',flush=True)
-    return {'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
+    return {'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,'company_news':company_news,
             'news':news,'calendar':calendar,'us_real':us_real,'sovereign_yields':sovereign,
         'companies':companies,'company_history':company_history,
        'movers':movers,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
@@ -427,11 +451,15 @@ def main():
     p.add_argument('--companies',default='',help='extra company tickers separated by commas (e.g. SHEL.L,MSFT)')
     p.add_argument('--no-companies',action='store_true',help='skip detailed company collection')
     p.add_argument('--fundamentals-batch',type=int,default=40,help='maximum new constituent financial summaries per build (default 40)')
+    p.add_argument('--mover-history-limit',type=int,default=12,help='up to 12 daily movers receive ten-year price history')
+    p.add_argument('--company-news-limit',type=int,default=12,help='fetch related headlines for up to 12 large daily movers')
     p.add_argument('--no-fundamentals',action='store_true',help='read existing financial cache only')
     a=p.parse_args()
     if not 1<=a.years<=25: p.error('--years must be 1–25')
     if not 1<=a.workers<=6: p.error('--workers must be 1–6')
     if not 0<=a.fundamentals_batch<=150:p.error('--fundamentals-batch must be 0–150')
+    if not 0<=a.mover_history_limit<=30:p.error('--mover-history-limit must be 0–30')
+    if not 0<=a.company_news_limit<=30:p.error('--company-news-limit must be 0–30')
     if not a.no_movers:
         unknown=set(a.movers_markets.upper().split(','))-set(market_movers.MARKET_CONFIG)
         if unknown: p.error('unknown movers market(s): '+', '.join(sorted(unknown)))
