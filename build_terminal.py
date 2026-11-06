@@ -32,6 +32,7 @@ import company_data
 import regional_data
 import market_intelligence
 import market_fundamentals
+import market_price_history
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CACHE = ROOT / '.terminal_cache'
@@ -429,7 +430,13 @@ def build(opts):
         offline=opts.offline or opts.no_fundamentals)
     warnings.extend(fwarnings)
     print(f'Fundamentals: {fcoverage["summaries"]} of {fcoverage["eligible"]} unique constituents have summaries; {fcoverage["available"]} have P/E',flush=True)
-    return {'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,'company_news':company_news,
+    history_symbols, history_coverage, history_warnings=market_price_history.collect(
+        sys.modules[__name__], opts, movers, company_history,
+        cache_dir=ROOT/'.terminal_price_history', batch=opts.price_history_batch)
+    warnings.extend(history_warnings)
+    return {'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
+            'priceHistorySymbols':history_symbols,'priceHistoryCoverage':history_coverage,
+            'company_news':company_news,
             'news':news,'calendar':calendar,'us_real':us_real,'sovereign_yields':sovereign,
         'companies':companies,'company_history':company_history,
        'movers':movers,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
@@ -452,6 +459,7 @@ def main():
     p.add_argument('--no-companies',action='store_true',help='skip detailed company collection')
     p.add_argument('--fundamentals-batch',type=int,default=40,help='maximum new constituent financial summaries per build (default 40)')
     p.add_argument('--mover-history-limit',type=int,default=12,help='up to 12 daily movers receive ten-year price history')
+    p.add_argument('--price-history-batch',type=int,default=60,help='number of additional ten-year charts downloaded per update')
     p.add_argument('--company-news-limit',type=int,default=12,help='fetch related headlines for up to 12 large daily movers')
     p.add_argument('--no-fundamentals',action='store_true',help='read existing financial cache only')
     a=p.parse_args()
@@ -459,6 +467,7 @@ def main():
     if not 1<=a.workers<=6: p.error('--workers must be 1–6')
     if not 0<=a.fundamentals_batch<=150:p.error('--fundamentals-batch must be 0–150')
     if not 0<=a.mover_history_limit<=30:p.error('--mover-history-limit must be 0–30')
+    if not 0<=a.price_history_batch<=125:p.error('--price-history-batch must be 0–125')
     if not 0<=a.company_news_limit<=30:p.error('--company-news-limit must be 0–30')
     if not a.no_movers:
         unknown=set(a.movers_markets.upper().split(','))-set(market_movers.MARKET_CONFIG)
