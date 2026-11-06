@@ -42,7 +42,8 @@ jobs:
           --movers-markets FTSE100,FTSE250,SP500,NASDAQ100
           --mover-history-limit 30
           --company-news-limit 20
-          --companies AXON,CCH.L,SHAW.L
+          --price-history-batch 60
+          --companies AXON,CCH.L,SHAW.L,NFLX
           --output terminal.html
 
       - name: Check market data
@@ -55,6 +56,7 @@ jobs:
           if test -f .terminal_fundamentals/fundamental_summaries.json; then
             cp .terminal_fundamentals/fundamental_summaries.json public/fundamentals_cache.json
           fi
+          python market_price_history.py --publish public
           touch public/.nojekyll
 
       - name: Configure Pages
