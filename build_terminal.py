@@ -35,6 +35,7 @@ import market_fundamentals
 import market_price_history
 import gilt_market
 import us_treasury_market
+import economic_forecasts
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CACHE = ROOT / '.terminal_cache'
@@ -148,7 +149,7 @@ def fetch_quote(info, opts):
     group, symbol, name, kind=info
     start=dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=int(opts.years*365.25)+16)
     end=today_utc()+dt.timedelta(days=2)
-    query=urllib.parse.urlencode({'period1':int(start.timestamp()),'period2':int(end.timestamp()),'interval':'1d','events':'div,splits'})
+    query=urllib.parse.urlencode({'period1':int(start.timestamp()),'period2':int(end.timestamp()),'interval':'1d','events':'div,splits','includeAdjustedClose':'true'})
     url='https://query1.finance.yahoo.com/v8/finance/chart/'+urllib.parse.quote(symbol,safe='')+'?'+query
     try:
         if not opts.offline: time.sleep(0.12)  # avoid bursty parallel requests
@@ -156,6 +157,13 @@ def fetch_quote(info, opts):
         res=json.loads(b.decode('utf-8'))['chart']['result'][0]
         m=res['meta']; tz=m.get('exchangeTimezoneName','UTC')
         closes=res['indicators']['quote'][0].get('close',[])
+        adj_block=res.get('indicators',{}).get('adjclose') or []
+        adjusted=adj_block[0].get('adjclose',[]) if adj_block else []
+        adj_by_day={}
+        if kind in ('etf','equity'):
+            for t,value in zip(res.get('timestamp',[]),adjusted):
+                v=safe_float(value)
+                if v is not None and v>0:adj_by_day[iso_date(t,tz)]=v
         pts_by_day={}
         for t,v in zip(res.get('timestamp',[]),closes):
             vf=safe_float(v)
@@ -192,9 +200,11 @@ def fetch_quote(info, opts):
           'low52':rounded(safe_float(m.get('fiftyTwoWeekLow')),4),
           'asOf':dt.datetime.fromtimestamp(quote_time,dt.timezone.utc).strftime('%Y-%m-%d %H:%M UTC'),
           'delayedMin':m.get('exchangeDataDelayedBy'),
-          'cached':cached,'cacheDetail':info_msg,'source':'Yahoo Finance'
+          'cached':cached,'cacheDetail':info_msg,'source':'Yahoo Finance',
+          'adjustedAvailable':len(adj_by_day)>=2
         }
-        hh=[{'date':date,'symbol':symbol,'close':rounded(val,5)} for date,val in pts]
+        hh=[{'date':date,'symbol':symbol,'close':rounded(val,5),
+             **({'adjClose':rounded(adj_by_day[date],5)} if date in adj_by_day else {})} for date,val in pts]
         return q,hh,info_msg,None
     except Exception as exc: return None,[],None,(symbol+': '+str(exc))
 
@@ -326,11 +336,37 @@ def demo_data():
               'financialCurrency':c.get('financialCurrency'),'asOf':'SYNTHETIC DEMO'} for c in companies]
     demo_news=[{'symbol':'SHEL.L','name':'Shell plc','articles':[],
                 'retrievedAt':'SYNTHETIC DEMO','source':'SYNTHETIC DEMO'}]
-    return {**extras,'company_news':demo_news,'fundamentals':demo_f,'fundamentalsCoverage':{'eligible':0,'available':0,'summaries':len(demo_f),'fetchedThisRun':0},'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
+    demo_prints,_,demo_forecasts=economic_forecasts.collect(macro,ROOT/'__none_demo_forecasts.csv')
+    return {**extras,'economicPrints':demo_prints,'forecastCoverage':{'sourced':demo_forecasts,'series':len(demo_prints)},'company_news':demo_news,'fundamentals':demo_f,'fundamentalsCoverage':{'eligible':0,'available':0,'summaries':len(demo_f),'fetchedThisRun':0},'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
             'companies':companies,'company_history':company_history,
             'movers':market_movers.demo_movers(),'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),
             'demo':True,'warnings':['DEMONSTRATION ONLY: all values and historical series are synthetic.'],
             'sources':['SYNTHETIC DEMO'],'yearsRequested':2}
+
+def build_quality(quotes,hist,movers,fundamentals,coverage,calendar,gilts,us_bonds,macro,warnings):
+    """Transparent coverage and freshness counts, not an arbitrary accuracy score."""
+    today=today_utc().date()
+    def age(iso):
+        try:return (today-dt.date.fromisoformat(str(iso)[:10])).days
+        except (ValueError,TypeError):return None
+    stale=[q['symbol'] for q in quotes if (age(q.get('asOf')) or 0)>4]
+    suspicious=[q['symbol'] for q in quotes if q.get('changePct') is not None
+        and abs(q['changePct'])>(15 if q.get('kind')=='index' else 35)]
+    coverage_by_index=[]
+    fund={f['symbol'] for f in fundamentals if f.get('trailingPE') is not None}
+    for m in movers:
+        members=m.get('constituents',[])
+        coverage_by_index.append({'name':m.get('name',m.get('id','')),
+            'members':m.get('members') or len(members),'quoted':sum(bool(q.get('current')) for q in members),
+            'peAvailable':sum(q.get('symbol') in fund for q in members)})
+    return {'requested':len(INSTRUMENTS),'quoted':len(quotes),'staleQuotes':stale,
+      'unusualPriceMoves':suspicious[:20], 'adjustedSeries':len({r['symbol'] for r in hist if r.get('adjClose') is not None}),
+      'fundamentalsCovered':coverage.get('summaries',len(fundamentals)),
+      'fundamentalsEligible':coverage.get('eligible',0),
+      'indexCoverage':coverage_by_index,'futureCalendar':len(calendar),
+      'macroeconomicSeries':len(macro),'pricedGilts':sum(bool(x.get('quoted')) for x in gilts),
+      'pricedUSTreasuries':sum(bool(x.get('quoted')) for x in us_bonds),
+      'retrievalWarnings':len(warnings),'generatedAt':today_utc().isoformat()}
 
 def build(opts):
     if opts.demo: return demo_data()
@@ -371,6 +407,8 @@ def build(opts):
     warnings.extend(regional_warnings)
     order_macro={x[1]:i for i,x in enumerate(FRED_MACRO)}
     macro.sort(key=lambda x:order_macro.get(x['key'],len(order_macro)))
+    economic_prints,forecast_warn,forecast_count=economic_forecasts.collect(macro,ROOT/'consensus_forecasts.csv')
+    warnings.extend(forecast_warn)
     us,uswarn,n_us_cached=parse_us_rates(opts);cached_count+=n_us_cached
     warnings.extend('FRED '+w for w in uswarn)
     us_real,realwarn,n_real_cached=market_intelligence.collect_us_real(sys.modules[__name__],opts)
@@ -446,7 +484,9 @@ def build(opts):
     warnings.extend(gilt_warnings)
     cached_count+=gilt_cached
     print(f'Gilts: {len(gilts)} DMO bonds ({sum(x.get("indexLinked",False) for x in gilts)} index-linked), {sum(x["quoted"] for x in gilts)} dated price quotes; {len(gilt_history)} saved observations',flush=True)
-    return {'us_treasuries':us_bonds,'us_treasury_history':us_treasury_history,'gilts':gilts,'gilt_history':gilt_history,
+    quality=build_quality(quotes,hist,movers,fundamentals,fcoverage,calendar,gilts,us_bonds,macro,warnings)
+    return {'quality':quality,'economicPrints':economic_prints,'forecastCoverage':{'sourced':forecast_count,'series':len(economic_prints)},
+            'us_treasuries':us_bonds,'us_treasury_history':us_treasury_history,'gilts':gilts,'gilt_history':gilt_history,
 'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
             'priceHistorySymbols':history_symbols,'priceHistoryCoverage':history_coverage,
             'company_news':company_news,
