@@ -168,6 +168,16 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 @media(max-width:420px){.pulse-board{grid-template-columns:1fr}.pulse-row{min-height:46px}}
 @media(prefers-reduced-motion:reduce){.workspace-view{animation:none}}
 
+/* Markets summary: real data already present in the snapshot, not a second feed. */
+.market-mini-summary{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;min-width:0}
+.market-mini-tile{display:grid;grid-template-rows:auto auto auto;gap:4px;min-width:0;text-align:left;border:1px solid #38363a;border-radius:5px;background:#17171a;color:var(--fg);padding:9px 10px;cursor:pointer;font:11px var(--font)}
+.market-mini-tile:hover,.market-mini-tile:focus-visible{border-color:#ffa028;outline:none}
+.market-mini-tile.selected{border-color:#ffa028;background:#262016}
+.market-mini-name{font-size:10px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.market-mini-value{font-size:15px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.market-mini-change{font-size:11px}
+@media(max-width:1050px){.market-mini-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.market-mini-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -181,11 +191,11 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
     <div class="global-search-wrap"><input id="global-search" type="search" placeholder="Search Shell, S&P 500, FTSE, GBP/USD…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="global-results" aria-label="Search all markets and companies"><div id="global-results" class="search-results" role="listbox" hidden></div></div></div>
   <nav class="workspace-nav" id="workspace-tabs" aria-label="Market terminal workspaces" role="tablist">
     <button type="button" role="tab" id="tab-overview" aria-controls="view-overview" data-workspace="overview" aria-selected="true">OVERVIEW</button>
+    <button type="button" role="tab" id="tab-fx" aria-controls="view-fx" data-workspace="fx" aria-selected="false">MARKETS</button>
     <button type="button" role="tab" id="tab-equities" aria-controls="view-equities" data-workspace="equities" aria-selected="false">EQUITIES</button>
-    <button type="button" role="tab" id="tab-companies" aria-controls="view-companies" data-workspace="companies" aria-selected="false">COMPANIES</button>
+    <button type="button" role="tab" id="tab-companies" aria-controls="view-companies" data-workspace="companies" aria-selected="false">COMPANY RESEARCH</button>
     <button type="button" role="tab" id="tab-bonds" aria-controls="view-bonds" data-workspace="bonds" aria-selected="false">BONDS & RATES</button>
     <button type="button" role="tab" id="tab-economics" aria-controls="view-economics" data-workspace="economics" aria-selected="false">ECONOMICS</button>
-    <button type="button" role="tab" id="tab-fx" aria-controls="view-fx" data-workspace="fx" aria-selected="false">FX & COMMODITIES</button>
     <button type="button" role="tab" id="tab-analytics" aria-controls="view-analytics" data-workspace="analytics" aria-selected="false">ANALYTICS</button>
   </nav>
 </div>
@@ -204,11 +214,12 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 </section>
 <div class="tiles" id="headline"></div>
 <section class="panel" id="monitor">
-  <div class="row"><h2>MARKET MONITOR</h2><div class="inputs"><select id="main-pick" class="field pick" aria-label="Choose instrument"></select><button id="export-main" class="btn" type="button">EXPORT CSV</button><button id="add-compare" class="btn" type="button">ADD TO COMPARE</button></div></div>
+  <div class="row"><h2>PRICE CHARTS &amp; HISTORY</h2><div class="inputs"><select id="main-pick" class="field pick" aria-label="Choose instrument"></select><button id="export-main" class="btn" type="button">EXPORT CSV</button><button id="add-compare" class="btn" type="button">ADD TO COMPARE</button></div></div>
+  <div class="market-mini-summary" id="market-mini-summary" aria-label="Major market price summary"></div>
   <div class="pills" id="main-ranges" aria-label="Historical period"></div><div id="main-custom" class="time-box"></div>
   <div class="note" id="main-detail">Daily prices. Price history is not a total-return series.</div>
   <div class="chart" id="main-chart"></div>
-  <div class="row"><h2>MARKET WATCHLIST</h2><span class="mini" id="count"></span></div>
+  <div class="row"><h2>GLOBAL PRICES</h2><span class="mini" id="count"></span></div>
   <div class="inputs"><input id="search" class="field inputbox" type="search" placeholder="Search name or ticker…" aria-label="Search instruments"><div class="pills" id="group-pills"></div></div>
   <div class="scroll"><table class="watch"><thead><tr>
     <th data-sort="name">Instrument</th><th data-sort="symbol" class="hide-sm">Ticker</th><th data-sort="currency" class="hide-sm">Ccy</th>
@@ -232,7 +243,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 </section>
 
 <section class="panel" id="constituents">
-  <div class="row"><h2>INDEX CONSTITUENTS — ALL COMPANIES</h2><span class="mini" id="const-count"></span></div>
+  <div class="row"><h2>INDEX CONSTITUENTS</h2><span class="mini" id="const-count"></span></div>
   <div class="constituents-toolbar inputs">
     <label for="const-market" class="mini">INDEX</label><select class="field" id="const-market" aria-label="Choose index constituents"></select>
     <input id="const-search" class="field" type="search" placeholder="Search company or ticker…" aria-label="Search index constituents">
@@ -245,7 +256,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 </section>
 
 <section class="panel" id="companies">
-  <div class="row"><h2>COMPANY RESEARCH — PRICE, VALUATION & PROFITS</h2><span class="mini">SELECT A COMPANY / SEARCH BY NAME OR TICKER</span></div>
+  <div class="row"><h2>COMPANY RESEARCH — PRICES, VALUATION &amp; FINANCIALS</h2><span class="mini">SELECT A COMPANY / SEARCH BY NAME OR TICKER</span></div>
   <div class="company-toolbar">
     <input id="company-query" class="field" type="search" list="company-suggestions" autocomplete="off" placeholder="Type Shell, SHEL.L, Microsoft…" aria-label="Search company name or ticker">
     <datalist id="company-suggestions"></datalist>
@@ -546,6 +557,17 @@ function headlines(){const symbols=['^FTSE','^GSPC','GBPUSD=X','^TNX','BZ=F','GC
   for(const s of symbols){const q=qMap.get(s);if(!q)continue;const t=el('div','tile');t.append(el('div','t',q.name),el('div','v',price(q)));
     t.append(el('div','c '+tone(val(q)),move(q,'day')));t.title='Last observation: '+q.asOf;t.onclick=()=>{if(q.kind==='yield'){activateWorkspace('bonds');return;}state.sym=s;activateWorkspace('fx',{scroll:false});$('main-pick').value=s;renderMain();renderWatch();$('monitor').scrollIntoView({behavior:'smooth'});};t.style.cursor='pointer';$('headline').append(t);}
 }
+function renderMarketMini(){
+  const host=$('market-mini-summary');if(!host)return;host.replaceChildren();
+  for(const symbol of ['^FTSE','^GSPC','^IXIC','GBPUSD=X','BZ=F','GC=F']){
+    const q=qMap.get(symbol);if(!q)continue;
+    const b=el('button','market-mini-tile'+(state.sym===symbol?' selected':''));b.type='button';
+    b.title='Show '+q.name+' price chart';b.setAttribute('aria-label','Show '+q.name+' chart');
+    b.append(el('span','market-mini-name',q.name),el('strong','market-mini-value',price(q)),
+      el('span','market-mini-change '+tone(moveVal(q,'day')),move(q,'day')));
+    b.onclick=()=>{state.sym=symbol;renderMain();renderWatch();};host.append(b);
+  }
+}
 function renderGroups(){wipe('group-pills');['','Equities','ETFs','FX','Rates','Commodities','Crypto'].forEach(g=>{
  const b=el('button','btn'+(state.group===g?' active':''),g||'All');b.onclick=()=>{state.group=g;renderGroups();renderWatch();renderScore();};$('group-pills').append(b);});}
 function filtered(){let rows=D.quotes.filter(q=>(!state.group||q.group===state.group)&&
@@ -570,6 +592,7 @@ function renderMain(){let q=qMap.get(state.sym);if(!q){empty('main-chart','No ma
   $('main-detail').textContent=q.name+' · '+price(q)+' · '+state.mainRange+' '+(q.kind==='yield'?'yield change':q.kind==='volatility'?'index-level movement':'price move')+': '+changeText+
     ' · quoted in '+(q.currency||'native units')+' · last quote '+(q.asOf||'unknown')+' · SOURCE: '+q.source;
   chart('main-chart',[{name:q.name,pts:pts,color:AMBER}],{format:v=>fmt(v,prec(q))+(q.kind==='yield'?'%':''),area:true});
+  renderMarketMini();
 }
 // Graphical charts are written in standard SVG with no external JS dependencies.
 function chart(id,series,opt={}){
@@ -972,12 +995,12 @@ function reorderSections(){
     if(children[1]){children[1].id='score-panel';wrap.insertBefore(children[1],pair);}pair.remove();}
   const config=[
     ['overview','MARKET OVERVIEW','Headlines · indices · FX · key yields',['news','headline','overview-board']],
-    ['equities','GLOBAL EQUITIES','Index movers · constituent-level analysis',['movers','constituents']],
-    ['companies','COMPANY RESEARCH','Share-price histories · valuation · accounts',['companies']],
-    ['bonds','FIXED INCOME','UK gilts · US Treasuries · yield curves · real yields · spreads',['gilts','us-treasuries','rates','us-spread-panel','cross-rates','real','sovereign']],
-    ['economics','ECONOMIC DATA','GDP · inflation · policy · release calendar',['macro','calendar']],
-    ['fx','MARKET EXPLORER','Currency · commodities · ETFs · index charts',['monitor']],
-    ['analytics','MULTI-ASSET ANALYTICS','Comparisons · volatility · correlations',['compare','score-panel','sources']]
+    ['fx','GLOBAL MARKET DATA','Major markets · prices · interactive historical charts',['monitor']],
+    ['equities','EQUITY MARKETS','Daily movers · full index constituents',['movers','constituents']],
+    ['companies','COMPANY RESEARCH','Share-price history · valuation · accounts · news',['companies']],
+    ['bonds','BONDS & RATES','UK gilts · US Treasuries · curves · real yields · spreads',['gilts','us-treasuries','rates','real','us-spread-panel','sovereign','cross-rates']],
+    ['economics','ECONOMIC DATA','GDP · inflation · employment · central banks · calendar',['macro','calendar']],
+    ['analytics','MARKET COMPARISONS & RISK','Cross-market comparisons · volatility · correlations',['compare','score-panel','sources']]
   ];
   for(const [key,title,desc,ids] of config){
     const view=el('div','workspace-view');view.id='view-'+key;view.dataset.workspace=key;view.setAttribute('role','tabpanel');view.setAttribute('aria-labelledby','tab-'+key);view.hidden=key!=='overview';
@@ -1057,7 +1080,7 @@ function renderSovereign(){
 }
 
 
-const WORKSPACES=['overview','equities','companies','bonds','economics','fx','analytics'];
+const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics'];
 let activeWorkspace='overview', searchHits=[], searchCursor=0;
 const workspaceForSection={'us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics',sources:'analytics'};
 function paintWorkspace(key){
