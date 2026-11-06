@@ -67,31 +67,49 @@ def convert(symbol, info, collected):
 
 
 def previous_site_snapshot():
-    """Recover financial summaries from the site's LAST publication on GitHub Pages.
+    """Load saved financial summaries from the previous GitHub Pages build.
 
-    A GitHub Actions runner is ephemeral. Reuse the last published static JSON,
-    rather than asking the user to configure an additional workflow cache.
-    Publication can be delayed; a failed build retains the previous site.
+    Runners have ephemeral disks. Download a small standalone JSON file, not the
+    20-year terminal.html, which can exceed the old 24 MB read limit.  The
+    smaller file also records unsuccessful lookups so each subsequent run can
+    progress through the index constituents instead of retrying the same names.
     """
     repo=os.environ.get('GITHUB_REPOSITORY','')
     if '/' not in repo:return {}
     owner,name=repo.split('/',1)
-    url=f'https://{owner}.github.io/{name}/'
+    base=f'https://{owner}.github.io/{name}/'
+    url=base+'fundamentals_cache.json'
     try:
-        request=urllib.request.Request(url,headers={'User-Agent':'PersonalMarketResearch/1.0'})
+        request=urllib.request.Request(url,headers={
+            'User-Agent':'PersonalMarketResearch/1.1',
+            'Cache-Control':'no-cache',
+            'Accept':'application/json'})
         with urllib.request.urlopen(request,timeout=18) as response:
-            html=response.read(24_000_000).decode('utf-8')
+            payload=json.loads(response.read(15_000_000).decode('utf-8'))
+        if isinstance(payload,dict) and isinstance(payload.get('records'),dict) and isinstance(payload.get('attempts'),dict):
+            return payload
+    except Exception as exc:
+        # Initial migration: existing page won't have a separate cache file.
+        print('Fundamental cache: standalone file unavailable; checking previous site snapshot ('+str(exc)[:90]+')',flush=True)
+
+    # One-time fallback for previously published builds. The large HTML may be
+    # truncated by size or a CDN during the transition; failures must be clear.
+    try:
+        request=urllib.request.Request(base,headers={
+            'User-Agent':'PersonalMarketResearch/1.1','Cache-Control':'no-cache'})
+        with urllib.request.urlopen(request,timeout=25) as response:
+            html=response.read(65_000_000).decode('utf-8')
         json_source=html.split('window.MT_DATA = ',1)[1].split(';</script>',1)[0]
         page=json.loads(json_source)
         if page.get('demo') is not False:return {}
         data={x['symbol']:x for x in page.get('fundamentals',[]) if isinstance(x,dict) and x.get('symbol')}
-        existing=page.get('fundamentalsCoverage') or {}
-        prior_attempts=existing.get('attempts') if isinstance(existing,dict) else None
+        coverage=page.get('fundamentalsCoverage') or {}
+        prior_attempts=coverage.get('attempts') if isinstance(coverage,dict) else {}
         if not isinstance(prior_attempts,dict):prior_attempts={}
-        # Failed Yahoo queries must retain their cooldown too. Otherwise each
-        # scheduled job gets stuck retrying the same ticker and never progresses.
+        print(f'Fundamental cache: recovered {len(data)} summaries from prior HTML',flush=True)
         return {'records':data,'attempts':{**{s:r.get('asOf','') for s,r in data.items()},**prior_attempts}}
-    except Exception:
+    except Exception as exc:
+        print('Fundamental cache: previous publication could not be recovered; starting new cache ('+str(exc)[:120]+')',flush=True)
         return {}
 
 
@@ -132,6 +150,7 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
     lookup_order=list(dict.fromkeys(priority+universe))
     records={k:v for k,v in previous.get('records',{}).items() if k in seen and isinstance(v,dict)}
     attempts={k:v for k,v in previous.get('attempts',{}).items() if k in seen}
+    resumed_summaries=len(records)
     # Detailed profiles (e.g. Shell) have priority over summary-only snapshots.
     for c in detailed_companies:
         sym=c.get('symbol')
@@ -151,6 +170,7 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
         return age_days(last)>=2
     pending=[s for s in lookup_order if needs_update(s)][:max(0,batch_size)]
     warnings=[]
+    new_successes=0
     if pending and not offline:
         if provider is None:
             try:
@@ -166,11 +186,14 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             for sym,obj,err in pool.map(retrieve,pending):
                 attempts[sym]=stamp
-                if obj:records[sym]=obj
+                if obj:
+                    records[sym]=obj
+                    new_successes+=1
                 elif err and len(warnings)<8:warnings.append('Fundamentals '+sym+': '+err)
     output=[records[s] for s in universe if s in records]
     coverage={'eligible':len(universe),'available':sum(1 for obj in output if obj.get('trailingPE') is not None),
               'summaries':len(output),'fetchedThisRun':len(pending) if not offline else 0,
+              'successfulNewThisRun':new_successes,'resumedFromCache':resumed_summaries,
               'updatedAt':stamp,'attempts':attempts}
     path.write_text(json.dumps({'records':records,'attempts':attempts},separators=(',',':')),encoding='utf-8')
     return output,coverage,warnings
