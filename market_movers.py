@@ -224,10 +224,25 @@ def build_market_movers(main_module, opts):
         coverage=len(current)/len(members)
         complete=len(current)==len(members) and len(gainers)==10 and len(losers)==10
         if not complete:warnings.append(f'Movers {mid}: partial sample {len(current)}/{len(members)} ({coverage:.0%}) for {same_day or "unknown day"}; rankings NOT guaranteed to be full-market top ten')
+        # Include the entire index membership in the HTML snapshot, not just movers.
+        # Missing/stale quotes stay visible, with explicit availability flags.
+        constituents=[]
+        for member in members:
+            q=quotes.get(member['symbol'])
+            constituents.append({
+                'symbol':member['symbol'],'name':member['name'],
+                'price':q['price'] if q else None,
+                'changePct':q['changePct'] if q and q['date']==same_day else None,
+                'currency':q.get('currency','') if q else '',
+                'date':q.get('date') if q else None,
+                'asOf':q.get('asOf') if q else None,
+                'current':bool(q and q['date']==same_day),
+            })
+        constituents.sort(key=lambda r:(r['name'].casefold(),r['symbol']))
         final.append({'id':mid,'name':MARKET_CONFIG[mid]['name'],'date':same_day,
             'members':len(members),'quoted':len(matches),'sameDay':len(current),'coveragePct':round(coverage*100,1),
             'complete':complete,'source':src+' + Yahoo Finance (unofficial)',
-            'gainers':gainers,'losers':losers})
+            'gainers':gainers,'losers':losers,'constituents':constituents})
     return final,warnings
 
 
@@ -248,6 +263,7 @@ def demo_movers():
         out.append({'id':market_id,'name':MARKET_CONFIG[market_id]['name'],'date':'2026-11-05',
               'members':count,'quoted':count,'sameDay':count,'coveragePct':100,'complete':True,
               'source':'SYNTHETIC DEMO — NOT REAL MARKET DATA',
+               'constituents':sorted([{**r,'current':True} for r in rows],key=lambda r:r['name']),
               'gainers':sorted((r for r in rows if r['changePct']>0),key=lambda r:-r['changePct'])[:10],
               'losers':sorted((r for r in rows if r['changePct']<0),key=lambda r:r['changePct'])[:10]})
     return out

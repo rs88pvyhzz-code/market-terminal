@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Global Market Terminal — Personal Research</title>
+<title>Global Market Terminal — Seven Workspaces</title>
 <style>
 :root{--bg:#09090b;--panel:#121215;--panel2:#17171b;--line:#2a2a30;--amber:#ffa028;--fg:#ececef;--muted:#96969f;--up:#51d284;--down:#ff665e;--blue:#5caeff;--purple:#c6a0ff;--aqua:#60d5ce;--font:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#060607;color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
@@ -98,6 +98,62 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 .official-links a{padding:5px 8px;background:#1e1e23;border:1px solid #393943;border-radius:4px}
 @media(max-width:900px){.news-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.news-grid,.calendar-list{grid-template-columns:1fr}.time-box input{width:124px}.research-stat .val{font-size:15px}}
+
+/* Whole-index constituents are available from the same data pull as movers. */
+.constituents-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.constituents-toolbar input{flex:1 1 190px;max-width:410px}
+.constituents-scroll{max-height:610px;overflow:auto}
+.constituents-scroll th{position:sticky;top:0;background:#16161a;z-index:1}
+.constituents-scroll table{min-width:1390px}
+.constituents-scroll td{font-size:11px}
+.constituents-scroll td.n{font-variant-numeric:tabular-nums}
+.fundamental-asof{color:var(--muted);font-size:10px}
+.constituent-open{color:#f5be68;border:1px solid #4a3b24;background:transparent;padding:5px 8px;cursor:pointer;border-radius:5px;font:inherit}
+.constituent-open:focus-visible,.constituent-open:hover{background:#332411;color:#fff}
+.constituent-secondary{color:#8b8b90;font-size:11px}
+.constituent-stale{color:#d4ad71}
+
+/* Seven-workspace navigation; the terminal remains a local self-contained HTML file. */
+.commandbar{position:sticky;top:0;z-index:50;background:#09090bef;backdrop-filter:blur(16px);border-bottom:1px solid #38322b;padding:10px 0 8px;min-width:0}
+.commandline{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:1px 2px 9px}
+.commandline .label{font:11px var(--font);color:#b4b4bd;letter-spacing:.05em}
+.global-search-wrap{position:relative;width:min(100%,560px);flex:1 1 280px;max-width:610px}
+.global-search-wrap input{display:block;width:100%;background:#1c1c20;color:#f0f0f2;border:1px solid #5b4b32;border-radius:6px;padding:11px 12px 11px 36px;font:13px var(--font)}
+.global-search-wrap input:focus{border-color:var(--amber)}
+.global-search-wrap:before{content:'⌕';font:24px var(--font);position:absolute;top:5px;left:12px;color:#b49b71;pointer-events:none}
+.search-results{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:65;background:#1b1b1f;border:1px solid #655034;border-radius:6px;box-shadow:0 12px 30px #000b;max-height:340px;overflow-y:auto}
+.search-results[hidden]{display:none!important}
+.search-choice{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;background:none;color:var(--fg);text-align:left;border:0;border-bottom:1px solid #323139;padding:10px 11px;cursor:pointer;font:12px var(--font)}
+.search-choice:hover,.search-choice.selected{background:#332515}
+.search-choice .subtext{font:10px var(--font);color:#a3a3ae;white-space:nowrap}
+.search-empty{padding:14px;color:var(--muted);font:12px var(--font)}
+.workspace-nav{display:flex;overflow-x:auto;gap:6px;padding:0 2px 2px;scrollbar-width:thin;position:static;top:auto;z-index:auto;background:transparent;backdrop-filter:none}
+.workspace-nav button{flex:none;border:1px solid #34343a;background:#161619;color:#babac4;border-radius:5px;padding:9px 12px;cursor:pointer;font:11px var(--font);letter-spacing:.02em;white-space:nowrap}
+.workspace-nav button:hover{border-color:#a67b41;color:#fff}
+.workspace-nav button[aria-selected="true"]{background:#ffa028;color:#130d04;border-color:#ffa028;font-weight:700}
+.workspace-stage{min-width:0;display:grid;gap:12px}
+.workspace-view{min-width:0;display:grid;gap:14px;align-content:start;animation:workspace-fade .15s ease-out}
+.workspace-view[hidden]{display:none!important}
+@keyframes workspace-fade{from{opacity:.7}to{opacity:1}}
+.workspace-title{display:flex;gap:8px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;padding:9px 3px 0;border-bottom:1px solid #2d2921}
+.workspace-title h1{font:600 18px var(--font);color:var(--amber);margin:0}
+.workspace-title span{font:11px var(--font);color:var(--muted)}
+.pulse-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pulse-group{background:#0f0f12;border:1px solid #28282c;border-radius:6px;min-width:0;overflow:hidden}
+.pulse-group h3{font:600 12px var(--font);color:var(--amber);background:#1a1a1e;padding:9px 11px;border-bottom:1px solid #2a2a30}
+.pulse-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;text-align:left;background:transparent;color:#ddd;border:0;border-bottom:1px solid #24242a;padding:9px 10px;width:100%;cursor:pointer;font:11px var(--font);min-height:52px}
+.pulse-row:hover,.pulse-row:focus-visible{background:#302314}.pulse-row:last-child{border-bottom:0}
+.pulse-row strong{display:block;font-size:11px;font-weight:500}.pulse-row .meta{font:10px var(--font);color:var(--muted);display:block}
+.pulse-row .v{font:12px var(--font);text-align:right;white-space:nowrap}.pulse-row .change{display:block;font-size:11px}
+.pulse-warning{font:11px var(--font);color:#b5a38c}
+.workspace-shortcuts{display:flex;gap:8px;flex-wrap:wrap}
+.workspace-shortcuts button{background:#1d1b1a;border:1px solid #554228;color:#f4bd70;padding:7px 12px;border-radius:5px;font:11px var(--font)}
+.workspace-shortcuts button:hover{background:#3b2c19}
+@media(max-width:1100px){.pulse-board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.commandline .label{display:none}.commandbar{padding:7px 0}.global-search-wrap{flex-basis:100%;max-width:none}.pulse-board{grid-template-columns:1fr 1fr}.workspace-nav button{padding:9px 10px;font-size:11px}.workspace-title h1{font-size:15px}}
+@media(max-width:420px){.pulse-board{grid-template-columns:1fr}.pulse-row{min-height:46px}}
+@media(prefers-reduced-motion:reduce){.workspace-view{animation:none}}
+
 </style>
 </head>
 <body>
@@ -106,8 +162,27 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <div><div class="brand">GLOBAL MARKET TERMINAL</div><div class="sub">RESEARCH / MULTI-ASSET / HISTORICAL ANALYTICS</div></div>
   <div class="stamp"><span id="status-tag" class="tag">STATIC SNAPSHOT</span><div id="stamp">Awaiting data</div></div>
 </header>
-<nav aria-label="Terminal sections"><a href="#news">HEADLINES</a><a href="#companies">COMPANIES</a><a href="#movers">MOVERS</a><a href="#monitor">MARKETS</a><a href="#rates">RATES</a><a href="#real">REAL YIELDS</a><a href="#sovereign">BOND SPREADS</a><a href="#macro">ECONOMICS</a><a href="#calendar">CALENDAR</a><a href="#compare">COMPARE</a><a href="#sources">SOURCES</a></nav>
+<div class="commandbar" id="commandbar">
+  <div class="commandline"><div class="label">MARKET / COMPANY LOOKUP<br><span class="mini">Search indexes, securities, constituents</span></div>
+    <div class="global-search-wrap"><input id="global-search" type="search" placeholder="Search Shell, S&P 500, FTSE, GBP/USD…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="global-results" aria-label="Search all markets and companies"><div id="global-results" class="search-results" role="listbox" hidden></div></div></div>
+  <nav class="workspace-nav" id="workspace-tabs" aria-label="Market terminal workspaces" role="tablist">
+    <button type="button" role="tab" id="tab-overview" aria-controls="view-overview" data-workspace="overview" aria-selected="true">OVERVIEW</button>
+    <button type="button" role="tab" id="tab-equities" aria-controls="view-equities" data-workspace="equities" aria-selected="false">EQUITIES</button>
+    <button type="button" role="tab" id="tab-companies" aria-controls="view-companies" data-workspace="companies" aria-selected="false">COMPANIES</button>
+    <button type="button" role="tab" id="tab-bonds" aria-controls="view-bonds" data-workspace="bonds" aria-selected="false">BONDS & RATES</button>
+    <button type="button" role="tab" id="tab-economics" aria-controls="view-economics" data-workspace="economics" aria-selected="false">ECONOMICS</button>
+    <button type="button" role="tab" id="tab-fx" aria-controls="view-fx" data-workspace="fx" aria-selected="false">FX & COMMODITIES</button>
+    <button type="button" role="tab" id="tab-analytics" aria-controls="view-analytics" data-workspace="analytics" aria-selected="false">ANALYTICS</button>
+  </nav>
+</div>
 <div id="demo-banner" class="err" style="display:none">SYNTHETIC DEMONSTRATION — These figures are invented test data, NOT market prices. Run build_terminal.py without --demo for a real snapshot.</div>
+<div class="workspace-stage" id="workspace-stage" aria-live="off"></div>
+<section class="panel" id="overview-board">
+  <div class="row"><h2>GLOBAL MARKET PULSE</h2><span class="mini">Select any market to open its chart or rates analysis</span></div>
+  <div class="pulse-board" id="market-pulse"></div>
+  <div class="workspace-shortcuts"><button type="button" data-jump="equities">VIEW ALL INDEX CONSTITUENTS</button><button type="button" data-jump="bonds">COMPARE GOVERNMENT YIELDS</button><button type="button" data-jump="economics">VIEW ECONOMIC INDICATORS</button><button type="button" data-jump="analytics">CROSS-MARKET ANALYTICS</button></div>
+  <p class="pulse-warning">Snapshot values; not streaming quotes. Most equity movements exclude dividends. Government-yield changes are basis points, not investment returns.</p>
+</section>
 <section class="panel" id="news">
   <div class="row"><div><h2>MARKET HEADLINES</h2><p class="note">Latest retrieved market and economic headlines, selected automatically from news search feeds. Click through to publisher coverage.</p></div><span id="news-stamp" class="mini"></span></div>
   <div class="pills" id="news-pills" aria-label="Market news categories"></div>
@@ -142,6 +217,19 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <p class="movers-note">Daily percentage PRICE changes, ranked across the index constituents successfully checked on the same local market date. A market with missing quotations is labelled PARTIAL: those results may not be the actual ten biggest moves. Figures are a static snapshot, not live. Click a company to see its source quote.</p>
 </section>
 
+<section class="panel" id="constituents">
+  <div class="row"><h2>INDEX CONSTITUENTS — ALL COMPANIES</h2><span class="mini" id="const-count"></span></div>
+  <div class="constituents-toolbar inputs">
+    <label for="const-market" class="mini">INDEX</label><select class="field" id="const-market" aria-label="Choose index constituents"></select>
+    <input id="const-search" class="field" type="search" placeholder="Search company or ticker…" aria-label="Search index constituents">
+    <select class="field" id="const-sort" aria-label="Sort constituents"><option value="name">Name A–Z</option><option value="rise">Daily change: highest first</option><option value="fall">Daily change: lowest first</option><option value="ticker">Ticker A–Z</option><option value="pe">P/E lowest first</option><option value="cap">Market cap largest first</option><option value="profit">TTM profit highest first</option><option value="div">Dividend yield highest first</option></select>
+    <button type="button" class="btn" id="const-export">EXPORT ALL CSV</button>
+  </div>
+  <p class="note" id="const-info" aria-live="polite">Index membership and quote coverage from the most recent successful download.</p>
+  <div class="constituents-scroll"><table class="watch"><thead><tr><th>Company</th><th>Ticker</th><th class="n">Last price</th><th class="n">Day</th><th class="n">P/E TTM</th><th class="n">P/E fwd</th><th class="n">Dividend</th><th class="n">Market cap</th><th class="n">Revenue TTM</th><th class="n">Net profit TTM</th><th>Quote date</th><th>Financials date</th><th>Research</th></tr></thead><tbody id="const-rows"></tbody></table></div>
+  <p class="note">Whole-index membership and market quotes refresh each scheduled build. Financial summaries are collected progressively and cached across builds: P/E, dividend, market capitalisation, revenue and net profit are shown only when sourced. The financial-data timestamp is a retrieval date, not an accounting period. The annual accounts and long price histories remain available only for separately collected detailed profiles. Missing data are shown as —; no values are estimated. Sources are unofficial and public-display rights need checking.</p>
+</section>
+
 <section class="panel" id="companies">
   <div class="row"><h2>COMPANY RESEARCH — PRICE, VALUATION & PROFITS</h2><span class="mini">SELECT A COMPANY / SEARCH BY NAME OR TICKER</span></div>
   <div class="company-toolbar">
@@ -161,7 +249,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
     <div><div class="row"><h3>SHARE PRICE HISTORY</h3><span class="mini" id="company-price-date"></span></div><div class="period-controls" id="company-period"></div><p class="note" id="company-performance">Choose a time period.</p><div class="chart" id="company-chart"></div></div>
     <div class="company-fin"><h3>ANNUAL INCOME STATEMENT</h3><div id="company-annual"></div><p class="note" style="padding-top:9px">Revenue, operating profit and net profit are reported accounting figures, NOT necessarily trailing 12 months. All amounts use the company's financial reporting currency.</p></div>
   </div>
-  <p class="note">The static page searches companies saved in the latest snapshot. For on-demand ticker lookup, use the optional Python server; ordinary static hosting cannot retrieve company fundamentals on its own. Add a ticker with <code>python build_terminal.py --companies SHEL.L,MSFT</code> and rebuild. The free Yahoo Finance financial-data interface can be unavailable: absent P/E or earnings figures are shown as —, not estimated. Financial statements and share-price quotes can be in different currencies (e.g. Shell's accounts in USD and London share price in pence).</p>
+  <p class="note">The Companies dropdown includes companies in the selected indices. Summary valuations are gathered progressively across scheduled refreshes; the first build will NOT have all P/E or earnings figures. Annual income-statement histories and 1/5/10-year company price charts are downloaded only for the separately selected detailed profiles. Adding more tickers to the detailed collector requires a new build. This is a public static page, not an on-demand financial-data server; unavailable figures show as —. Financials and share prices can use different currencies (for example, Shell reports in USD and trades in London in pence).</p>
 </section>
 <section class="panel" id="compare">
   <div class="row"><h2>CROSS-MARKET COMPARISON</h2><button id="export-compare" class="btn" type="button">EXPORT COMPARISON CSV</button></div>
@@ -235,9 +323,48 @@ const D=window.MT_DATA||{quotes:[],history:[],uk_rates:[],us_rates:[],macro:[],w
 const $=id=>document.getElementById(id);
 const AMBER='#ffa028',UP='#51d284',DOWN='#ff665e',BLUE='#5caeff',PURPLE='#c6a0ff',AQUA='#60d5ce';
 const PALETTE=[AMBER,BLUE,AQUA,PURPLE];
-const state={newsCategory:'ALL',calendarRegion:'ALL',companyRange:'1Y',ratesRange:'5Y',macroRange:'5Y',realRange:'5Y',sovereignRange:'5Y',realRegion:'UK',realMaturity:'10',ratesTenor:'10',curveAsOf:'',sovereignCountry:'IT',sovereignBase:'DE',companySymbol:'SHEL.L',moversMarket:'',sym:'^FTSE',group:'',search:'',mainRange:'1Y',compareRange:'5Y',compare:['^FTSE','^GSPC','ACWI',''],sort:'default',desc:false,macro:'uk_cpi',macroRegion:'UK',macroCompare:'',ratesRegion:'ALL'};
+const state={newsCategory:'ALL',calendarRegion:'ALL',companyRange:'1Y',ratesRange:'5Y',macroRange:'5Y',realRange:'5Y',sovereignRange:'5Y',realRegion:'UK',realMaturity:'10',ratesTenor:'10',curveAsOf:'',sovereignCountry:'IT',sovereignBase:'DE',companySymbol:'SHEL.L',moversMarket:'',constMarket:'SP500',constSearch:'',constSort:'name',sym:'^FTSE',group:'',search:'',mainRange:'1Y',compareRange:'5Y',compare:['^FTSE','^GSPC','ACWI',''],sort:'default',desc:false,macro:'uk_cpi',macroRegion:'UK',macroCompare:'',ratesRegion:'ALL'};
 const qMap=new Map((D.quotes||[]).map(q=>[q.symbol,q]));
 const companyMap=new Map((D.companies||[]).map(q=>[q.symbol,q]));
+const fundamentalsMap=new Map((D.fundamentals||[]).map(q=>[q.symbol,q]));
+const companyFundamental=(symbol)=>fundamentalsMap.get(symbol)||companyMap.get(symbol)||null;
+const indexedStocks=new Map();
+for(const market of D.movers||[])for(const q of market.constituents||[]){
+  const prev=indexedStocks.get(q.symbol);
+  if(!prev||(!prev.current&&q.current))indexedStocks.set(q.symbol,q);
+}
+function savedCompanyList(){
+  const all=new Map([...indexedStocks.values()].map(q=>[q.symbol,{symbol:q.symbol,name:q.name}]));
+  for(const c of D.companies||[])all.set(c.symbol,{symbol:c.symbol,name:c.name});
+  return [...all.values()].sort((a,b)=>a.name.localeCompare(b.name,'en')||a.symbol.localeCompare(b.symbol));
+}
+function ensureCompany(symbol){
+  if(companyMap.has(symbol))return companyMap.get(symbol);
+  const q=indexedStocks.get(symbol);if(!q)return null;
+  // Price-only placeholder; never imply fundamentals were retrieved.
+  const f=fundamentalsMap.get(symbol)||{};
+  const c={symbol:q.symbol,name:q.name,price:q.price,changePct:q.current?q.changePct:null,
+    priceCurrency:q.currency||'',priceAsOf:q.asOf||q.date||null,
+    marketCap:f.marketCap??null,marketCapCurrency:q.currency==='GBp'||q.currency==='GBX'?'GBP':q.currency||'',
+    trailingPE:f.trailingPE??null,forwardPE:f.forwardPE??null,dividendYieldPct:f.dividendYieldPct??null,
+    priceToBook:f.priceToBook??null,revenueTTM:f.revenueTTM??null,netIncomeTTM:f.netIncomeTTM??null,
+    profitMarginPct:f.profitMarginPct??null,sector:f.sector||null,
+    fundamentalSource:f.source||'Financial summary not yet downloaded',
+    financialAsOf:f.asOf||null,financialCurrency:f.financialCurrency||'',annual:[],
+    warning:'Annual income statement and historical share-price chart not included for this constituent.'};
+  companyMap.set(symbol,c);return c;
+}
+function openConstituent(symbol){
+  if(!ensureCompany(symbol))return;
+  state.companySymbol=symbol;
+  activateWorkspace('companies',{scroll:false});
+  $('company-pick').value=symbol;
+  showCompanyAlert((D.companies||[]).some(x=>x.symbol===symbol)?'':
+    'Only daily price data are saved for this constituent. Financial accounts, P/E and multi-year history are not available here; use CHECK SOURCE QUOTE for more.');
+  renderCompany();
+  $('companies').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 const companyHistory=new Map();(D.company_history||[]).forEach(r=>{if(!companyHistory.has(r.symbol))companyHistory.set(r.symbol,[]);companyHistory.get(r.symbol).push({date:r.date,v:Number(r.close)});});
 for(const pts of companyHistory.values())pts.sort((a,b)=>a.date.localeCompare(b.date));
 const histMap=new Map();(D.history||[]).forEach(r=>{if(!histMap.has(r.symbol))histMap.set(r.symbol,[]);histMap.get(r.symbol).push({date:r.date,v:Number(r.close)});});
@@ -305,7 +432,7 @@ function setLatest(){const ts=D.generatedAt||'unknown';$('stamp').textContent='G
 }
 function headlines(){const symbols=['^FTSE','^GSPC','GBPUSD=X','^TNX','BZ=F','GC=F','^VIX','BTC-USD'];wipe('headline');
   for(const s of symbols){const q=qMap.get(s);if(!q)continue;const t=el('div','tile');t.append(el('div','t',q.name),el('div','v',price(q)));
-    t.append(el('div','c '+tone(val(q)),move(q,'day')));t.title='Last observation: '+q.asOf;t.onclick=()=>{state.sym=s;renderMain();renderWatch();$('monitor').scrollIntoView({behavior:'smooth'});};t.style.cursor='pointer';$('headline').append(t);}
+    t.append(el('div','c '+tone(val(q)),move(q,'day')));t.title='Last observation: '+q.asOf;t.onclick=()=>{if(q.kind==='yield'){activateWorkspace('bonds');return;}state.sym=s;activateWorkspace('fx',{scroll:false});$('main-pick').value=s;renderMain();renderWatch();$('monitor').scrollIntoView({behavior:'smooth'});};t.style.cursor='pointer';$('headline').append(t);}
 }
 function renderGroups(){wipe('group-pills');['','Equities','ETFs','FX','Rates','Commodities','Crypto'].forEach(g=>{
  const b=el('button','btn'+(state.group===g?' active':''),g||'All');b.onclick=()=>{state.group=g;renderGroups();renderWatch();renderScore();};$('group-pills').append(b);});}
@@ -520,19 +647,19 @@ function companyAmount(x,ccy){
   return (ccy?ccy+' ':'')+fmt(v/scale,ab?2:0)+(ab?' '+ab:'');
 }
 function companySuggestions(){
-  const list=D.companies||[],dl=$('company-suggestions'),sel=$('company-pick');
+  const list=savedCompanyList(),dl=$('company-suggestions'),sel=$('company-pick');
   dl.replaceChildren();sel.replaceChildren();
   for(const c of list){const op=document.createElement('option');op.value=c.name;op.label=c.symbol;dl.append(op);sel.add(new Option(c.name+' ['+c.symbol+']',c.symbol));}
-  if(companyMap.has(state.companySymbol))sel.value=state.companySymbol;
+  if(companyMap.has(state.companySymbol)||indexedStocks.has(state.companySymbol))sel.value=state.companySymbol;
   else if(sel.options.length)state.companySymbol=sel.value;
 }
 function showCompanyAlert(message){const alert=$('company-alert');alert.textContent=message||'';alert.style.display=message?'block':'none';}
 async function selectCompany(query){
   const term=String(query||'').trim().toLowerCase();if(!term)return;
-  const entries=D.companies||[];
+  const entries=savedCompanyList();
   const exact=entries.find(c=>c.symbol.toLowerCase()===term||c.name.toLowerCase()===term);
   const prefix=entries.filter(c=>c.symbol.toLowerCase().startsWith(term)||c.name.toLowerCase().startsWith(term));
-  if(exact||prefix.length===1){state.companySymbol=(exact||prefix[0]).symbol;$('company-pick').value=state.companySymbol;showCompanyAlert('');renderCompany();return;}
+  if(exact||prefix.length===1){openConstituent((exact||prefix[0]).symbol);if(companyMap.has((exact||prefix[0]).symbol)){$('company-pick').value=state.companySymbol;renderCompany();}return;}
   if(prefix.length>1){showCompanyAlert('Several companies match. Select one from the company dropdown.');return;}
   if(location.protocol==='http:'||location.protocol==='https:'){
     showCompanyAlert('Checking selected ticker / company name…');
@@ -553,7 +680,7 @@ async function selectCompany(query){
   showCompanyAlert('Not saved in this snapshot: '+query+'. Add its exchange ticker to --companies and rebuild the HTML; arbitrary online lookup requires a connected server.');
 }
 function renderCompany(){
-  const c=companyMap.get(state.companySymbol);
+  const c=ensureCompany(state.companySymbol);
   if(!c){showCompanyAlert('No company profiles embedded. Rebuild without --no-companies.');
     $('company-name').textContent='No company selected';$('company-kpis').replaceChildren();empty('company-chart','Company price history unavailable.');
     $('company-annual').replaceChildren();return;}
@@ -573,12 +700,13 @@ function renderCompany(){
     ['NET PROFIT · FY '+(c.fiscalEnd?c.fiscalEnd.slice(0,4):'—'),companyAmount(c.netProfit,fundCCY)],
     ['OPERATING PROFIT · FY '+(c.fiscalEnd?c.fiscalEnd.slice(0,4):'—'),companyAmount(c.operatingProfit,fundCCY)],
     ['REVENUE · TTM',companyAmount(c.revenueTTM,fundCCY)],
+    ['NET PROFIT · TTM',companyAmount(c.netIncomeTTM,fundCCY)],
     ['PROFIT MARGIN · TTM',pc(c.profitMarginPct)],
     ['PRICE / BOOK',c.priceToBook==null?'—':fmt(c.priceToBook,2)+'×'],
   ];
   const host=$('company-kpis');host.replaceChildren();for(const [label,value] of kpis){
     const tile=el('div','company-kpi');tile.append(el('div','k',label),el('div','v',value));host.append(tile);}
-  $('company-dates').textContent='Price: '+(c.priceAsOf||'unavailable')+' · Financial reporting currency: '+(fundCCY||'unavailable')+' · Accounts FY ending '+(c.fiscalEnd||'unavailable')+' · Financial source: '+(c.fundamentalSource||'unavailable')+(c.warning?' · Price warning: '+c.warning:'');
+  $('company-dates').textContent='Price: '+(c.priceAsOf||'unavailable')+' · Financial reporting currency: '+(fundCCY||'unavailable')+' · Accounts FY ending '+(c.fiscalEnd||'unavailable')+' · Financial data checked: '+(c.financialAsOf||'not supplied')+' · Financial source: '+(c.fundamentalSource||'unavailable')+(c.warning?' · Price warning: '+c.warning:'');
   $('company-price-date').textContent='Quote units: '+(quoteCCY||'unknown');
   const pts=periods(companyHistory.get(c.symbol)||[],'companyRange');
   const periodMove=pts.length>1&&pts[0].v>0?(pts.at(-1).v/pts[0].v-1)*100:null;
@@ -595,6 +723,57 @@ function renderCompany(){
   }table.append(body);destination.append(table);
 }
 function chosenMoverMarket(){return (D.movers||[]).find(m=>m.id===state.moversMarket)||null;}
+function renderConstituents(){
+  const list=(D.movers||[]).filter(m=>Array.isArray(m.constituents));
+  const pick=$('const-market'),rowsEl=$('const-rows');rowsEl.replaceChildren();
+  if(!list.length){$('const-info').textContent='No constituent data yet. Run a new build with market_movers.py.';return;}
+  if(!list.some(x=>x.id===state.constMarket))state.constMarket=list[0].id;
+  if(pick.options.length!==list.length)pick.replaceChildren(...list.map(m=>new Option(m.name,m.id)));
+  pick.value=state.constMarket;
+  const market=list.find(x=>x.id===state.constMarket);
+  const query=state.constSearch;
+  let rows=(market.constituents||[]).filter(q=>!query||(q.symbol+' '+q.name).toLowerCase().includes(query));
+  const val=(q,k)=>{const f=companyFundamental(q.symbol);const v=f?.[k];return Number.isFinite(Number(v))&&v!=null?Number(v):null;};
+  if(state.constSort==='ticker')rows.sort((a,b)=>a.symbol.localeCompare(b.symbol));
+  else if(state.constSort==='rise')rows.sort((a,b)=>(b.current?b.changePct:-Infinity)-(a.current?a.changePct:-Infinity));
+  else if(state.constSort==='fall')rows.sort((a,b)=>(a.current?a.changePct:Infinity)-(b.current?b.changePct:Infinity));
+  else if(state.constSort==='pe')rows.sort((a,b)=>(val(a,'trailingPE')??Infinity)-(val(b,'trailingPE')??Infinity));
+  else if(state.constSort==='cap')rows.sort((a,b)=>(val(b,'marketCap')??-Infinity)-(val(a,'marketCap')??-Infinity));
+  else if(state.constSort==='profit')rows.sort((a,b)=>(val(b,'netIncomeTTM')??-Infinity)-(val(a,'netIncomeTTM')??-Infinity));
+  else if(state.constSort==='div')rows.sort((a,b)=>(val(b,'dividendYieldPct')??-Infinity)-(val(a,'dividendYieldPct')??-Infinity));
+  else rows.sort((a,b)=>a.name.localeCompare(b.name,'en'));
+  const valuationCount=(market.constituents||[]).filter(q=>val(q,'trailingPE')!=null).length;
+  $('const-count').textContent=rows.length+' / '+market.members+' constituents';
+  $('const-info').textContent=market.name+' · '+market.sameDay+' / '+market.members+' quotes for '+(market.date||'unknown')+
+    ' · P/E available for '+valuationCount+' / '+market.members+' companies ('+fmt(100*valuationCount/Math.max(1,market.members),0)+'%)'+
+    ' · financial coverage grows across scheduled runs; latest downloaded fundamental figures may be older than share prices.';
+  if(!rows.length){const tr=el('tr');const td1=td(tr,'No matching constituents','');td1.colSpan=13;rowsEl.append(tr);return;}
+  for(const q of rows){
+    const f=companyFundamental(q.symbol)||{};
+    const mcCcy=q.currency==='GBp'||q.currency==='GBX'?'GBP':q.currency||'';
+    const finCcy=f.financialCurrency||'';
+    const tr=el('tr');
+    td(tr,q.name);td(tr,q.symbol);
+    td(tr,q.price==null?'—':fmt(q.price,q.price>=1000?1:q.price>=10?2:4)+' '+(q.currency||''),'n');
+    td(tr,q.current?pc(q.changePct):'—','n '+(q.current?tone(q.changePct):'neutral'));
+    td(tr,val(q,'trailingPE')==null?'—':fmt(val(q,'trailingPE'),1)+'×','n');
+    td(tr,val(q,'forwardPE')==null?'—':fmt(val(q,'forwardPE'),1)+'×','n');
+    td(tr,val(q,'dividendYieldPct')==null?'—':pc(val(q,'dividendYieldPct')),'n');
+    td(tr,val(q,'marketCap')==null?'—':companyAmount(val(q,'marketCap'),mcCcy),'n');
+    td(tr,val(q,'revenueTTM')==null?'—':companyAmount(val(q,'revenueTTM'),finCcy),'n');
+    td(tr,val(q,'netIncomeTTM')==null?'—':companyAmount(val(q,'netIncomeTTM'),finCcy),'n');
+    td(tr,q.date||'—',q.current?'':'constituent-stale');
+    td(tr,f.asOf||f.financialAsOf||'—','fundamental-asof');
+    const cell=td(tr,'');const btn=el('button','constituent-open','RESEARCH');btn.type='button';
+    btn.onclick=()=>openConstituent(q.symbol);cell.append(btn);rowsEl.append(tr);
+  }
+}
+function exportConstituents(){
+  const m=(D.movers||[]).find(x=>x.id===state.constMarket);if(!m?.constituents)return;
+  downloadFile('constituents_'+m.id+'_'+(m.date||'unknown')+'.csv',
+    [['name','ticker','price','price_currency','daily_change_percent','quote_date','trailing_pe','forward_pe','dividend_yield_pct','market_cap','market_cap_currency','revenue_ttm','net_income_ttm','financial_currency','financials_checked_at'],
+     ...m.constituents.map(q=>{const f=companyFundamental(q.symbol)||{};return [q.name,q.symbol,q.price,q.currency,q.current?q.changePct:'',q.date,f.trailingPE,f.forwardPE,f.dividendYieldPct,f.marketCap,q.currency==='GBp'||q.currency==='GBX'?'GBP':q.currency,f.revenueTTM,f.netIncomeTTM,f.financialCurrency,f.asOf||f.financialAsOf]})]);
+}
 function renderMoverTable(id,rows,positive){
   const host=$(id);host.replaceChildren();
   if(!rows.length){const tr=el('tr');const cell=el('td','neutral','No stocks available');cell.colSpan=5;tr.append(cell);host.append(tr);return;}
@@ -602,7 +781,7 @@ function renderMoverTable(id,rows,positive){
   rows.forEach((q,i)=>{
     const tr=el('tr'),rank=td(tr,String(i+1).padStart(2,'0'),'mover-rank');
     const name=td(tr,'','name');const link=el('a','',q.name||q.symbol);
-    link.href='https://finance.yahoo.com/quote/'+encodeURIComponent(q.symbol)+'/' ;link.target='_blank';link.rel='noopener noreferrer';
+    link.href='#companies';link.onclick=e=>{e.preventDefault();openConstituent(q.symbol);};
     link.title=q.symbol+' · as of '+(q.asOf||'unknown');
     name.append(link,el('span','secondary',q.symbol));
     const decimals=q.price>=1000?1:q.price>=10?2:4;
@@ -641,17 +820,30 @@ function exportMain(){const q=qMap.get(state.sym);if(!q)return;downloadFile('mar
 function exportCompare(){const chosen=selectedCompare();if(!chosen.length)return;const allDates=[...new Set(chosen.flatMap(q=>(histMap.get(q.symbol)||[]).map(p=>p.date)))].sort();
  const data=new Map(chosen.map(q=>[q.symbol,new Map((histMap.get(q.symbol)||[]).map(p=>[p.date,p.v]))]));
  downloadFile('comparison_levels.csv',[['date',...chosen.map(q=>q.symbol+' ('+q.currency+')')],...allDates.map(date=>[date,...chosen.map(q=>data.get(q.symbol).get(date)??'')])]);}
-function sources(){const w=D.warnings||[];$('source-summary').textContent=(D.quotes||[]).length+' market instruments; '+(D.history||[]).length+' daily closes; '+(D.uk_rates||[]).length+' UK rates dates; '+(D.us_rates||[]).length+' US rates dates; '+(D.eu_rates||[]).length+' euro rates dates; '+(D.macro||[]).length+' economic series; '+(D.movers||[]).length+' equity mover markets; '+(D.companies||[]).length+' company profiles; '+(D.news||[]).length+' news headlines; '+(D.calendar||[]).length+' verified release dates; '+(D.sovereign_yields||[]).length+' sovereign-yield months. Data generated '+(D.generatedAt||'unknown')+'. Cached source series: '+(D.cachedSeries||0)+'.';
+function sources(){const w=D.warnings||[];$('source-summary').textContent=(D.quotes||[]).length+' market instruments; '+(D.history||[]).length+' daily closes; '+(D.uk_rates||[]).length+' UK rates dates; '+(D.us_rates||[]).length+' US rates dates; '+(D.eu_rates||[]).length+' euro rates dates; '+(D.macro||[]).length+' economic series; '+(D.movers||[]).length+' equity mover markets; '+(D.companies||[]).length+' detailed company profiles; '+(D.fundamentalsCoverage?.summaries||0)+' cached constituent financial summaries; '+(D.news||[]).length+' news headlines; '+(D.calendar||[]).length+' verified release dates; '+(D.sovereign_yields||[]).length+' sovereign-yield months. Data generated '+(D.generatedAt||'unknown')+'. Cached source series: '+(D.cachedSeries||0)+'.';
  $('warnings').textContent=w.length?(w.length+' retrieval warning(s): '+w.slice(0,9).join(' | ')+(w.length>9?' | plus '+(w.length-9)+' more':'')):'No reported retrieval failures. The underlying feeds may still contain delayed or stale prices.';
 }
 
 function reorderSections(){
-  const wrap=document.querySelector('.wrap'),foot=wrap.querySelector('footer');
-  // Put most decision-useful information first; section IDs and links stay intact.
-  const order=['news','headline','movers','companies','monitor','rates','real','sovereign','macro','calendar','compare','cross-rates'];
-  order.forEach(id=>{const node=$(id);if(node)wrap.insertBefore(node,foot);});
-  const extra=wrap.querySelector(':scope > section.g2');if(extra)wrap.insertBefore(extra,foot);
-  const src=$('sources');if(src)wrap.insertBefore(src,foot);
+  const wrap=document.querySelector('.wrap'),stage=$('workspace-stage');
+  // Split the former US spread / YTD scoreboard grid into their own workspaces.
+  const pair=wrap.querySelector(':scope > section.g2');
+  if(pair){const children=[...pair.children];if(children[0]){children[0].id='us-spread-panel';wrap.insertBefore(children[0],pair);}
+    if(children[1]){children[1].id='score-panel';wrap.insertBefore(children[1],pair);}pair.remove();}
+  const config=[
+    ['overview','MARKET OVERVIEW','Headlines · indices · FX · key yields',['news','headline','overview-board']],
+    ['equities','GLOBAL EQUITIES','Index movers · constituent-level analysis',['movers','constituents']],
+    ['companies','COMPANY RESEARCH','Share-price histories · valuation · accounts',['companies']],
+    ['bonds','FIXED INCOME','Yield curves · real yields · sovereign spreads',['rates','us-spread-panel','cross-rates','real','sovereign']],
+    ['economics','ECONOMIC DATA','GDP · inflation · policy · release calendar',['macro','calendar']],
+    ['fx','MARKET EXPLORER','Currency · commodities · ETFs · index charts',['monitor']],
+    ['analytics','MULTI-ASSET ANALYTICS','Comparisons · volatility · correlations',['compare','score-panel','sources']]
+  ];
+  for(const [key,title,desc,ids] of config){
+    const view=el('div','workspace-view');view.id='view-'+key;view.dataset.workspace=key;view.setAttribute('role','tabpanel');view.setAttribute('aria-labelledby','tab-'+key);view.hidden=key!=='overview';
+    const head=el('div','workspace-title');const h=document.createElement('h1');h.textContent=title;head.append(h,el('span','',desc));view.append(head);
+    for(const id of ids){const node=$(id);if(node)view.append(node);}stage.append(view);
+  }
 }
 function researchTile(label,value,detail){const item=el('div','research-stat');item.append(el('div','lab',label),el('div','val',value),el('div','obs',detail));return item;}
 function renderNews(){
@@ -724,6 +916,121 @@ function renderSovereign(){
    ' · monthly benchmark 10Y bond yields, not tick-by-tick data · Eurostat irt_lt_mcby_m':'No matching monthly published benchmark yields available for this selection.';
 }
 
+
+const WORKSPACES=['overview','equities','companies','bonds','economics','fx','analytics'];
+let activeWorkspace='overview', searchHits=[], searchCursor=0;
+const workspaceForSection={news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics',sources:'analytics'};
+function paintWorkspace(key){
+  switch(key){
+    case 'overview': renderNews(); renderPulse(); break;
+    case 'equities': renderMovers(); renderConstituents(); break;
+    case 'companies': renderCompany(); break;
+    case 'bonds': renderRates(); usSpread(); renderReal(); renderSovereign(); break;
+    case 'economics': renderMacro(); renderCalendar(); break;
+    case 'fx': renderMain(); renderWatch(); break;
+    case 'analytics': renderCompare(); renderScore(); break;
+  }
+}
+function activateWorkspace(key,options={}){
+  if(!WORKSPACES.includes(key))key='overview';
+  activeWorkspace=key;
+  for(const name of WORKSPACES){const target=$('view-'+name);if(target)target.hidden=name!==key;const tab=$('tab-'+name);
+    if(tab){tab.setAttribute('aria-selected',String(name===key));tab.tabIndex=name===key?0:-1;}}
+  if(options.updateHash!==false && location.hash!=='#'+key)history.replaceState(null,'','#'+key);
+  if(options.scroll!==false)window.scrollTo(0,0);
+  // Draw SVG after the destination panel becomes visible. Hidden panels have zero width.
+  requestAnimationFrame(()=>{paintWorkspace(key);});
+}
+function marketInstrument(symbol){
+  if(!qMap.has(symbol))return;
+  state.sym=symbol;
+  activateWorkspace('fx',{scroll:false});
+  const select=$('main-pick');if(select)select.value=symbol;
+  renderMain();renderWatch();
+  $('monitor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function latestField(records,key){return (records||[]).filter(row=>row[key]!=null).at(-1)||null;}
+function renderPulse(){
+  const host=$('market-pulse');if(!host)return;host.replaceChildren();
+  const sections=[
+   {title:'EQUITY INDICES',items:[['^GSPC','S&P 500'],['^FTSE','FTSE 100'],['^STOXX','STOXX 600'],['^N225','Nikkei 225']]},
+   {title:'FOREIGN EXCHANGE',items:[['GBPUSD=X','GBP / USD'],['EURUSD=X','EUR / USD'],['USDJPY=X','USD / JPY'],['GBPEUR=X','GBP / EUR']]},
+   {title:'COMMODITIES',items:[['BZ=F','Brent crude'],['GC=F','Gold'],['HG=F','Copper'],['NG=F','US natural gas']]},
+   {title:'GOVERNMENT YIELDS',items:[['uk_gilt','UK 10Y gilt'],['us_tsy','US 10Y Treasury'],['eu_gov','Euro-area 10Y'],['bank_rate','BoE Bank Rate']]}
+  ];
+  for(const group of sections){const card=el('div','pulse-group');card.append(el('h3','',group.title));
+    let present=0;
+    for(const [symbol,label] of group.items){
+      const isYield=['uk_gilt','us_tsy','eu_gov','bank_rate'].includes(symbol);
+      const src=isYield?(symbol==='uk_gilt'?latestField(D.uk_rates,'gilt10y'):symbol==='bank_rate'?latestField(D.uk_rates,'bankRate'):symbol==='us_tsy'?latestField(D.us_rates,'DGS10'):latestField(D.eu_rates,'eur10y')):qMap.get(symbol);
+      if(!src)continue;present++;
+      const v=isYield?(symbol==='uk_gilt'?src.gilt10y:symbol==='bank_rate'?src.bankRate:symbol==='us_tsy'?src.DGS10:src.eur10y):src.price;
+      const button=el('button','pulse-row');button.type='button';button.setAttribute('aria-label','Open '+label);
+      const left=el('div');left.append(el('strong','',label),el('span','meta',isYield?((src.date||'')+' · yield %'):(src.currency||'')+' · '+(src.asOf||'').slice(0,10)));
+      const right=el('div','v');right.append(document.createTextNode(fmt(v,isYield?2:Math.abs(v)>100?1:4)+(isYield?'%':'')));
+      if(!isYield)right.append(el('span','change '+tone(src.changePct),pc(src.changePct)));
+      button.append(left,right);button.onclick=()=>isYield?activateWorkspace('bonds'):marketInstrument(symbol);card.append(button);
+    }
+    if(!present)card.append(el('p','search-empty','No recent quotes in this category.'));
+    host.append(card);
+  }
+}
+function searchCatalogue(){
+  const all=[];
+  for(const market of D.movers||[])all.push({kind:'index',label:market.name,code:market.id,detail:'Index constituents · '+market.members+' companies'});
+  for(const item of savedCompanyList())all.push({kind:'company',label:item.name,code:item.symbol,detail:'Company · '+item.symbol});
+  for(const q of D.quotes||[])all.push({kind:'instrument',label:q.name,code:q.symbol,detail:(q.group||'Market')+' · '+q.symbol});
+  return all;
+}
+let fullSearchList=[];
+function closeGlobalResults(){const list=$('global-results');list.hidden=true;$('global-search').setAttribute('aria-expanded','false');}
+function showGlobalResults(){
+  const term=$('global-search').value.trim().toLowerCase(),host=$('global-results');host.replaceChildren();searchHits=[];searchCursor=0;
+  if(!term){closeGlobalResults();return;}
+  const matches=fullSearchList.map(item=>{const code=item.code.toLowerCase(),label=item.label.toLowerCase();
+    const score=code===term||label===term?0:code.startsWith(term)?1:label.startsWith(term)?2:label.includes(term)?3:code.includes(term)?4:99;
+    return {...item,score};}).filter(v=>v.score<99).sort((a,b)=>a.score-b.score||a.label.localeCompare(b.label)).slice(0,9);
+  searchHits=matches;
+  if(!matches.length){host.append(el('div','search-empty','No saved match. Company summaries are collected gradually.'));}
+  else matches.forEach((item,i)=>{const button=el('button','search-choice'+(i===searchCursor?' selected':''));button.type='button';button.setAttribute('role','option');button.setAttribute('aria-selected',String(i===searchCursor));button.append(el('span','',item.label),el('span','subtext',item.detail));
+    button.onclick=()=>chooseGlobalResult(item);host.append(button);});
+  host.hidden=false;$('global-search').setAttribute('aria-expanded','true');
+}
+function highlightGlobalResult(){[...$('global-results').children].forEach((button,i)=>{button.classList.toggle('selected',i===searchCursor);if(button.getAttribute('role')==='option')button.setAttribute('aria-selected',String(i===searchCursor));});}
+function chooseGlobalResult(item){if(!item)return;
+  $('global-search').value='';closeGlobalResults();
+  if(item.kind==='index'){
+    state.constMarket=item.code;state.moversMarket=item.code;
+    activateWorkspace('equities',{scroll:false});renderConstituents();renderMovers();
+    $('constituents').scrollIntoView({behavior:'smooth',block:'start'});
+  }else if(item.kind==='company'){openConstituent(item.code);}
+  else{marketInstrument(item.code);}
+}
+function initWorkspace(){
+  fullSearchList=searchCatalogue();
+  document.querySelectorAll('[data-workspace]').forEach(button=>{
+    if(!button.matches('[role="tab"]'))return;
+    button.onclick=()=>activateWorkspace(button.dataset.workspace);
+    button.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();
+      const idx=WORKSPACES.indexOf(button.dataset.workspace);const next=e.key==='Home'?0:e.key==='End'?WORKSPACES.length-1:(idx+(e.key==='ArrowRight'?1:-1)+WORKSPACES.length)%WORKSPACES.length;
+      activateWorkspace(WORKSPACES[next]);$('tab-'+WORKSPACES[next]).focus();};
+  });
+  document.querySelectorAll('[data-jump]').forEach(button=>button.onclick=()=>activateWorkspace(button.dataset.jump));
+  const input=$('global-search');input.addEventListener('input',showGlobalResults);
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){closeGlobalResults();return;}
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if($('global-results').hidden)showGlobalResults();if(searchHits.length)searchCursor=(searchCursor+(e.key==='ArrowDown'?1:-1)+searchHits.length)%searchHits.length;highlightGlobalResult();}
+    if(e.key==='Enter'){e.preventDefault();if(searchHits.length)chooseGlobalResult(searchHits[searchCursor]);else showGlobalResults();}
+  });
+  document.addEventListener('pointerdown',e=>{if(!e.target.closest('.global-search-wrap'))closeGlobalResults();});
+  document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!e.metaKey&&!e.ctrlKey){e.preventDefault();input.focus();}});
+  window.addEventListener('hashchange',()=>{const key=location.hash.slice(1);activateWorkspace(WORKSPACES.includes(key)?key:workspaceForSection[key]||'overview',{updateHash:false,scroll:false});});
+  let toPaint;window.addEventListener('resize',()=>{clearTimeout(toPaint);toPaint=setTimeout(()=>paintWorkspace(activeWorkspace),170);});
+  const requested=location.hash.slice(1),key=WORKSPACES.includes(requested)?requested:workspaceForSection[requested]||'overview';
+  activateWorkspace(key,{updateHash:false,scroll:false});
+  if(requested && !WORKSPACES.includes(requested) && $(requested)){requestAnimationFrame(()=>$(requested).scrollIntoView({block:'start'}));}
+}
+
 function init(){setLatest();reorderSections();if(!D.quotes.length){empty('main-chart','No quote data embedded. Run: python build_terminal.py');empty('compare-chart','No quote data embedded.');}
   if(D.quotes.length&&!qMap.has(state.sym))state.sym=D.quotes[0].symbol;
   if(D.quotes.length){options($('main-pick'),state.sym);$('main-pick').onchange=e=>{state.sym=e.target.value;renderMain();renderWatch();};
@@ -754,13 +1061,17 @@ function init(){setLatest();reorderSections();if(!D.quotes.length){empty('main-c
   $('macro-region').onchange=e=>{state.macroRegion=e.target.value;state.macro=(METRIC_KEY[state.macroRegion]||{}).inflation;renderMacro();};
   $('macro-compare').onchange=e=>{state.macroCompare=e.target.value;renderMacro();};
   $('movers-market').onchange=e=>{state.moversMarket=e.target.value;renderMovers();};
+  $('const-market').onchange=e=>{state.constMarket=e.target.value;renderConstituents();};
+  $('const-search').oninput=e=>{state.constSearch=e.target.value.trim().toLowerCase();renderConstituents();};
+  $('const-sort').onchange=e=>{state.constSort=e.target.value;renderConstituents();};
+  $('const-export').onclick=exportConstituents;
   $('export-movers').onclick=exportMovers;
   companySuggestions();
-  $('company-pick').onchange=e=>{state.companySymbol=e.target.value;showCompanyAlert('');renderCompany();};
+  $('company-pick').onchange=e=>openConstituent(e.target.value);
   $('company-go').onclick=()=>selectCompany($('company-query').value);
   $('company-query').onkeydown=e=>{if(e.key==='Enter')selectCompany(e.target.value);};
-  $('add-compare').onclick=()=>{if(!qMap.has(state.sym))return;let slot=state.compare.findIndex(s=>!s);if(slot<0)slot=3;state.compare[slot]=state.sym;$('cmp'+slot).value=state.sym;renderCompare();$('compare').scrollIntoView({behavior:'smooth'});};
-  headlines();renderNews();renderCalendar();renderMain();renderWatch();renderMovers();renderCompany();renderCompare();renderRates();usSpread();renderScore();renderMacro();renderReal();renderSovereign();sources();
+  $('add-compare').onclick=()=>{if(!qMap.has(state.sym))return;let slot=state.compare.findIndex(s=>!s);if(slot<0)slot=3;state.compare[slot]=state.sym;$('cmp'+slot).value=state.sym;activateWorkspace('analytics',{scroll:false});renderCompare();$('compare').scrollIntoView({behavior:'smooth'});};
+  headlines();renderNews();renderCalendar();renderMain();renderWatch();renderMovers();renderConstituents();renderCompany();renderCompare();renderRates();usSpread();renderScore();renderMacro();renderReal();renderSovereign();sources();initWorkspace();
 }
 init();
 })();

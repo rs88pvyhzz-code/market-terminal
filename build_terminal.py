@@ -31,6 +31,7 @@ import market_movers
 import company_data
 import regional_data
 import market_intelligence
+import market_fundamentals
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CACHE = ROOT / '.terminal_cache'
@@ -316,7 +317,11 @@ def demo_data():
         'SYNTHETIC DEMO','UK','policy',False))
     companies, company_history = company_data.demo_companies()
     extras=market_intelligence.demo_extras(end)
-    return {**extras,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
+    demo_f=[{'symbol':c['symbol'],'trailingPE':c.get('trailingPE'),'forwardPE':c.get('forwardPE'),
+              'marketCap':c.get('marketCap'),'dividendYieldPct':c.get('dividendYieldPct'),
+              'revenueTTM':c.get('revenueTTM'),'netIncomeTTM':c.get('netIncomeTTM'),
+              'financialCurrency':c.get('financialCurrency'),'asOf':'SYNTHETIC DEMO'} for c in companies]
+    return {**extras,'fundamentals':demo_f,'fundamentalsCoverage':{'eligible':0,'available':0,'summaries':len(demo_f),'fetchedThisRun':0},'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
             'companies':companies,'company_history':company_history,
             'movers':market_movers.demo_movers(),'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),
             'demo':True,'warnings':['DEMONSTRATION ONLY: all values and historical series are synthetic.'],
@@ -360,7 +365,7 @@ def build(opts):
               'Bank of England','UK','policy',False,'https://www.bankofengland.co.uk/boeapps/database/Bank-Rate.asp'))
     warnings.extend(regional_warnings)
     order_macro={x[1]:i for i,x in enumerate(FRED_MACRO)}
-    macro.sort(key=lambda x:order_macro.get(x['key'], len(order_macro)))
+    macro.sort(key=lambda x:order_macro.get(x['key'],len(order_macro)))
     us,uswarn,n_us_cached=parse_us_rates(opts);cached_count+=n_us_cached
     warnings.extend('FRED '+w for w in uswarn)
     us_real,realwarn,n_real_cached=market_intelligence.collect_us_real(sys.modules[__name__],opts)
@@ -395,7 +400,13 @@ def build(opts):
                 except Exception as exc: warnings.append(f'Company {sym}: {exc}')
         company_order={sym:i for i,(sym,_) in enumerate(selections)}
         companies.sort(key=lambda r:company_order.get(r['symbol'],9999))
-    return {'news':news,'calendar':calendar,'us_real':us_real,'sovereign_yields':sovereign,
+    fundamentals, fcoverage, fwarnings=market_fundamentals.collect(
+        movers,companies, ROOT/'.terminal_fundamentals', batch_size=opts.fundamentals_batch,
+        offline=opts.offline or opts.no_fundamentals)
+    warnings.extend(fwarnings)
+    print(f'Fundamentals: {fcoverage["summaries"]} of {fcoverage["eligible"]} unique constituents have summaries; {fcoverage["available"]} have P/E',flush=True)
+    return {'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
+            'news':news,'calendar':calendar,'us_real':us_real,'sovereign_yields':sovereign,
         'companies':companies,'company_history':company_history,
        'movers':movers,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
        'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),'demo':False,
@@ -415,9 +426,12 @@ def main():
     p.add_argument('--no-movers',action='store_true',help='skip constituent-level mover downloads')
     p.add_argument('--companies',default='',help='extra company tickers separated by commas (e.g. SHEL.L,MSFT)')
     p.add_argument('--no-companies',action='store_true',help='skip detailed company collection')
+    p.add_argument('--fundamentals-batch',type=int,default=40,help='maximum new constituent financial summaries per build (default 40)')
+    p.add_argument('--no-fundamentals',action='store_true',help='read existing financial cache only')
     a=p.parse_args()
     if not 1<=a.years<=25: p.error('--years must be 1–25')
     if not 1<=a.workers<=6: p.error('--workers must be 1–6')
+    if not 0<=a.fundamentals_batch<=150:p.error('--fundamentals-batch must be 0–150')
     if not a.no_movers:
         unknown=set(a.movers_markets.upper().split(','))-set(market_movers.MARKET_CONFIG)
         if unknown: p.error('unknown movers market(s): '+', '.join(sorted(unknown)))
