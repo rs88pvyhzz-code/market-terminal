@@ -1,4 +1,3 @@
-
 name: Refresh and publish Market Terminal
 
 on:
@@ -41,15 +40,21 @@ jobs:
           python build_terminal.py --years 20
           --workers 2 --cache-hours 0
           --movers-markets FTSE100,FTSE250,SP500,NASDAQ100
+          --mover-history-limit 30
+          --company-news-limit 20
+          --companies AXON,CCH.L,SHAW.L
           --output terminal.html
 
       - name: Check market data
         run: python verify_snapshot.py terminal.html
 
-      - name: Prepare website
+      - name: Prepare website and persistent cache
         run: |
           mkdir -p public
           cp terminal.html public/index.html
+          if test -f .terminal_fundamentals/fundamental_summaries.json; then
+            cp .terminal_fundamentals/fundamental_summaries.json public/fundamentals_cache.json
+          fi
           touch public/.nojekyll
 
       - name: Configure Pages
