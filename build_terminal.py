@@ -33,6 +33,7 @@ import regional_data
 import market_intelligence
 import market_fundamentals
 import market_price_history
+import gilt_market
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CACHE = ROOT / '.terminal_cache'
@@ -434,14 +435,21 @@ def build(opts):
         sys.modules[__name__], opts, movers, company_history,
         cache_dir=ROOT/'.terminal_price_history', batch=opts.price_history_batch)
     warnings.extend(history_warnings)
-    return {'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
+    # Optional individual UK government-bond indicative clean-price snapshot.
+    # Never invent missing quotes; source and date are retained for every bond.
+    gilts,gilt_history,gilt_warnings,gilt_cached=gilt_market.collect(sys.modules[__name__],opts)
+    warnings.extend(gilt_warnings)
+    cached_count+=gilt_cached
+    print(f'Gilts: {len(gilts)} conventional bonds, {sum(x["quoted"] for x in gilts)} dated clean-price quotes; {len(gilt_history)} saved observations',flush=True)
+    return {'gilts':gilts,'gilt_history':gilt_history,
+'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
             'priceHistorySymbols':history_symbols,'priceHistoryCoverage':history_coverage,
             'company_news':company_news,
             'news':news,'calendar':calendar,'us_real':us_real,'sovereign_yields':sovereign,
         'companies':companies,'company_history':company_history,
        'movers':movers,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
        'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),'demo':False,
-       'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank'],
+       'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank','Dividenddata public indicative gilt listings (optional)'],
        'yearsRequested':opts.years,'cachedSeries':cached_count}
 
 def main():

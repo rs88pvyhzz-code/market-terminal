@@ -158,27 +158,110 @@ def parse_ecb_meetings(raw,today=None):
     return results
 
 
+def parse_ons_api_releases(raw,today=None):
+    """ONS's official upcoming-releases search API, not the published-only RSS feed.
+
+    Source: https://developer.ons.gov.uk/search/search-releases/
+    Only confirmed dates explicitly supplied by the ONS are included.
+    """
+    from zoneinfo import ZoneInfo
+    today=today or dt.date.today()
+    content=json.loads(raw)
+    if not isinstance(content,dict) or not isinstance(content.get('releases'),list):
+        raise ValueError('Unexpected ONS release API response')
+    whitelist=re.compile(r'GDP|gross domestic|consumer price|inflation|retail sales|\bemployment\b|'
+                         r'unemployment|labour market|average weekly earnings|public sector finances|'
+                         r'UK trade|balance of payments|index of (production|services)|'
+                         r'business investment|productivity|construction output',re.I)
+    events=[];seen=set()
+    for row in content['releases']:
+        if not isinstance(row,dict):continue
+        desc=row.get('description') or {}
+        title=(desc.get('title') or row.get('title') or '').strip()
+        if not title or not whitelist.search(title) or desc.get('cancelled') or desc.get('postponed'):continue
+        if not desc.get('finalised',row.get('finalised',False)):continue
+        stamp=desc.get('release_date') or row.get('release_date')
+        if not stamp:continue
+        try:
+            when=dt.datetime.fromisoformat(stamp.replace('Z','+00:00'))
+            if when.tzinfo is None:when=when.replace(tzinfo=dt.timezone.utc)
+            london=when.astimezone(ZoneInfo('Europe/London'))
+        except (ValueError,TypeError):continue
+        day=london.date()
+        if not today<=day<=today+dt.timedelta(days=120):continue
+        # Do not present a separate time-series release as another headline when
+        # the substantive release is also published on the same day.
+        if re.search(r'time series$',title,re.I):continue
+        slug=(row.get('uri') or '').strip()
+        url='https://www.ons.gov.uk'+slug if slug.startswith('/') else 'https://www.ons.gov.uk/releasecalendar'
+        key=(day.isoformat(),title.casefold())
+        if key in seen:continue
+        seen.add(key)
+        events.append({'date':day.isoformat(),'region':'UK','title':title[:180],
+            'url':url,'source':'ONS official calendar','time':london.strftime('%H:%M')+' UK'})
+    return sorted(events,key=lambda a:(a['date'],a['title']))
+
+
+# Confirmed Bank of England MPC announcement dates, sourced from the BoE's
+# published 2026 and 2027 calendar. Replace when the Bank revises its schedule.
+# https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates
+CONFIRMED_BOE_MPC_DATES=(
+    '2026-12-17','2027-02-04','2027-03-18','2027-04-29',
+    '2027-06-17','2027-07-29','2027-09-16','2027-11-04','2027-12-16')
+
+def boe_mpc_upcoming(today=None):
+    today=today or dt.date.today()
+    return [{'date':iso,'region':'UK','title':'Bank of England MPC rate decision and minutes',
+             'url':'https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates',
+             'source':'Bank of England (confirmed schedule)','time':'12:00 UK'}
+            for iso in CONFIRMED_BOE_MPC_DATES
+            if today<=dt.date.fromisoformat(iso)<=today+dt.timedelta(days=120)]
+
 def collect_calendar(core,opts):
-    """Retrieve multiple official calendar sources; failure of one is isolated."""
+    """Official ONS search API plus independent US and ECB calendars."""
+    out=boe_mpc_upcoming();warnings=[];n_cached=0
+    from_date=dt.date.today()
+    params=urllib.parse.urlencode({
+      'release-type':'type-upcoming','sort':'release_date_asc',
+      'fromDate':from_date.isoformat(),
+      'toDate':(from_date+dt.timedelta(days=120)).isoformat(),
+      'limit':500, 'offset':0})
+    api='https://api.beta.ons.gov.uk/v1/search/releases?'+params
+    try:
+        raw,c,msg=core.get_bytes(api,'ons_upcoming_api_v2',opts.offline,opts.cache_hours)
+        rows=parse_ons_api_releases(raw)
+        if not rows:raise ValueError('ONS returned no confirmed significant economic releases')
+        out.extend(rows);n_cached+=int(c)
+        if 'stale cache' in msg:warnings.append('ONS calendar: stale API cache')
+    except Exception as e:
+        warnings.append('ONS API unavailable: '+str(e)[:125])
+        try:
+            url='https://www.ons.gov.uk/releasecalendar?rss&release-type=type-upcoming&sort=date-newest&limit=100'
+            raw,c,msg=core.get_bytes(url,'official_calendar_ons',opts.offline,opts.cache_hours)
+            rows=parse_ons_upcoming(raw)
+            out.extend(rows);n_cached+=int(c)
+            if not rows:warnings.append('ONS RSS fallback also returned no confirmed upcoming releases')
+        except Exception as e2:warnings.append('ONS RSS fallback: '+str(e2)[:125])
     feeds=[
-        ('ONS','https://www.ons.gov.uk/releasecalendar?rss&release-type=type-upcoming&sort=date-newest&limit=100',
-          parse_ons_upcoming),
-        ('BLS','https://www.bls.gov/schedule/news_release/bls.ics',parse_bls_ics),
-        ('ECB','https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html',parse_ecb_meetings),
+      ('BLS','https://www.bls.gov/schedule/news_release/bls.ics',parse_bls_ics),
+      ('ECB','https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html',parse_ecb_meetings),
     ]
-    out=[];warnings=[];n_cached=0
     for name,url,parser in feeds:
         try:
-            raw,is_cached,msg=core.get_bytes(url,'official_calendar_'+name.lower(),opts.offline,opts.cache_hours)
+            raw,c,msg=core.get_bytes(url,'official_calendar_'+name.lower(),opts.offline,opts.cache_hours)
             rows=parser(raw)
-            out+=rows;n_cached+=int(is_cached)
-            if not rows:warnings.append(name+' calendar: no future dated releases could be verified from source')
-            if 'stale cache' in msg:warnings.append(name+' calendar: stale cached release schedule')
-        except Exception as e:warnings.append(name+' calendar: '+str(e))
-    # Deduplicate identical title/date combinations; sort chronologically.
+            out.extend(rows);n_cached+=int(c)
+            if not rows:warnings.append(name+' calendar: no future dated releases verified')
+            if 'stale cache' in msg:warnings.append(name+' calendar: stale cached schedule')
+        except Exception as e:warnings.append(name+' calendar: '+str(e)[:120])
     unique={}
     for event in out:unique[(event['region'],event['date'],event['title'])]=event
-    return sorted(unique.values(),key=lambda e:(e['date'],e['region']))[:40],warnings,n_cached
+    result=sorted(unique.values(),key=lambda e:(e['date'],e['region']))
+    # Retain UK releases even when US and EU collectively exceed display limit.
+    # The user switches between regional filters in the UI.
+    uk=[x for x in result if x['region']=='UK'][:32]
+    other=[x for x in result if x['region']!='UK'][:32]
+    return sorted(uk+other,key=lambda e:(e['date'],e['region']))[:64],warnings,n_cached
 
 def collect_us_real(core,opts):
     bydate={};warnings=[];cached=0

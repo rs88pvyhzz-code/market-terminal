@@ -224,6 +224,10 @@ def publish_cache(public, cache_dir=DEFAULT_DIR):
         count += 1
     public.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(cache_file,public/CACHE_NAME)
+    # Retain accumulated indicative UK gilt quotes across isolated GitHub runners.
+    gilt_cache=pathlib.Path(__file__).resolve().parent/'.terminal_gilt_history.json'
+    if gilt_cache.exists():
+        shutil.copyfile(gilt_cache,public/'gilt_history_cache.json')
     print(f'Published {count} per-company history files and compressed cache',flush=True)
     return count
 
