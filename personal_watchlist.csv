@@ -1,22 +1,23 @@
-symbol,name,asset_type
-VAPX.L,Vanguard FTSE Developed Asia Pacific ex Japan ETF,etf
-VUAG.L,Vanguard S&P 500 UCITS ETF Accumulating,etf
-VUSA.L,Vanguard S&P 500 UCITS ETF Distributing,etf
-VJPB.L,Vanguard FTSE Japan UCITS ETF Accumulating,etf
-XDEX.L,Xtrackers MSCI Emerging Markets ex China ETF,etf
-XMJP.L,Xtrackers MSCI Japan UCITS ETF,etf
-III.L,3i Group plc,investment_trust
-VUKE.L,Vanguard FTSE 100 UCITS ETF,etf
-VERX.L,Vanguard FTSE Developed Europe ex UK ETF,etf
-CUKX.L,iShares Core FTSE 100 UCITS ETF,etf
-CSPX.L,iShares Core S&P 500 UCITS ETF,etf
-RCP.L,RIT Capital Partners,investment_trust
-SMT.L,Scottish Mortgage Investment Trust,investment_trust
-SHEL.L,Shell plc,stock
-SIE.DE,Siemens AG,stock
-VV,Vanguard Large-Cap ETF,etf
-VBK,Vanguard Small-Cap Growth ETF,etf
-VHT,Vanguard Health Care ETF,etf
-XDEW.L,Xtrackers S&P 500 Equal Weight UCITS ETF,etf
-SKWD,Skyward Specialty Insurance Group,stock
-VALL.L,Vanguard FTSE Global All-Cap UCITS ETF Accumulating,etf
+symbol,name,asset_type,benchmark
+AXON,Axon Enterprise Inc,stock,^GSPC
+VAPX.L,Vanguard FTSE Developed Asia Pacific ex Japan ETF,etf,EFA
+VUAG.L,Vanguard S&P 500 UCITS ETF Accumulating,etf,^GSPC
+VUSA.L,Vanguard S&P 500 UCITS ETF Distributing,etf,^GSPC
+VJPB.L,Vanguard FTSE Japan UCITS ETF Accumulating,etf,^N225
+XDEX.L,Xtrackers MSCI Emerging Markets ex China ETF,etf,EEM
+XMJP.L,Xtrackers MSCI Japan UCITS ETF,etf,^N225
+III.L,3i Group plc,investment_trust,^FTSE
+VUKE.L,Vanguard FTSE 100 UCITS ETF,etf,^FTSE
+VERX.L,Vanguard FTSE Developed Europe ex UK ETF,etf,^STOXX
+CUKX.L,iShares Core FTSE 100 UCITS ETF,etf,^FTSE
+CSPX.L,iShares Core S&P 500 UCITS ETF,etf,^GSPC
+RCP.L,RIT Capital Partners,investment_trust,ACWI
+SMT.L,Scottish Mortgage Investment Trust,investment_trust,ACWI
+SHEL.L,Shell plc,stock,^FTSE
+SIE.DE,Siemens AG,stock,^GDAXI
+VV,Vanguard Large-Cap ETF,etf,^GSPC
+VBK,Vanguard Small-Cap Growth ETF,etf,^RUT
+VHT,Vanguard Health Care ETF,etf,^GSPC
+XDEW.L,Xtrackers S&P 500 Equal Weight UCITS ETF,etf,^GSPC
+SKWD,Skyward Specialty Insurance Group,stock,^GSPC
+VALL.L,Vanguard FTSE Global All-Cap UCITS ETF Accumulating,etf,ACWI

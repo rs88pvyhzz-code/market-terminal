@@ -234,7 +234,15 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 .watchlist-advanced{border:1px solid #38343a;border-radius:5px;padding:10px;background:#121215}
 .watchlist-advanced summary{color:#f1b55c;font:600 12px var(--font);cursor:pointer;margin-bottom:9px}
 .watchlist-advanced:not([open]) summary{margin-bottom:0}
-#watchlist-chart{min-height:310px}
+#watchlist-chart,#watchlist-relative-chart{min-height:290px}
+.watchlist-risk{background:#141416;border:1px solid #37323a;border-radius:5px;padding:12px;margin:10px 0}
+.watchlist-risk .row h3{color:#ffad43}
+.watchlist-relative-legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font:11px var(--font);margin-top:8px}
+.watchlist-relative-legend .security{color:#ffa028}.watchlist-relative-legend .benchmark{color:#60d5ce}
+.watchlist-risk-alert{border-left:3px solid #f4a442;padding:7px 9px;background:#272017;color:#eac79b;font:11px var(--font);margin:8px 0}
+.watchlist-risk .watchlist-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:1100px){.watchlist-risk .watchlist-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.watchlist-risk .watchlist-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:1100px){.watchlist-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:800px){.watchlist-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.watchlist-bottom{grid-template-columns:1fr}.watchlist-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:460px){.watchlist-controls{grid-template-columns:1fr}.watchlist-selected-header h3{font-size:15px}}
@@ -301,6 +309,17 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   </div>
   <div class="period-controls watchlist-ranges" id="watchlist-ranges" aria-label="Share price history period"></div>
   <div class="chart" id="watchlist-chart" role="img" aria-label="Historical security price"></div>
+  <section class="watchlist-risk" aria-label="Risk and momentum analysis">
+    <div class="row"><h3>RISK, MOMENTUM &amp; BENCHMARK</h3><span id="watchlist-risk-period" class="mini">Based on observed prices only</span></div>
+    <p id="watchlist-risk-note" class="note">Beta, volatility and correlation require enough matching daily observations. Missing values remain blank.</p>
+    <div id="watchlist-anomaly" class="watchlist-risk-alert" hidden></div>
+    <div class="watchlist-kpis" id="watchlist-risk-kpis"></div>
+    <div class="row"><div><h3>PERFORMANCE AGAINST REFERENCE INDEX</h3>
+      <p id="watchlist-relative-meta" class="note">Both price series rebased to 100 on their first shared date. Comparison uses a common currency.</p></div></div>
+    <div class="chart" id="watchlist-relative-chart" role="img" aria-label="Security and benchmark indexed performance"></div>
+    <div class="watchlist-relative-legend"><span class="security">■ Security</span><span class="benchmark">■ Reference index / proxy</span></div>
+    <p class="note">Beta and correlation use one-year daily price returns with matching dates and currencies. References are broad market proxies, not necessarily each fund's official tracking index. Figures are historical, not forecasts.</p>
+  </section>
   <div class="watchlist-bottom">
     <section class="watchlist-news" aria-label="News for selected security">
       <div class="row"><h3>KEY COMPANY NEWS</h3><span class="mini" id="watchlist-news-time"></span></div>
@@ -1232,7 +1251,9 @@ function renderDataQuality(){
  ['US Treasuries priced',q.pricedUSTreasuries??'—','Dated, not real-time'],
  ['Corporate credit feeds',(D.credit_spreads||[]).length+' / 6','Dated FRED / ICE BofA OAS'],
  ['Market valuation coverage',(D.market_valuations||[]).filter(v=>v.trailingPEProxy!=null).length+' / '+(D.market_valuations||[]).length,'Partial and positive earnings only'],
- ['Company event dates',(D.company_events||[]).length,'Indicative unless issuer-sourced']];
+ ['Company event dates',(D.company_events||[]).length,'Indicative unless issuer-sourced'],
+ ['Watchlist 1Y risk histories',(D.watchlistCoverage?.riskHistoryEligible??'—')+' / '+(D.watchlistCoverage?.quoteEligible??'—'),'At least 120 daily closes over 180 calendar days'],
+ ['Watchlist price anomalies',D.watchlistCoverage?.priceAnomalies??'—','Large discontinuities flagged; not deleted']];
  for(const [name,value,description] of tiles)host.append(researchTile(name,String(value),description));
  const indexHost=$('dq-indices');indexHost.replaceChildren();
  const rows=q.indexCoverage||[];if(rows.length){
@@ -1479,6 +1500,125 @@ function watchRows(){let rows=watchlistRecords.filter(w=>(watchState.kind==='all
  if(watchState.sort==='pe')rows.sort((a,b)=>(val(a,'trailingPE')??Infinity)-(val(b,'trailingPE')??Infinity));
  return rows;
 }
+// Benchmark comparison: matching local trading dates, currency harmonisation,
+// no interpolation, and no artificial three-year statistics for new listings.
+const watchRiskCache=new Map();
+const watchCurrency=(c)=>c==='GBp'||c==='GBX'?'GBP':String(c||'').toUpperCase();
+const watchSpanDays=(a,b)=>(Date.parse(b+'T12:00:00Z')-Date.parse(a+'T12:00:00Z'))/86400000;
+function watchAligned(w,q,range='1Y',adjusted=false){
+ const sym=w.benchmark||'',bench=qMap.get(sym),raw=histMap.get(sym)||[];
+ if(!sym||!bench||raw.length<2)return {rows:[],bench,reason:'Reference index not available in this market snapshot.'};
+ const own=(watchHistoryMap.get(w.symbol)||[]).filter(r=>Array.isArray(r)&&r[1]>0)
+   .map(r=>({date:r[0],v:adjusted?(r[2]??null):r[1]})).filter(r=>r.v>0).sort((a,b)=>a.date.localeCompare(b.date));
+ if(own.length<2)return {rows:[],bench,reason:'Security price history is unavailable.'};
+ const last=own.at(-1).date;
+ const cutoff=range==='MAX'?'0000-01-01':startOf(last,range);
+ const first=own.find(r=>r.date>=cutoff)?.date||last;
+ const dates=new Map(own.filter(r=>r.date>=first).map(r=>[r.date,r.v]));
+ const sameCurrency=watchCurrency(q?.currency)===watchCurrency(bench.currency);
+ const rows=[];
+ for(const b of raw){if(!dates.has(b.date)||b.date<first||!(b.v>0))continue;
+  const a=dates.get(b.date);const bv=adjusted&&b.adj>0?b.adj:b.v;
+  const av=sameCurrency?a:priceToGBP(a,q?.currency||'',b.date);
+  const indexv=sameCurrency?bv:priceToGBP(bv,bench.currency,b.date);
+  if(av>0&&indexv>0)rows.push({date:b.date,a:av,b:indexv});
+ }
+ if(rows.length<2)return {rows,bench,reason:'Fewer than two common trading dates with matching FX rates.'};
+ return {rows,bench,converted:!sameCurrency};
+}
+function watchReturns(rows,key){const out=[];for(let i=1;i<rows.length;i++){
+ const gap=watchSpanDays(rows[i-1].date,rows[i].date);
+ if(gap<1||gap>7)continue;
+ const r=Math.log(rows[i][key]/rows[i-1][key]);if(Number.isFinite(r))out.push(r);
+ }return out;
+}
+function watchSampleVol(xs){if(xs.length<2)return null;let mean=xs.reduce((a,b)=>a+b,0)/xs.length;
+ return Math.sqrt(252*xs.reduce((z,x)=>z+(x-mean)**2,0)/(xs.length-1))*100;
+}
+function watchTechnical(w){
+ const rows=(watchHistoryMap.get(w.symbol)||[]).filter(x=>Array.isArray(x)&&x[1]>0)
+   .map(x=>({date:x[0],v:Number(x[1])})).sort((a,b)=>a.date.localeCompare(b.date));
+ if(rows.length<2)return {bars:0,span:0,sma20:null,sma50:null,sma200:null,rsi:null,drawdown:null,volatility:null,beta:null,corr:null,obs:0,bench:null};
+ const last=rows.at(-1).date;
+ const sample=rows.filter(r=>watchSpanDays(r.date,last)<=365);
+ const len=sample.length,span=watchSpanDays(sample[0].date,last);
+ const avg=n=>rows.length>=n?rows.slice(-n).reduce((a,b)=>a+b.v,0)/n:null;
+ let rsi=null;
+ if(rows.length>=15){const last15=rows.slice(-15);let gain=0,loss=0;
+  for(let i=1;i<last15.length;i++){let d=last15[i].v-last15[i-1].v;gain+=Math.max(0,d);loss+=Math.max(0,-d);}
+  // 14-session RSI. An unbroken, non-thinned last 14 sessions is required.
+  const gaps=last15.slice(1).every((p,i)=>watchSpanDays(last15[i].date,p.date)<=7);
+  if(gaps)rsi=loss===0?(gain===0?50:100):100-100/(1+gain/loss);
+ }
+ let high=0,minDD=0;for(const x of sample){high=Math.max(high,x.v);minDD=Math.min(minDD,(x.v/high-1)*100);}
+ const recentReturns=watchReturns(sample.map(r=>({date:r.date,a:r.v})),'a');
+ const enough=len>=120&&span>=180;
+ const vol=enough?watchSampleVol(recentReturns):null;
+ const benchPair=watchAligned(w,watchQuoteMap.get(w.symbol),'1Y',false);
+ const paired=benchPair.rows;
+ let beta=null,corr=null,observations=0;
+ const xa=[],xb=[];
+ for(let i=1;i<paired.length;i++){
+  if(watchSpanDays(paired[i-1].date,paired[i].date)>7)continue;
+  const x=Math.log(paired[i].a/paired[i-1].a),y=Math.log(paired[i].b/paired[i-1].b);
+  if(Number.isFinite(x)&&Number.isFinite(y)){xa.push(x);xb.push(y);}
+ }
+ observations=xa.length;
+ const alignedSpan=paired.length>1?watchSpanDays(paired[0].date,paired.at(-1).date):0;
+ if(observations>=120&&alignedSpan>=180){
+  const av=xa.reduce((a,b)=>a+b,0)/observations,bv=xb.reduce((a,b)=>a+b,0)/observations;
+  let va=0,vb=0,cov=0;for(let i=0;i<observations;i++){
+    let da=xa[i]-av,db=xb[i]-bv;va+=da*da;vb+=db*db;cov+=da*db;}
+  beta=vb>1e-12?cov/vb:null;corr=va>1e-12&&vb>1e-12?cov/Math.sqrt(va*vb):null;
+ }
+ return {bars:len,span,sma20:avg(20),sma50:avg(50),sma200:avg(200),rsi,
+   drawdown:len>=20?minDD:null,drawdownLabel:span>=300?'Last 12 months':'Available period only',
+   volatility:vol,beta,corr,obs:observations,bench:benchPair.bench,
+   currencyBasis:benchPair.converted?'GBP converted':watchCurrency(watchQuoteMap.get(w.symbol)?.currency),
+   benchError:benchPair.reason||null};
+}
+function renderWatchlistRisk(w,q){
+ const host=$('watchlist-risk-kpis');host.replaceChildren();const r=watchTechnical(w),unit=q?.currency||'';
+ const val=(x,p=1)=>x==null||!Number.isFinite(x)?'—':fmt(x,p);
+ const showPrice=x=>x==null?'—':fmt(x,x>=100?1:2)+' '+unit;
+ const rsi=r.rsi==null?'Insufficient trading sessions':r.rsi>=70?'Above 70 · strong momentum':r.rsi<=30?'Below 30 · weak momentum':'Neutral momentum band';
+ const entries=[
+  ['ANNUALISED VOLATILITY',r.volatility==null?'—':val(r.volatility)+'%','1Y daily log returns · ≥120 samples'],
+  ['BETA TO REFERENCE',val(r.beta,2),'Daily matched price returns · '+(r.currencyBasis||'common currency')],
+  ['CORRELATION TO REFERENCE',val(r.corr,2),'Pearson daily return correlation'],
+  ['MAX DRAWDOWN',r.drawdown==null?'—':val(r.drawdown)+'%',r.drawdownLabel||'Based on available prices'],
+  ['RSI (14)',val(r.rsi,1),rsi],
+  ['20-DAY MOVING AVERAGE',showPrice(r.sma20),'Last 20 trading closes · SMA'],
+  ['50-DAY MOVING AVERAGE',showPrice(r.sma50),'Last 50 trading closes · SMA'],
+  ['200-DAY MOVING AVERAGE',showPrice(r.sma200),'Last 200 trading closes · SMA'],
+  ['BETA OBSERVATIONS',String(r.obs||0),'Matched daily pairs in latest 12 months'],
+  ['REFERENCE INDEX',r.bench?.name||w.benchmark||'—',(r.bench?.symbol||w.benchmark||'')+' · comparison proxy']
+ ];
+ for(const [label,value,info] of entries)host.append(watchValTile(label,value,info));
+ const from=watchHistoryMap.get(w.symbol)?.[0]?.[0]||'unknown';
+ $('watchlist-risk-period').textContent=r.bars+' daily closes in latest year · earliest '+from;
+ $('watchlist-risk-note').textContent='One-year realised risk uses unadjusted daily prices; at least 120 daily returns over 180 calendar days are required for volatility, beta and correlation. ' +
+  (r.volatility==null?'Insufficient observations: these measures are deliberately blank. ':'')+
+  'RSI and moving averages use available daily closes. Benchmark: '+(r.bench?.name||w.benchmark||'not available')+'.';
+ const warning=q?.historyWarning||q?.anomalyWarning||'';
+ $('watchlist-anomaly').hidden=!warning;$('watchlist-anomaly').textContent=warning;
+}
+function renderWatchlistRelative(w,q){
+ const found=watchAligned(w,q,watchState.range,watchState.basis.startsWith('adjusted'));
+ const host=$('watchlist-relative-meta');
+ if(found.reason){empty('watchlist-relative-chart',found.reason);host.textContent=found.reason;return;}
+ const pts=found.rows,first=pts[0],last=pts.at(-1),span=watchSpanDays(first.date,last.date);
+ const a=pts.map(p=>({date:p.date,v:100*p.a/first.a})),b=pts.map(p=>({date:p.date,v:100*p.b/first.b}));
+ const diff=a.at(-1).v-b.at(-1).v;
+ const partial=watchState.range==='MAX'?false:span<({'1M':20,'3M':65,'6M':125,'1Y':285,'3Y':900,'5Y':1550,'10Y':3000,'YTD':0}[watchState.range]||0);
+ host.textContent=(partial?'PARTIAL HISTORY — ':'')+first.date+' to '+last.date+' ('+Math.round(span)+' days). '+
+  w.symbol+' '+pc(a.at(-1).v-100)+' vs '+(found.bench?.name||w.benchmark)+' '+pc(b.at(-1).v-100)+
+  ' · relative '+pc(diff)+' percentage points · '+(found.converted?'Both translated to GBP at dated FX rates':'Same quoted currency')+
+  ' · '+(watchState.basis.startsWith('adjusted')?'adjusted returns where supplied; the index may remain price only':'price return only; no dividends')+'.';
+ chart('watchlist-relative-chart',[{name:w.symbol+' (rebased)',pts:a,color:AMBER},{name:(found.bench?.name||w.benchmark)+' (rebased)',pts:b,color:AQUA}],
+  {format:v=>fmt(v,1),aria:w.name+' compared with '+(found.bench?.name||w.benchmark)});
+}
+
 function watchPriceRisk(symbol){
  // Source observations only; 252-session realised price volatility and one-year drawdown.
  const rows=(watchHistoryMap.get(symbol)||[]).filter(a=>Array.isArray(a)&&a[1]>0).map(a=>({date:a[0],price:Number(a[1])}));
@@ -1538,14 +1678,19 @@ function renderWatchlistChart(w,q){
  $('watchlist-basis').value=watchState.basis;
  const controls=$('watchlist-ranges');controls.replaceChildren();
  for(const range of WATCH_RANGES){const btn=el('button','btn'+(range===watchState.range?' active':''),range);
-  btn.type='button';btn.onclick=()=>{watchState.range=range;renderWatchlistChart(w,q);};controls.append(btn);}
+  btn.type='button';btn.onclick=()=>{watchState.range=range;renderWatchlistChart(w,q);renderWatchlistRelative(w,q);};controls.append(btn);}
  const found=watchSeries(w,q),pts=found.pts;
  const adj=watchState.basis.startsWith('adjusted'),gbp=watchState.basis.endsWith('gbp');
  const units=gbp?'GBP per share':(q?.currency||'native quoted units');
  if(found.error){empty('watchlist-chart',found.error);$('watchlist-history-meta').textContent=found.error;return;}
  const move=100*(pts.at(-1).v/pts[0].v-1);
- $('watchlist-history-meta').textContent=watchState.range+' · '+(adj?'Dividend-adjusted price proxy':'Price')+' move '+pc(move)+
-  ' · '+pts[0].date+' to '+pts.at(-1).date+' · '+units+' · price returns exclude dividends unless adjusted is selected; FX conversion uses dated historical observations.';
+ const span=watchSpanDays(pts[0].date,pts.at(-1).date);
+ const periodMin={'1M':20,'3M':65,'6M':125,'1Y':285,'3Y':900,'5Y':1550,'10Y':3000};
+ const incomplete=watchState.range!=='MAX'&&watchState.range!=='YTD'&&span<(periodMin[watchState.range]||0);
+ $('watchlist-history-meta').textContent=(incomplete?'SHORT HISTORY — ':'')+
+  watchState.range+' requested; '+Math.round(span)+' calendar days available · '+(adj?'Dividend-adjusted price proxy':'Price')+
+  ' move over AVAILABLE dates '+pc(move)+' · '+pts[0].date+' to '+pts.at(-1).date+
+  ' · '+units+' · price returns exclude dividends unless adjusted is selected; FX conversion uses dated historical observations.';
  chart('watchlist-chart',[{name:w.name,pts,color:AMBER}],{area:true,format:v=>fmt(v,v>=1000?1:2),aria:w.name+' historical price'});
 }
 function watchlistNews(w,q){
@@ -1592,7 +1737,7 @@ function renderWatchlist(){
  $('watchlist-selected-name').textContent=w.name+' · '+w.symbol;
  $('watchlist-selected-meta').textContent=[w.assetType.replace('_',' '),c.sector,c.industry,q?.asOf?'Quote '+q.asOf:(w.assetType==='fund'?'Fund platform code: no exchange market quote':'Quote unavailable')].filter(Boolean).join(' · ');
  const kpis=$('watchlist-kpis');kpis.replaceChildren();
- const risk=watchPriceRisk(w.symbol);
+ const risk=watchPriceRisk(w.symbol),technical=watchTechnical(w);
  const core=[
   ['LAST QUOTED PRICE',watchFmtQuote(q),q?.source||'No verified exchange quote'],
   ['DAILY PRICE MOVE',pc(q?.changePct),q?.asOf?.slice(0,10)||'No dated quote'],
@@ -1601,8 +1746,8 @@ function renderWatchlist(){
  ];
  const riskMeasures=[
   ['THREE-YEAR PRICE RETURN',pc(risk.threeYear),'Price only · quoted currency'],
-  ['ONE-YEAR VOLATILITY',pc(risk.volatility),'Realised price returns · annualised'],
-  ['ONE-YEAR MAX DRAWDOWN',pc(risk.maxDrawdown),'Observed closing prices'],
+  ['ONE-YEAR VOLATILITY',pc(technical.volatility),'Daily log price returns · ≥120 observations'],
+  ['MAX DRAWDOWN',pc(technical.drawdown),technical.drawdownLabel||'Observed closes'],
   ['52-WEEK HIGH',q?.high52==null?'—':fmt(q.high52,2)+' '+(q.currency||''),'Quoted price units'],
   ['52-WEEK LOW',q?.low52==null?'—':fmt(q.low52,2)+' '+(q.currency||''),'Quoted price units']
  ];
@@ -1628,7 +1773,7 @@ function renderWatchlist(){
    riskMeasures[1],riskMeasures[2],['DISCOUNT TO NAV','—','Not available from this free feed; cannot infer from P/E'],
    riskMeasures[3],riskMeasures[4],['TRUST MARKET CAPITALISATION',companyAmount(c.marketCap,c.marketCapCurrency||''),'Trust market cap, not your holding']];
  }else{
-  data=[...core,...riskMeasures,w.assetType==='fund'?
+  data=[...core,['DIVIDEND YIELD',pc(c.dividendYieldPct),'Cash distribution yield where sourced; accumulation ETFs may not distribute'],...riskMeasures,w.assetType==='fund'?
    ['FUND NAV','—','A platform code is not an exchange ticker; use provider NAV']:
    ['FUND FEES & HOLDINGS','CHECK ISSUER','Fund-level fees and holdings need a verified factsheet']];
  }
@@ -1640,13 +1785,13 @@ function renderWatchlist(){
  $('watchlist-source-warning').textContent='Price source: '+(q?.source||'not retrieved')+' · quoted '+(q?.asOf||'date unavailable')+
   ' · financials: '+(c.fundamentalSource||c.source||'not sourced')+' · '+(c.financialAsOf||'financial retrieval date unavailable')+
   '. Share prices and accounts can use different currencies. The table does not contain any share quantities, holding costs or invested amounts.';
- renderWatchlistChart(w,q);watchlistNews(w,q);renderWatchlistEvents(w);
+ renderWatchlistChart(w,q);renderWatchlistRisk(w,q);renderWatchlistRelative(w,q);watchlistNews(w,q);renderWatchlistEvents(w);
 }
 function initWatchlist(){
  $('watchlist-search').oninput=e=>{watchState.query=e.target.value.trim().toLowerCase();renderWatchRows();};
  $('watchlist-kind').onchange=e=>{watchState.kind=e.target.value;renderWatchRows();};
  $('watchlist-sort').onchange=e=>{watchState.sort=e.target.value;renderWatchRows();};
- $('watchlist-basis').onchange=e=>{watchState.basis=e.target.value;const w=watchlistRecords.find(r=>r.symbol===watchState.symbol);if(w)renderWatchlistChart(w,watchQuoteMap.get(w.symbol));};
+ $('watchlist-basis').onchange=e=>{watchState.basis=e.target.value;const w=watchlistRecords.find(r=>r.symbol===watchState.symbol);if(w){renderWatchlistChart(w,watchQuoteMap.get(w.symbol));renderWatchlistRelative(w,watchQuoteMap.get(w.symbol));}};
 }
 
 const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics','watchlist','quality'];

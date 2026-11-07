@@ -15,6 +15,20 @@ import company_data
 import market_intelligence
 
 KINDS={'stock':'equity','investment_trust':'equity','etf':'etf','fund':None}
+# Official listing date for VALL; Yahoo chart also contains two USD launch/NAV
+# reference points (~5.00) before GBP exchange trading (~3.67). Do not mix them.
+# https://www.vanguard.co.uk/professional/product/etf/equity/E161/vanguard-ftse-global-all-cap-ucits-etf-usd-acc
+FIRST_EXCHANGE_DATE={'VALL.L':'2026-08-20'}
+BENCHMARKS={
+    'AXON':'^GSPC', 'VAPX.L':'EFA', 'VUAG.L':'^GSPC', 'VUSA.L':'^GSPC',
+    'VJPB.L':'^N225', 'XDEX.L':'EEM', 'XMJP.L':'^N225',
+    'III.L':'^FTSE', 'VUKE.L':'^FTSE', 'VERX.L':'^STOXX',
+    'CUKX.L':'^FTSE', 'CSPX.L':'^GSPC', 'RCP.L':'ACWI',
+    'SMT.L':'ACWI', 'SHEL.L':'^FTSE', 'SIE.DE':'^GDAXI',
+    'VV':'^GSPC', 'VBK':'^RUT', 'VHT':'^GSPC',
+    'XDEW.L':'^GSPC', 'SKWD':'^GSPC', 'VALL.L':'ACWI'
+}
+
 
 
 def read_watchlist(path, limit=35):
@@ -35,7 +49,11 @@ def read_watchlist(path, limit=35):
             seen.add(symbol)
             # CSV is also committed publicly; never import private comments, cost or holdings.
             name=re.sub(r'[\x00-\x1f\x7f]', '',(row.get('name') or symbol).strip())[:96] or symbol
-            out.append({'symbol':symbol,'name':name,'assetType':kind})
+            bench=(row.get('benchmark') or BENCHMARKS.get(symbol) or '').strip().upper()
+            bench=company_data.valid_symbol(bench) if bench else ''
+            out.append({'symbol':symbol,'name':name,'assetType':kind,
+                        'benchmark':bench or '',
+                        'firstTradeDate':FIRST_EXCHANGE_DATE.get(symbol,'')})
     if not out:warnings.append('Personal watchlist contains no valid tickers')
     return out,warnings
 
@@ -58,6 +76,47 @@ def thin_history(rows, asof=None):
     return [[r['date'],r['close'],r.get('adjClose')] for r in selected]
 
 
+def validate_quote_history(symbol, quote, history):
+    """Exclude only known pre-listing, differently denominated reference points.
+
+    All other large movements remain visible and should be investigated as
+    potential corporate actions or data errors, never silently deleted.
+    """
+    history=sorted((x for x in history if x.get('date') and x.get('close') is not None),
+                   key=lambda x:x['date'])
+    start=FIRST_EXCHANGE_DATE.get(symbol)
+    removed=0
+    if start:
+        removed=sum(x['date']<start for x in history)
+        history=[x for x in history if x['date']>=start]
+        if removed and quote:
+            quote['historyWarning']=(f'Ignored {removed} pre-listing reference observations before '
+                 +start+'; earlier source values were not London exchange quotes.')
+    if quote and history:
+        quote['historyStarts']=history[0]['date']
+        quote['historyEnds']=history[-1]['date']
+        # A security which began trading during the year has no genuine YTD
+        # price return from the previous year's close.
+        last=dt.date.fromisoformat(history[-1]['date'])
+        first=dt.date.fromisoformat(history[0]['date'])
+        if first >= dt.date(last.year,1,1):quote['ytdPct']=None
+        if (last-first).days < 335:quote['yearPct']=None
+        # Yahoo's 52-week range can include pre-listing seed values; for this
+        # known issue calculate it from actual post-listing traded closes.
+        if removed:
+            recent=[x['close'] for x in history if x['date'] >= (last-dt.timedelta(days=365)).isoformat()]
+            if recent:
+                quote['high52']=max(recent);quote['low52']=min(recent)
+        for a,b in zip(history,history[1:]):
+            if a['close']>0 and b['date']<= (dt.date.fromisoformat(a['date'])+dt.timedelta(days=7)).isoformat():
+                move=abs(b['close']/a['close']-1)
+                if move>0.30:
+                    quote['anomalyWarning']=(f'Large source price jump {move*100:.1f}% '
+                         +a['date']+' to '+b['date']+'; check split, dividend and price units.')
+                    break
+    return quote,history
+
+
 def collect_quotes(core,opts,watchlist):
     quotes=[];history=[];warnings=[];cached=0
     if not watchlist:return quotes,history,warnings,cached
@@ -75,8 +134,11 @@ def collect_quotes(core,opts,watchlist):
     for item in tradeable:
         q,hh,msg,err=done[item['symbol']]
         if q:
+            q,hh=validate_quote_history(item['symbol'],q,hh)
             quotes.append(q);cached+=int(bool(q.get('cached')))
             history.append({'symbol':item['symbol'],'points':thin_history(hh),'source':'Yahoo Finance daily chart (unofficial)'})
+            if q.get('historyWarning'):warnings.append(item['symbol']+': '+q['historyWarning'])
+            if q.get('anomalyWarning'):warnings.append(item['symbol']+': '+q['anomalyWarning'])
             if 'stale cache' in (q.get('cacheDetail') or ''):warnings.append('Watchlist '+item['symbol']+': stale cached price data')
         elif err:warnings.append('Watchlist quote '+str(err)[:180])
     return quotes,history,warnings,cached
@@ -113,7 +175,19 @@ def collect_news(core,opts,watchlist,limit=35):
 
 def coverage(records,quotes,news,history,companies):
     q={x['symbol']:x for x in quotes};n={x['symbol']:x for x in news};h={x['symbol']:x for x in history};c={x['symbol']:x for x in companies}
+    # A usable twelve-month risk series requires more than a freshly listed ETF's few quotes.
+    risk_count=0
+    for item in records:
+        pts=h.get(item['symbol'],{}).get('points',[])
+        if len(pts)>=120 and pts[0][0] and pts[-1][0]:
+            last=dt.date.fromisoformat(pts[-1][0]);cutoff=(last-dt.timedelta(days=365)).isoformat()
+            recent=[row for row in pts if row[0]>=cutoff]
+            if len(recent)>=120 and (last-dt.date.fromisoformat(recent[0][0])).days>=180:
+                risk_count+=1
     return {'requested':len(records),'quoteEligible':sum(r['assetType']!='fund' for r in records),'quoted':len(quotes),
+            'riskHistoryEligible':risk_count,
+            'priceAnomalies':sum(bool(x.get('anomalyWarning')) for x in quotes),
+            'preListingFixes':sum(bool(x.get('historyWarning')) for x in quotes),
             'historical':sum(len(h.get(r['symbol'],{}).get('points',[]))>=2 for r in records),
             'detailedFundamentals':sum(bool(c.get(r['symbol'],{}).get('trailingPE') or c.get(r['symbol'],{}).get('revenueTTM')) for r in records),
             'newsWithResults':sum(bool(n.get(r['symbol'],{}).get('articles')) for r in records)}
