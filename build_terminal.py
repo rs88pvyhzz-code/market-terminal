@@ -339,7 +339,7 @@ def demo_data():
     demo_news=[{'symbol':'SHEL.L','name':'Shell plc','articles':[],
                 'retrievedAt':'SYNTHETIC DEMO','source':'SYNTHETIC DEMO'}]
     demo_prints,_,demo_forecasts=economic_forecasts.collect(macro,ROOT/'__none_demo_forecasts.csv')
-    return {**extras,'economicPrints':demo_prints,'forecastCoverage':{'sourced':demo_forecasts,'series':len(demo_prints)},'company_news':demo_news,'fundamentals':demo_f,'fundamentalsCoverage':{'eligible':0,'available':0,'summaries':len(demo_f),'fetchedThisRun':0},'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
+    return {**extras,'marketHistoryMetrics':[], 'priceHistoryCoverage':{'eligible':0,'available':0,'fullFiveYears':0,'fullTenYears':0},'economicPrints':demo_prints,'forecastCoverage':{'sourced':demo_forecasts,'series':len(demo_prints)},'company_news':demo_news,'fundamentals':demo_f,'fundamentalsCoverage':{'eligible':0,'available':0,'summaries':len(demo_f),'fetchedThisRun':0},'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
             'companies':companies,'company_history':company_history,
             'movers':market_movers.demo_movers(),'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),
             'demo':True,'warnings':['DEMONSTRATION ONLY: all values and historical series are synthetic.'],
@@ -505,8 +505,10 @@ def build(opts):
     print(f'Fundamentals: {fcoverage["summaries"]} of {fcoverage["eligible"]} unique constituents have summaries; {fcoverage["available"]} have P/E',flush=True)
     history_symbols, history_coverage, history_warnings=market_price_history.collect(
         sys.modules[__name__], opts, movers, company_history,
-        cache_dir=ROOT/'.terminal_price_history', batch=opts.price_history_batch)
+        cache_dir=ROOT/'.terminal_price_history', batch=opts.price_history_batch, watchlist=watchlist)
     warnings.extend(history_warnings)
+    market_history_metrics=market_price_history.screener_metrics(ROOT/'.terminal_price_history')
+    print('History coverage: '+str(history_coverage.get('available',0))+'/'+str(history_coverage.get('eligible',0))+' available; '+str(history_coverage.get('fullFiveYears',0))+' span five years',flush=True)
     # Official FedInvest U.S. Treasury security quotations; dated, not live.
     us_bonds,us_treasury_history,ust_warnings,ust_cached=us_treasury_market.collect(sys.modules[__name__],opts)
     warnings.extend(ust_warnings);cached_count+=ust_cached
@@ -528,6 +530,7 @@ def build(opts):
     print(f'Credit: {len(credit_spreads)} / {len(market_additions.CREDIT_SERIES)} FRED series; market valuation: {len(market_valuations)} indices; issuer events: {len(company_events)}',flush=True)
     quality=build_quality(quotes,hist,movers,fundamentals,fcoverage,calendar,gilts,us_bonds,macro,warnings)
     quality['personalWatchlist']=watch_coverage
+    quality['priceHistory']=history_coverage
     return {'personalWatchlist':watchlist,'watchlist_quotes':watch_quotes,'watchlist_history':watch_history,
             'watchlist_news':watch_news,'watchlistCoverage':watch_coverage,
             'credit_spreads':credit_spreads,'market_valuations':market_valuations,'company_events':company_events,'companyEventCoverage':event_coverage,
@@ -535,6 +538,7 @@ def build(opts):
             'us_treasuries':us_bonds,'us_treasury_history':us_treasury_history,'gilts':gilts,'gilt_history':gilt_history,
 'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
             'priceHistorySymbols':history_symbols,'priceHistoryCoverage':history_coverage,
+            'marketHistoryMetrics':market_history_metrics,
             'company_news':company_news,
             'news':news,'calendar':calendar,'us_real':us_real,'sovereign_yields':sovereign,
         'companies':companies,'company_history':company_history,

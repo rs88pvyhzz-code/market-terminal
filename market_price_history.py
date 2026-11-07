@@ -14,6 +14,8 @@ import copy
 import datetime as dt
 import gzip
 import json
+import math
+import statistics
 import os
 import pathlib
 import re
@@ -83,9 +85,16 @@ def _points(rows, years=10):
     return [[date, price] for date, price in points if date >= cutoff]
 
 
+def _security_points(sym, points):
+    # VALL.L London listing began 20 Aug 2026. Earlier provider values are
+    # not a live, investable VALL.L price history and must not enter risk metrics.
+    if sym == 'VALL.L':return [r for r in points if r[0] >= '2026-08-20']
+    return points
+
+
 def collect(core, opts, movers, company_history, cache_dir=DEFAULT_DIR, batch=60,
             provider=None, asof=None, seed=('NFLX', 'AXON', 'CCH.L', 'SHAW.L'),
-            previous=None):
+            previous=None, watchlist=()):
     """Return (available_symbols, coverage, warnings).
 
     provider(symbol, options) -> (quote, history, message, error) is injectable
@@ -110,11 +119,19 @@ def collect(core, opts, movers, company_history, cache_dir=DEFAULT_DIR, batch=60
             sym = q.get('symbol', '')
             if SYMBOL_RE.fullmatch(sym):
                 universe.setdefault(sym, q.get('name', sym))
+    # Priority for the entire saved watchlist, even for ETFs absent from the four indices.
+    watch_names = {}
+    for w in watchlist or ():
+        sym = w.get('symbol', '')
+        if SYMBOL_RE.fullmatch(sym) and w.get('assetType') != 'fund':
+            watch_names[sym] = w.get('name') or sym
+            universe.setdefault(sym, watch_names[sym])
     # Also preserve user-preselected companies, even if not an index constituent.
     detail_symbols = {r.get('symbol') for r in company_history if isinstance(r, dict)}
     universe.update({s: s for s in detail_symbols if s and SYMBOL_RE.fullmatch(s)})
     records = {sym:rec for sym,rec in (saved.get('records') or {}).items()
                if sym in universe and isinstance(rec, dict) and len(rec.get('points') or []) > 1}
+    for sym,rec in records.items():rec['points']=_security_points(sym,rec['points'])
     attempts = {sym: when for sym,when in (saved.get('attempts') or {}).items() if sym in universe}
 
     # Reuse free data already fetched by the detailed-company and mover collectors.
@@ -124,11 +141,24 @@ def collect(core, opts, movers, company_history, cache_dir=DEFAULT_DIR, batch=60
         if sym in universe:
             embedded[sym].append(row)
     for sym,rows in embedded.items():
-        points = _points(rows)
-        if len(points) >= 2:
-            records[sym] = {'symbol':sym, 'points':points, 'asOf':today,
-                            'currency':records.get(sym,{}).get('currency','')}
-            attempts[sym] = today
+        points = _security_points(sym, _points(rows))
+        if len(points) < 2:continue
+        old = records.get(sym,{}).get('points') or []
+        # NEVER replace a multi-year history with a short newer snippet.  This was
+        # silently erasing years of accumulated index history on repeated runs.
+        if old and old[0][0] < points[0][0]:
+            overlap = {d:v for d,v in old}
+            shared = [(d,p,overlap[d]) for d,p in points if d in overlap]
+            # Merge latest closes only if split-adjusted prices share a common basis.
+            comparable = len(shared)>=2 and all(abs(p/o-1)<0.08 for d,p,o in shared[-5:] if o>0)
+            if comparable:
+                merged = dict(old)
+                merged.update({d:v for d,v in points if d >= old[-1][0]})
+                records[sym]['points'] = [[d,v] for d,v in sorted(merged.items())]
+            continue
+        records[sym]={'symbol':sym,'points':points,'asOf':today,
+                      'currency':records.get(sym,{}).get('currency','')}
+        attempts[sym]=today
 
     def attempt_age(sym):
         when = attempts.get(sym)
@@ -161,8 +191,8 @@ def collect(core, opts, movers, company_history, cache_dir=DEFAULT_DIR, batch=60
             except (TypeError, ValueError, OverflowError):
                 continue
 
-    priorities = [sym for sym in seed if sym in universe]
-    order = list(dict.fromkeys(priorities + list(universe)))
+    priorities = [sym for sym in watch_names if sym in universe] + [sym for sym in seed if sym in universe]
+    order = list(dict.fromkeys(priorities + sorted(detail_symbols) + list(universe)))
     # Missing series first; refresh cached series every ~45 days or immediately
     # when a suspected split would otherwise distort the historical chart.
     pending = [s for s in order if s not in records and attempt_age(s)>=2]
@@ -177,21 +207,41 @@ def collect(core, opts, movers, company_history, cache_dir=DEFAULT_DIR, batch=60
         def fetch(sym):
             try:
                 quote, rows, _, err = query(sym, hist_opts)
-                return sym, quote, _points(rows), err
+                return sym, quote, _security_points(sym, _points(rows)), err
             except Exception as exc:
                 return sym, None, [], str(exc)[:130]
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(2,max(1,getattr(opts,'workers',2)))) as pool:
             for sym, quote, points, err in pool.map(fetch, pending):
                 attempts[sym] = today
                 if len(points) >= 2:
+                    previous_points=records.get(sym,{}).get('points') or []
+                    # Preserve older starting dates if a provider returns a partial
+                    # response; it must not cut off a historic chart.
+                    if previous_points and points[0][0] > previous_points[0][0]:
+                        prev = dict(previous_points)
+                        overlap=[(v,prev[d]) for d,v in points if d in prev]
+                        if len(overlap)>=2 and all(abs(v/old-1)<.08 for v,old in overlap[-5:] if old>0):
+                            prev.update(dict(points))
+                            points=[[d,v] for d,v in sorted(prev.items())]
+                        else:
+                            points=previous_points
                     records[sym] = {'symbol':sym,'points':points,'asOf':today,
-                                    'currency': (quote or {}).get('currency','')}
+                                    'currency': (quote or {}).get('currency') or records.get(sym,{}).get('currency','')}
                 elif len(warnings) < 8:
                     warnings.append(f'History {sym}: {err or "no usable daily closes"}')
     ordered = sorted(records)
+    def span(sym):
+        pts=records.get(sym,{}).get('points') or []
+        return (_date(pts[-1][0])-_date(pts[0][0])).days if len(pts)>1 else 0
     coverage = {'eligible':len(universe), 'available':len(records),
+                'watchlistEligible':len(watch_names),
+                'watchlistAvailable':sum(s in records for s in watch_names),
+                'fullOneYear':sum(span(s)>=330 for s in records),
+                'fullFiveYears':sum(span(s)>=365*5-35 for s in records),
+                'fullTenYears':sum(span(s)>=365*10-70 for s in records),
                 'fetchedThisRun':len(pending) if not getattr(opts,'offline',False) else 0,
                 'asOf':today, 'years':10}
+
     cache_file.write_bytes(gzip.compress(json.dumps(
         {'version':1,'records':records,'attempts':attempts},separators=(',',':'),ensure_ascii=False
     ).encode('utf-8'), compresslevel=6))
@@ -199,6 +249,47 @@ def collect(core, opts, movers, company_history, cache_dir=DEFAULT_DIR, batch=60
           f'{coverage["fetchedThisRun"]} new requests', flush=True)
     return ordered, coverage, warnings
 
+
+def screener_metrics(cache_dir=DEFAULT_DIR, asof=None):
+    """Compact auditable history statistics for market screener and Data Quality.
+
+    Based on actual stored daily close observations, NOT an interpolated curve.
+    No annualised risk estimate if there are fewer than 120 closes in 180 days
+    or if a gross discontinuity merits corporate-action review.
+    """
+    path=pathlib.Path(cache_dir)/CACHE_NAME
+    try:data=_unpack(path.read_bytes()).get('records',{})
+    except (OSError,ValueError,KeyError,TypeError):return []
+    result=[]
+    for sym,rec in sorted(data.items()):
+        pts=_security_points(sym, _points(rec.get('points') or []))
+        if len(pts)<2:continue
+        last=_date(pts[-1][0]); first=_date(pts[0][0]); bydate={d:v for d,v in pts}
+        def nearest_age(days):
+            cutoff=(last-dt.timedelta(days=days)).isoformat()
+            eligible=[v for d,v in pts if d<=cutoff]
+            return eligible[-1] if eligible else None
+        year=[(d,v) for d,v in pts if d >= (last-dt.timedelta(days=365)).isoformat()]
+        returns=[math.log(year[i][1]/year[i-1][1]) for i in range(1,len(year)) if year[i-1][1]>0]
+        outlier=any(abs(x)>math.log(1.55) for x in returns)
+        good=len(year)>=120 and ( _date(year[-1][0])-_date(year[0][0]) ).days>=180 and not outlier
+        vol=100*statistics.stdev(returns)*math.sqrt(252) if good and len(returns)>1 else None
+        peak=0; draw=0
+        for _,v in year:
+            peak=max(peak,v)
+            if peak>0:draw=min(draw,100*(v/peak-1))
+        base=nearest_age(183)
+        six=100*(pts[-1][1]/base-1) if base and (last-first).days>=160 else None
+        base_year=nearest_age(365)
+        one=100*(pts[-1][1]/base_year-1) if base_year and (last-first).days>=330 else None
+        result.append({'symbol':sym,'first':pts[0][0],'last':pts[-1][0],
+             'dailyCloses':len(pts),'years':round((last-first).days/365.25,2),
+             'oneYearPriceReturnPct':round(one,2) if one is not None else None,
+             'sixMonthPriceReturnPct':round(six,2) if six is not None else None,
+             'volatility1YPct':round(vol,2) if vol is not None else None,
+             'maxDrawdown1YPct':round(draw,2) if good else None,
+             'priceDiscontinuityFlag':outlier,'sourceDate':rec.get('asOf','')[:10]})
+    return result
 
 def publish_cache(public, cache_dir=DEFAULT_DIR):
     """Write a small file per ticker for lazy, on-demand browser chart loading.

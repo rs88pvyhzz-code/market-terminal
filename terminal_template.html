@@ -247,6 +247,24 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 @media(max-width:800px){.watchlist-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.watchlist-bottom{grid-template-columns:1fr}.watchlist-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:460px){.watchlist-controls{grid-template-columns:1fr}.watchlist-selected-header h3{font-size:15px}}
 
+
+/* Source-backed equity screening, with explicit missing-data exclusions. */
+.screener-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:10px 0}
+.screener-grid label{display:grid;gap:5px;color:var(--muted);font:10px/1.35 var(--font)}
+.screener-grid input,.screener-grid select{width:100%;min-width:0;color-scheme:dark;font:12px var(--font)}
+.screener-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:11px}
+.screener-actions button{font-size:11px}
+.screener-scroll{max-height:585px;overflow:auto;border:1px solid #2e2e34;border-radius:4px}
+.screener-scroll table{min-width:1440px}
+.screener-scroll th{position:sticky;top:0;z-index:2;background:#17171b}
+.screener-scroll td{font-size:11px}
+.screener-scroll tr{cursor:pointer}
+.screener-scroll tr:hover{background:#2c241a}
+.screener-count{font:11px/1.55 var(--font);color:#c0b4a7}
+.screener-footnote{font:10px/1.6 var(--font);color:var(--muted);margin-top:9px}
+.history-coverage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:8px}
+.history-coverage-grid .research-stat{border:1px solid #34343a}
+@media(max-width:570px){.screener-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.screener-actions{gap:5px}}
 </style>
 </head>
 <body>
@@ -342,6 +360,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <div class="row"><h2>DATA QUALITY &amp; COVERAGE</h2><span class="mini" id="dq-stamp">Snapshot validation</span></div>
   <div class="research-stats" id="dq-tiles"></div>
   <div class="small-scroll"><h3>INDEX-LEVEL COVERAGE</h3><div id="dq-indices"></div></div>
+  <div class="small-scroll" id="dq-historical"><h3>HISTORICAL PRICE COVERAGE — PROGRESSIVE DOWNLOAD</h3><div id="dq-history" class="history-coverage-grid"></div><p class="note" id="dq-history-note">Ten years is a target, not a guarantee. New listings and unavailable Yahoo histories have shorter observation periods; charts expand across successful scheduled updates.</p></div>
   <p class="note" id="dq-alerts">Retrieval warnings and dates are checked per source. A successful download does not prove that a price is accurate.</p>
 </section>
 <section class="panel" id="news">
@@ -379,6 +398,27 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <p class="movers-note">Daily percentage PRICE changes, ranked across the index constituents successfully checked on the same local market date. A market with missing quotations is labelled PARTIAL: those results may not be the actual ten biggest moves. Figures are a static snapshot, not live. Click a company to see its source quote.</p>
 </section>
 
+
+<section class="panel" id="equity-screener">
+  <div class="row"><div><h2>EQUITY STOCK SCREENER</h2>
+    <p class="note">Filter FTSE 100, FTSE 250, S&amp;P 500 and Nasdaq 100 constituents using sourced financial metrics and observed historical price returns. Missing facts are never treated as zero.</p></div><span id="screener-stamp" class="mini"></span></div>
+  <div class="screener-grid">
+    <label>INDEX<select id="screen-market" class="field" aria-label="Screener market"><option value="all">All four indices</option><option value="FTSE100">FTSE 100</option><option value="FTSE250">FTSE 250</option><option value="SP500">S&amp;P 500</option><option value="NASDAQ100">Nasdaq 100</option></select></label>
+    <label>SECTOR<select id="screen-sector" class="field" aria-label="Screener sector"><option value="all">All sectors</option></select></label>
+    <label>MAX P/E (TTM)<input id="screen-pe" type="number" class="field" min="0" max="500" step="0.5" inputmode="decimal" placeholder="e.g. 15"></label>
+    <label>MIN DIVIDEND YIELD %<input id="screen-div" type="number" class="field" min="0" max="30" step="0.5" inputmode="decimal" placeholder="e.g. 3"></label>
+    <label>MIN ROE %<input id="screen-roe" type="number" class="field" min="-100" max="500" step="1" inputmode="decimal" placeholder="e.g. 15"></label>
+    <label>MIN EARNINGS GROWTH %<input id="screen-growth" type="number" class="field" min="-100" max="1000" step="1" inputmode="decimal" placeholder="e.g. 5"></label>
+    <label>MAX TOTAL DEBT / EBITDA<input id="screen-debt" type="number" class="field" min="0" max="100" step="0.25" inputmode="decimal" placeholder="e.g. 2"></label>
+    <label>MAX 1Y VOLATILITY %<input id="screen-vol" type="number" class="field" min="0" max="500" step="1" inputmode="decimal" placeholder="e.g. 30"></label>
+    <label>MIN SIX-MONTH PRICE RETURN %<input id="screen-mom" type="number" class="field" min="-100" max="1000" step="1" inputmode="decimal" placeholder="e.g. 0"></label>
+    <label>SORT BY<select id="screen-sort" class="field" aria-label="Sort screened companies"><option value="cap">Market cap, largest first</option><option value="pe">P/E, lowest first</option><option value="div">Dividend, highest first</option><option value="roe">ROE, highest first</option><option value="growth">Earnings growth, highest first</option><option value="vol">Volatility, lowest first</option><option value="momentum">Six-month momentum, highest first</option><option value="name">Company name A–Z</option></select></label>
+  </div>
+  <div class="screener-actions"><button class="btn" type="button" id="screen-value">VALUE + INCOME</button><button class="btn" type="button" id="screen-quality">QUALITY</button><button class="btn" type="button" id="screen-clear">CLEAR FILTERS</button><button class="btn" type="button" id="screen-export">EXPORT MATCHES CSV</button></div>
+  <p id="screen-results" class="screener-count" aria-live="polite"></p>
+  <div class="screener-scroll"><table class="watch"><thead><tr><th>Company / index</th><th>Ticker</th><th>Sector</th><th class="n">P/E</th><th class="n">Dividend %</th><th class="n">ROE %</th><th class="n">Earnings growth %</th><th class="n">Total debt / EBITDA</th><th class="n">1Y volatility %</th><th class="n">6M price return %</th><th class="n">1Y max drawdown %</th><th>Financials checked</th><th>Price history</th></tr></thead><tbody id="screen-rows"></tbody></table></div>
+  <p class="screener-footnote" id="screen-note">Financial data come from unofficial Yahoo summaries and can be stale. Growth figures are reported estimates, not audited forecasts. Total debt / EBITDA is not net debt / EBITDA. Historical volatility and momentum are calculated from observed split-adjusted price history, not total returns. Missing values are excluded when their filter is active. Tap any row for Company Research.</p>
+</section>
 <section class="panel" id="constituents">
   <div class="row"><h2>INDEX CONSTITUENTS</h2><span class="mini" id="const-count"></span></div>
   <div class="constituents-toolbar inputs">
@@ -619,7 +659,15 @@ const state={newsCategory:'ALL',calendarRegion:'ALL',companyRange:'1Y',ratesRang
 const qMap=new Map((D.quotes||[]).map(q=>[q.symbol,q]));
 const companyMap=new Map((D.companies||[]).map(q=>[q.symbol,q]));
 const fundamentalsMap=new Map((D.fundamentals||[]).map(q=>[q.symbol,q]));
-const companyFundamental=(symbol)=>fundamentalsMap.get(symbol)||companyMap.get(symbol)||null;
+const companyFundamental=(symbol)=>{
+  const f=fundamentalsMap.get(symbol),c=companyMap.get(symbol);
+  if(!f)return c||null;if(!c)return f;
+  // Older cached summaries may lack growth fields already present in a detailed profile.
+  const dividend=f.dividendYieldPct??c.dividendYieldPct??null;
+  return {...c,...f,dividendYieldPct:dividend!=null&&dividend>=0&&dividend<=30?dividend:null,
+    earningsGrowthPct:f.earningsGrowthPct??c.earningsGrowthPct??null,
+    revenueGrowthPct:f.revenueGrowthPct??c.revenueGrowthPct??null};
+};
 const indexedStocks=new Map();
 for(const market of D.movers||[])for(const q of market.constituents||[]){
   const prev=indexedStocks.get(q.symbol);
@@ -666,13 +714,14 @@ function openConstituent(symbol){
 
 const historicAvailable=new Set(D.priceHistorySymbols||[]);
 const historicRequests=new Set();
+const historicLoaded=new Set();
 const historicFailed=new Set();
 const companyHistory=new Map();(D.company_history||[]).forEach(r=>{if(!companyHistory.has(r.symbol))companyHistory.set(r.symbol,[]);companyHistory.get(r.symbol).push({date:r.date,v:Number(r.close)});});
 for(const pts of companyHistory.values())pts.sort((a,b)=>a.date.localeCompare(b.date));
 // Load one ticker's historical prices only when its research chart is opened.
 // The rest of the market snapshot stays small and loads normally on iPad.
 function loadCompanyHistory(symbol){
-  if(companyHistory.get(symbol)?.length>1||!historicAvailable.has(symbol)||historicRequests.has(symbol)||historicFailed.has(symbol))return;
+  if(!historicAvailable.has(symbol)||historicRequests.has(symbol)||historicLoaded.has(symbol)||historicFailed.has(symbol))return;
   historicRequests.add(symbol);
   const url='stock_history/'+encodeURIComponent(symbol)+'.json?v='+encodeURIComponent(D.generatedAt||'1');
   fetch(url).then(response=>{if(!response.ok)throw new Error('HTTP '+response.status);return response.json();})
@@ -681,7 +730,14 @@ function loadCompanyHistory(symbol){
       const points=payload.points.filter(p=>Array.isArray(p)&&/^\d{4}-\d{2}-\d{2}$/.test(p[0])&&Number.isFinite(Number(p[1]))&&Number(p[1])>0)
         .map(p=>({date:p[0],v:Number(p[1])})).sort((a,b)=>a.date.localeCompare(b.date));
       if(points.length<2)throw new Error('Insufficient history');
-      companyHistory.set(symbol,points);
+      const previous=companyHistory.get(symbol)||[];
+      // Use the longer sourced history, not the last file downloaded.
+      if(previous.length<2||points[0].date<previous[0].date&&points.length>=previous.length/2){
+        companyHistory.set(symbol,points);
+      } else if(points.at(-1).date>previous.at(-1).date&&points[0].date<=previous[0].date){
+        companyHistory.set(symbol,points);
+      }
+      historicLoaded.add(symbol);
       if(state.companySymbol===symbol){
         const alert=$('company-alert');
         if(alert.textContent.includes('Ten-year chart available; loading when opened.'))
@@ -1108,8 +1164,11 @@ function renderCompany(){
   $('company-dates').textContent='Price: '+(c.priceAsOf||'unavailable')+' · Financial reporting currency: '+(fundCCY||'unavailable')+' · Accounts FY ending '+(c.fiscalEnd||'unavailable')+' · Financial data checked: '+(c.financialAsOf||'not supplied')+' · Financial source: '+(c.fundamentalSource||'unavailable')+(c.warning?' · Price warning: '+c.warning:'');
   $('company-price-date').textContent='Quote units: '+(quoteCCY||'unknown');
   renderCompanyInsight(c);
-  const hasSavedHistory=(companyHistory.get(c.symbol)||[]).length>1;
-  if(!hasSavedHistory)loadCompanyHistory(c.symbol);
+  const storedHistory=companyHistory.get(c.symbol)||[];
+  const hasSavedHistory=storedHistory.length>1;
+  const storedSpan=storedHistory.length>1?Date.parse(storedHistory.at(-1).date)-Date.parse(storedHistory[0].date):0;
+  // Loaded detailed-company snapshots can be shorter than the progressive archive.
+  if(historicAvailable.has(c.symbol)&&(storedHistory.length<1200||storedSpan<365*8*86400000))loadCompanyHistory(c.symbol);
   const pts=periods(companyHistory.get(c.symbol)||[],'companyRange');
   const periodMove=pts.length>1&&pts[0].v>0?(pts.at(-1).v/pts[0].v-1)*100:null;
   $('company-performance').textContent=state.companyRange+' · price change '+pc(periodMove)+(pts.length?' · '+datefmt(pts[0].date)+' to '+datefmt(pts.at(-1).date):' · no observations in this range')+' · price return only, dividends excluded'+(pts.length?' · historical source starts '+datefmt((companyHistory.get(c.symbol)||[])[0].date):'');
@@ -1138,6 +1197,97 @@ function renderCompany(){
   }table.append(body);destination.append(table);
 }
 function chosenMoverMarket(){return (D.movers||[]).find(m=>m.id===state.moversMarket)||null;}
+// INDEX UNIVERSE SCREENER — missing data and sample coverage are explicit.
+const screenRisk=new Map((D.marketHistoryMetrics||[]).map(x=>[x.symbol,x]));
+const screenState={market:'all',sector:'all',sort:'cap',filters:{},matches:[],count:0};
+function numberOrNull(value){return value===null||value===undefined||value===''||!Number.isFinite(Number(value))?null:Number(value);}
+const screenRows=(()=>{
+  const rows=new Map();
+  for(const market of D.movers||[]){
+    for(const q of market.constituents||[]){
+      if(!q.symbol)continue;
+      const row=rows.get(q.symbol)||{symbol:q.symbol,name:q.name||q.symbol,markets:[],currency:q.currency||'',priceDate:q.date||''};
+      if(!row.markets.includes(market.id))row.markets.push(market.id);
+      if(q.date>=row.priceDate){row.name=q.name||row.name;row.currency=q.currency||row.currency;row.priceDate=q.date||row.priceDate;}
+      rows.set(q.symbol,row);
+    }
+  }
+  return [...rows.values()].map(row=>{
+    const f=companyFundamental(row.symbol)||{},risk=screenRisk.get(row.symbol)||{};
+    const pe=numberOrNull(f.trailingPE),div=numberOrNull(f.dividendYieldPct),roe=numberOrNull(f.roePct),growth=numberOrNull(f.earningsGrowthPct);
+    const debt=numberOrNull(f.totalDebt),ebitda=numberOrNull(f.ebitda);
+    return {...row,sector:f.sector||'',pe:pe>0?pe:null,div:div>=0&&div<=30?div:null,
+      roe,growth,leverage:debt!=null&&debt>=0&&ebitda>0?debt/ebitda:null,
+      cap:numberOrNull(f.marketCap),vol:numberOrNull(risk.volatility1YPct),momentum:numberOrNull(risk.sixMonthPriceReturnPct),
+      maxDD:numberOrNull(risk.maxDrawdown1YPct),history:risk,finDate:(f.asOf||f.financialAsOf||'').slice(0,10)};
+  });
+})();
+const screenFields=[['pe','max'],['div','min'],['roe','min'],['growth','min'],['debt','max'],['vol','max'],['mom','min']];
+function screenNumber(id){const input=$('screen-'+id);return input&&input.value.trim()!==''?numberOrNull(input.value):null;}
+function screenApply(){
+  const filters=Object.fromEntries(screenFields.map(([id])=>[id,screenNumber(id)]));
+  const limits=[['pe','pe'],['div','div'],['roe','roe'],['growth','growth'],['debt','leverage'],['vol','vol'],['mom','momentum']];
+  let missing=0,outside=0,matched=[];const unique=screenRows.filter(x=>(screenState.market==='all'||x.markets.includes(screenState.market))&&(screenState.sector==='all'||x.sector===screenState.sector));
+  for(const x of unique){let lack=false,fail=false;
+    for(const [k,prop] of limits){const threshold=filters[k];if(threshold===null)continue;
+      const value=x[prop];if(value===null){lack=true;continue;}
+      const direction=screenFields.find(v=>v[0]===k)[1];if(direction==='min'?value<threshold:value>threshold)fail=true;
+    }
+    if(fail)outside++;else if(lack)missing++;else matched.push(x);
+  }
+  const sortable={pe:['pe',1],div:['div',-1],roe:['roe',-1],growth:['growth',-1],vol:['vol',1],momentum:['momentum',-1],cap:['cap',-1]};
+  const sort=sortable[screenState.sort];
+  if(sort){const [field,direction]=sort;matched.sort((a,b)=>{
+     const av=a[field],bv=b[field];if(av==null)return bv==null?a.name.localeCompare(b.name):1;
+     if(bv==null)return -1;return direction*(av-bv)||a.name.localeCompare(b.name);
+  });} else matched.sort((a,b)=>a.name.localeCompare(b.name));
+  screenState.matches=matched;screenState.count=unique.length;
+  return {matched,missing,outside,universe:unique.length,filters};
+}
+function renderScreener(){
+  const host=$('screen-rows');if(!host)return;host.replaceChildren();
+  const {matched,missing,outside,universe,filters}=screenApply();
+  const financial=screenRows.filter(x=>x.pe!=null).length,historical=screenRows.filter(x=>x.vol!=null).length;
+  const active=Object.values(filters).some(x=>x!==null);
+  $('screener-stamp').textContent=screenRows.length+' distinct tickers · '+financial+' with P/E · '+historical+' with 1Y volatility';
+  $('screen-results').textContent=matched.length+' matches / '+universe+' companies in selected universe'+(active?' · '+missing+' excluded for missing filtered fields · '+outside+' outside the limits':'')+' · showing first '+Math.min(150,matched.length)+'.';
+  if(!matched.length){const tr=el('tr');const c=td(tr,'No companies match, or the requested financial/history fields are unavailable.');c.colSpan=13;host.append(tr);return;}
+  const p=x=>x==null?'—':fmt(x,1);
+  for(const x of matched.slice(0,150)){
+    const tr=el('tr');tr.title='Open '+x.name+' company research';tr.onclick=()=>openConstituent(x.symbol);
+    td(tr,x.name+' · '+x.markets.join('/'));td(tr,x.symbol);td(tr,x.sector||'—');
+    td(tr,x.pe!=null?p(x.pe)+'×':'—','n');td(tr,p(x.div),'n');td(tr,p(x.roe),'n');td(tr,p(x.growth),'n');
+    td(tr,x.leverage!=null?p(x.leverage)+'×':'—','n');td(tr,p(x.vol),'n');td(tr,p(x.momentum),'n');td(tr,p(x.maxDD),'n');
+    td(tr,x.finDate||'—');td(tr,x.history.first?x.history.first+' to '+x.history.last:'—');host.append(tr);
+  }
+}
+function initScreener(){
+  const sectors=[...new Set(screenRows.map(x=>x.sector).filter(Boolean))].sort();
+  const select=$('screen-sector');sectors.forEach(x=>select.add(new Option(x,x)));
+  const refresh=()=>{screenState.market=$('screen-market').value;screenState.sector=$('screen-sector').value;
+    screenState.sort=$('screen-sort').value;renderScreener();};
+  for(const id of ['market','sector','sort'])$('screen-'+id).addEventListener('change',refresh);
+  for(const [id] of screenFields){$('screen-'+id).addEventListener('input',refresh);}
+  const preset=values=>{for(const [id] of screenFields)$('screen-'+id).value=values[id]??'';refresh();};
+  $('screen-value').onclick=()=>preset({pe:15,div:3});
+  $('screen-quality').onclick=()=>preset({roe:15,growth:5,debt:2});
+  $('screen-clear').onclick=()=>{$('screen-market').value='all';$('screen-sector').value='all';$('screen-sort').value='cap';preset({});};
+  $('screen-export').onclick=()=>downloadFile('equity_screener_'+(D.generatedAt||'snapshot').slice(0,10)+'.csv',
+   [['name','ticker','indices','sector','trailing_pe','dividend_yield_pct','roe_pct','earnings_growth_pct','total_debt_to_ebitda','volatility_one_year_pct','six_month_price_return_pct','max_drawdown_one_year_pct','financials_retrieved_at','history_start','history_end'],
+   ...screenState.matches.map(x=>[x.name,x.symbol,x.markets.join('/'),x.sector,x.pe,x.div,x.roe,x.growth,x.leverage,x.vol,x.momentum,x.maxDD,x.finDate,x.history.first,x.history.last])]);
+  refresh();
+}
+function renderHistoricalCoverage(){
+  const host=$('dq-history');if(!host)return;host.replaceChildren();
+  const h=D.priceHistoryCoverage||{},risk=D.marketHistoryMetrics||[];
+  const metrics=[['Ticker price histories',String(h.available??risk.length)+' / '+String(h.eligible??'—'),'Saved full daily observations (progressive)'],
+    ['5-year span',h.fullFiveYears??risk.filter(x=>x.years>=4.9).length,'Actual dates observed, not a promise of full coverage'],
+    ['10-year span',h.fullTenYears??risk.filter(x=>x.years>=9.8).length,'Older listings only'],
+    ['Watchlist histories',String(h.watchlistAvailable??'—')+' / '+String(h.watchlistEligible??'—'),'Priority over unselected index constituents'],
+    ['1Y volatility available',risk.filter(x=>x.volatility1YPct!=null).length,'Minimum 120 closes / 180 calendar days; excludes suspicious breaks']];
+  for(const [a,b,c] of metrics)host.append(researchTile(a,String(b),c));
+  $('dq-history-note').textContent='Saved history is progressively downloaded at up to '+(h.fetchedThisRun||0)+' attempted tickers in the last build. All listed years represent actual dated observations; recent IPOs cannot have ten years. A price discontinuity is flagged, not silently removed.';
+}
 function renderConstituents(){
   const list=(D.movers||[]).filter(m=>Array.isArray(m.constituents));
   const pick=$('const-market'),rowsEl=$('const-rows');rowsEl.replaceChildren();
@@ -1251,7 +1401,7 @@ function exportCompare(){
  ]);
 }
 
-function renderDataQuality(){
+function renderDataQuality(){renderHistoricalCoverage();
  const q=D.quality||{},host=$('dq-tiles');host.replaceChildren();
  const tiles=[['Market quotes',(q.quoted??D.quotes?.length??0)+' / '+(q.requested??'—'),'Daily provider instruments'],
  ['Constituent fundamentals',(q.fundamentalsCovered??D.fundamentals?.length??0)+' / '+(q.fundamentalsEligible??'—'),'Any usable financial summary'],
@@ -1406,7 +1556,7 @@ function reorderSections(){
   const config=[
     ['overview','MARKET OVERVIEW','Headlines · indices · FX · key yields',['news','headline','overview-board']],
     ['fx','GLOBAL MARKET DATA','Major markets · prices · interactive historical charts',['monitor']],
-    ['equities','EQUITY MARKETS','Daily movers · full index constituents',['movers','constituents']],
+    ['equities','EQUITY MARKETS','Daily movers · full index constituents',['movers','equity-screener','constituents']],
     ['companies','COMPANY RESEARCH','Peer analysis · earnings diary · company financials',['peer-panel','company-events-panel','companies']],
     ['bonds','BONDS & RATES','Government bonds · corporate credit · yield curves',['gilts','us-treasuries','corporate-credit','rates','real','us-spread-panel','sovereign','cross-rates']],
     ['economics','ECONOMIC DATA','GDP · inflation · actuals versus forecasts · calendar',['macro','macro-surprise','calendar']],
@@ -1886,11 +2036,11 @@ function initWatchlist(){
 
 const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics','watchlist','quality'];
 let activeWorkspace='overview', searchHits=[], searchCursor=0;
-const workspaceForSection={'personal-watchlist-panel':'watchlist','market-valuations':'analytics','corporate-credit':'bonds','company-events-panel':'companies','us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
+const workspaceForSection={'personal-watchlist-panel':'watchlist','market-valuations':'analytics','corporate-credit':'bonds','company-events-panel':'companies','us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities','equity-screener':'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
 function paintWorkspace(key){
   switch(key){
     case 'overview': renderNews(); renderPulse(); break;
-    case 'equities': renderMovers(); renderConstituents(); break;
+    case 'equities': renderMovers(); renderScreener(); renderConstituents(); break;
     case 'companies': renderCompany(); renderPeers(); renderCompanyEvents(); break;
     case 'bonds': renderGilts(); renderCredit(); renderRates(); usSpread(); renderReal(); renderSovereign(); break;
     case 'economics': renderMacro(); renderEconomicPrints(); renderCalendar(); break;
@@ -2024,9 +2174,9 @@ function giltCashflows(b,valuationDate){
   const ai=Math.max(0,Math.min(c,c*(daysAccrual/daysTotal)));
   return {accrued:ai,settlement:today,flows:dates.reverse().map((date,i,a)=>({t:(date-settle)/day/365.25,amount:c+(i===a.length-1?100:0)}))};
 }
-function giltValuation(b,clean,valuationDate){
+function giltValuation(b,clean,valuationDate,officialDirty=null){
   if(b.indexLinked||!(clean>0&&clean<1000)||!Number.isFinite(clean))return null;
-  const f=giltCashflows(b,valuationDate);if(!f)return null;const dirty=clean+f.accrued;
+  const f=giltCashflows(b,valuationDate);if(!f)return null;const dirty=(officialDirty!=null&&Number.isFinite(Number(officialDirty))&&Number(officialDirty)>0)?Number(officialDirty):clean+f.accrued;
   const pv=(rate)=>f.flows.reduce((s,p)=>s+p.amount/Math.pow(1+rate/200,2*p.t),0);
   let lo=-50,hi=150;if(pv(lo)<dirty||pv(hi)>dirty)return null;
   for(let i=0;i<90;i++){const mid=(lo+hi)/2;if(pv(mid)>dirty)lo=mid;else hi=mid;}
@@ -2045,10 +2195,10 @@ function renderGilts(){
     'No verified DMO quotes were returned. Enter your own price for conventional-gilt calculations.';
   if(!rows.length){const tr=el('tr');const cell=td(tr,'No gilts match this filter');cell.colSpan=8;table.append(tr);}
   for(const g of rows){const tr=el('tr');tr.style.cursor='pointer';if(g.ticker===giltState.symbol)tr.classList.add('selected');
-    const model=!g.indexLinked&&g.askClean!=null?giltValuation(g,g.askClean,g.asOf):null;
+    const model=!g.indexLinked&&g.askClean!=null?giltValuation(g,g.askClean,g.asOf,g.askDirty):null;
     td(tr,g.name);td(tr,g.shortTicker?g.shortTicker+' · '+g.isin:g.isin);td(tr,g.maturity);td(tr,fmt(g.coupon,3)+'%','n');
     td(tr,g.bidClean!=null?fmt(g.bidClean,2):'—','n');td(tr,g.askClean!=null?fmt(g.askClean,2):'—','n');
-    td(tr,g.indexLinked?'Real gilt':model?fmt(model.ytm,3)+'%*':'—','n');td(tr,g.asOf||'—');
+    td(tr,g.indexLinked?'—':model?fmt(model.ytm,3)+'%*':'—','n');td(tr,g.asOf||'—');
     tr.onclick=()=>{giltState.symbol=g.ticker;renderGilts();};table.append(tr);
   }
   const b=giltList.find(g=>g.ticker===giltState.symbol);
@@ -2059,7 +2209,7 @@ function renderGilts(){
   input.value=user!=null?String(user):(b.askClean!=null?String(b.askClean):'');
   $('gilt-price-basis').textContent=user!=null?'USER PRICE (today)':b.quoted?'DMO HISTORICAL OFFER ('+b.asOf+')':'NO MARKET QUOTE';
   const price=input.value!==''?Number(input.value):null;
-  const v=price!=null&&!b.indexLinked?giltValuation(b,price,user!=null?(D.generatedAt||'').slice(0,10):b.asOf):null;
+  const v=price!=null&&!b.indexLinked?giltValuation(b,price,user!=null?(D.generatedAt||'').slice(0,10):b.asOf,user==null?b.askDirty:null):null;
   const exact=b.quoted&&user==null;
   const host=$('gilt-stats');host.replaceChildren();
   const st=[['Maturity',b.maturity,b.indexLinked?'Index-linked gilt':'Conventional fixed rate'],['Coupon',fmt(b.coupon,3)+'%','Usually semiannual'],
@@ -2068,9 +2218,9 @@ function renderGilts(){
     ['DMO sale dirty / offer',b.askDirty!=null?fmt(b.askDirty,5):'—','Official, including accrued interest / indexation'],
     ['Quoted bid / offer spread',b.bidClean!=null&&b.askClean!=null?fmt(b.askClean-b.bidClean,3):'—','£ / £100'],
     ['Your clean purchase price',price!=null?fmt(price,3):'—',exact?'DMO sale clean price':'Manual input'],
-    ['Model accrued interest',v?fmt(v.accrued,4):'—',b.indexLinked?'Not modelled for index-linked':'Approximate £ / £100'],
-    ['Model dirty price',v?fmt(v.dirty,4):'—','Approximate for conventional gilts'],
-    ['Model gross yield to maturity',v?fmt(v.ytm,3)+'%':'—',b.indexLinked?'Not appropriate without inflation assumptions':'Approximate, not published'],
+    ['Model accrued interest',v?fmt(v.accrued,4):'—',b.indexLinked?'Not modelled for index-linked':'Indicative only; DMO dirty quote used for yield when available'],
+    ['Dirty price used for model',v?fmt(v.dirty,4):'—',user==null&&b.askDirty!=null?'Official DMO offer dirty price':'Estimated from conventional gilt accrued interest'],
+    ['Model gross yield to maturity',v?fmt(v.ytm,3)+'%':'—',b.indexLinked?'Real yield requires a correctly indexed coupon/redemption schedule':'Indicative only: dated quote and approximate payment dates'],
     ['Running yield',v?fmt(v.running,3)+'%':'—','Coupon / clean purchase price'],
     ['Modified duration',v?fmt(v.duration,2)+' years':'—','Approximate'],
     ['DV01 per £100 nominal',v?'£'+fmt(v.dv01,4):'—','Per +1 basis point'],
@@ -2194,6 +2344,7 @@ function init(){setLatest();reorderSections();
   $('compare-etf-preset').onclick=()=>selectComparison(['SPY','ACWI','EWU',''],'adjusted_gbp');
   $('compare-index-preset').onclick=()=>selectComparison(['^FTSE','^GSPC','ACWI',''],'price_local');
   initPeers();
+  initScreener();
   $('credit-main').onchange=e=>{creditState.primary=e.target.value;renderCredit();};
   $('credit-compare').onchange=e=>{creditState.compare=e.target.value;renderCredit();};
   document.querySelectorAll('[data-credit-range]').forEach(b=>b.onclick=()=>{creditState.range=b.dataset.creditRange;renderCredit();});

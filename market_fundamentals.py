@@ -39,6 +39,7 @@ def convert(symbol, info, collected):
     currency=info.get('financialCurrency') or None
     values={
         'symbol':symbol,
+        'schemaVersion':2,
         'asOf':collected,
         'source':'Yahoo Finance / yfinance (unofficial, unverified)',
         'trailingPE':tr if tr is not None and tr>0 else None,
@@ -58,6 +59,8 @@ def convert(symbol, info, collected):
         'freeCashflow':finite(info.get('freeCashflow')),
         'totalDebt':finite(info.get('totalDebt')),
         'roePct':(100*finite(info.get('returnOnEquity')) if finite(info.get('returnOnEquity')) is not None else None),
+        'earningsGrowthPct': (100*finite(info.get('earningsGrowth')) if finite(info.get('earningsGrowth')) is not None else None),
+        'revenueGrowthPct': (100*finite(info.get('revenueGrowth')) if finite(info.get('revenueGrowth')) is not None else None),
         'earningsReportedDate':None,
     }
     # Only retain non-empty summaries; a symbol that returned blanks is not 'covered'.
@@ -149,6 +152,9 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
     priority=[s for _,s in sorted(hot,reverse=True)]
     lookup_order=list(dict.fromkeys(priority+universe))
     records={k:v for k,v in previous.get('records',{}).items() if k in seen and isinstance(v,dict)}
+    for old in records.values():
+        dy=finite(old.get('dividendYieldPct'))
+        if dy is not None and not 0<=dy<=30:old['dividendYieldPct']=None
     attempts={k:v for k,v in previous.get('attempts',{}).items() if k in seen}
     resumed_summaries=len(records)
     # Detailed profiles (e.g. Shell) have priority over summary-only snapshots.
@@ -157,16 +163,21 @@ def collect(movers, detailed_companies, directory, batch_size=40, offline=False,
         if sym not in seen:continue
         vals={k:c.get(k) for k in ('trailingPE','forwardPE','marketCap','priceToBook',
              'dividendYieldPct','revenueTTM','netIncomeTTM','profitMarginPct','financialCurrency','sector',
-             'industry','epsTTM','ebitda','enterpriseToEbitda','freeCashflow','totalDebt','roePct')}
+             'industry','epsTTM','ebitda','enterpriseToEbitda','freeCashflow','totalDebt','roePct',
+             'earningsGrowthPct','revenueGrowthPct')}
         if not any(vals.get(k) is not None for k in ('trailingPE','forwardPE','marketCap','revenueTTM','netIncomeTTM')):continue
-        records[sym]={'symbol':sym,'asOf':stamp,'source':'Detailed company profile (Yahoo Finance via yfinance)',**vals}
+        records[sym]={'symbol':sym,'schemaVersion':2,'asOf':stamp,'source':'Detailed company profile (Yahoo Finance via yfinance)',**vals}
         attempts[sym]=stamp
     def age_days(s):
         try:return (now-dt.datetime.fromisoformat(s.replace('Z','+00:00'))).total_seconds()/86400
         except Exception:return 100000
     def needs_update(sym):
         last=attempts.get(sym,'')
-        if sym in records:return age_days(records[sym].get('asOf',''))>=30 and age_days(last)>=2
+        if sym in records:
+            # One-off progressive migration adds earnings/revenue growth to old
+            # financial summaries; avoid a 30-day wait for the new screener.
+            if records[sym].get('schemaVersion')!=2:return age_days(last)>=2
+            return age_days(records[sym].get('asOf',''))>=30 and age_days(last)>=2
         return age_days(last)>=2
     pending=[s for s in lookup_order if needs_update(s)][:max(0,batch_size)]
     warnings=[]

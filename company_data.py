@@ -128,6 +128,9 @@ def fetch_company(symbol,name,builder,opts):
     trailing=_num(info.get('trailingPE'))
     forward=_num(info.get('forwardPE'))
     div_yield=_num(info.get('dividendYield'))
+    # yfinance dividendYield is a percentage in supported releases, not a fraction.
+    # Reject implausible figures instead of displaying a 306% Shell yield.
+    if div_yield is not None and not 0 <= div_yield <= 30:div_yield=None
     latest=annual[0] if annual else {}
     # If a statement is missing, do not silently swap in TTM without relabelling.
     company={
@@ -148,6 +151,8 @@ def fetch_company(symbol,name,builder,opts):
         'ebitda':_num(info.get('ebitda')),'enterpriseToEbitda':_num(info.get('enterpriseToEbitda')),
         'freeCashflow':_num(info.get('freeCashflow')),'totalDebt':_num(info.get('totalDebt')),
         'roePct':_num(info.get('returnOnEquity'))*100 if _num(info.get('returnOnEquity')) is not None else None,
+        'earningsGrowthPct':_num(info.get('earningsGrowth'))*100 if _num(info.get('earningsGrowth')) is not None else None,
+        'revenueGrowthPct':_num(info.get('revenueGrowth'))*100 if _num(info.get('revenueGrowth')) is not None else None,
         'revenue':latest.get('revenue'),'operatingProfit':latest.get('operatingProfit'),
         'netProfit':latest.get('netProfit'),'fiscalEnd':latest.get('fiscalEnd'),
         'financialCurrency':financial_currency,'annual':annual,'events':events,
