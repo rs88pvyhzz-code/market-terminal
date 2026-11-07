@@ -418,6 +418,15 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
     <div><div class="row"><h3>SHARE PRICE HISTORY</h3><span class="mini" id="company-price-date"></span></div><div class="period-controls" id="company-period"></div><p class="note" id="company-performance">Choose a time period.</p><div class="chart" id="company-chart"></div></div>
     <div class="company-fin"><h3>ANNUAL INCOME STATEMENT</h3><div id="company-annual"></div><p class="note" style="padding-top:9px">Revenue, operating profit and net profit are reported accounting figures, NOT necessarily trailing 12 months. All amounts use the company's financial reporting currency.</p></div>
   </div>
+  <section class="watchlist-risk" id="company-risk-panel" aria-label="Company performance, risk and momentum">
+    <div class="row"><h3>PERFORMANCE, RISK &amp; MOMENTUM</h3><span class="mini" id="company-risk-period">Historical closing prices</span></div>
+    <p class="note" id="company-risk-note">Risk statistics use observed closing prices only. Missing or insufficient data is not estimated.</p>
+    <div class="watchlist-kpis" id="company-risk-kpis"></div>
+    <div class="row"><h3>COMPANY VS REFERENCE INDEX</h3><select class="field" id="company-benchmark-range" aria-label="Benchmark comparison period"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="5Y">5 years</option><option value="MAX">All available</option></select></div>
+    <p class="note" id="company-benchmark-note">Both series are rebased to 100 on their first shared trading date, using a common currency.</p>
+    <div class="chart" id="company-benchmark-chart" role="img" aria-label="Company performance compared with reference index"></div>
+    <p class="note">The reference is a broad-market proxy, not necessarily an official sector benchmark. These are price returns excluding dividends. Beta and correlation require at least 120 matched daily returns spanning 180 calendar days. Technical indicators are not investment recommendations.</p>
+  </section>
   <p class="note">Search covers the saved constituents of the S&amp;P 500, Nasdaq 100, FTSE 100 and FTSE 250. The collector prioritises companies with large daily moves, storing up to 10 years of share-price history for a small selection and gathering up to 40 new financial summaries per scheduled run. Historical accounts remain limited to preselected detailed profiles. The website is a static snapshot, not a live on-demand data API. Missing figures are shown as —; financial reports and share prices can use different currencies.</p>
 </section>
 <section class="panel" id="company-events-panel">
@@ -1117,6 +1126,7 @@ function renderCompany(){
   }else{
     chart('company-chart',[{name:c.name,color:AMBER,pts}],{format:v=>fmt(v,v>=1000?1:2)});
   }
+  renderCompanyRisk(c);
   const destination=$('company-annual');destination.replaceChildren();
   if(!c.annual||!c.annual.length){destination.append(el('div','empty','Annual income statements unavailable from the free feed.'));return;}
   const table=el('table');const header=el('tr');
@@ -1577,6 +1587,86 @@ function watchTechnical(w){
    currencyBasis:benchPair.converted?'GBP converted':watchCurrency(watchQuoteMap.get(w.symbol)?.currency),
    benchError:benchPair.reason||null};
 }
+// Shared risk mathematics: Company Research and My Watchlist use the same
+// observed-price volatility, return alignment, beta and correlation conventions.
+function renderCompanyRisk(c){
+ const host=$('company-risk-kpis');host.replaceChildren();
+ const sym=c.symbol, saved=watchlistRecords.find(w=>w.symbol===sym);
+ const firstTrade=saved?.firstTradeDate||'';
+ const stored=companyHistory.get(sym)||[];
+ const own=saved&&(watchHistoryMap.get(sym)||[]).length>stored.length
+   ?(watchHistoryMap.get(sym)||[]).map(x=>({date:x[0],v:Number(x[1])})):stored;
+ const rows=own.filter(x=>x.date>=firstTrade&&x.v>0&&Number.isFinite(x.v)).sort((a,b)=>a.date.localeCompare(b.date));
+ const end=rows.at(-1)?.date;
+ const year=end?rows.filter(x=>watchSpanDays(x.date,end)<=365):[];
+ const span=year.length>1?watchSpanDays(year[0].date,end):0;
+ const avg=n=>rows.length>=n?rows.slice(-n).reduce((t,x)=>t+x.v,0)/n:null;
+ const ret=watchReturns(year.map(x=>({date:x.date,a:x.v})),'a');
+ const vol=year.length>=120&&span>=180?watchSampleVol(ret):null;
+ let peak=0,dd=0;for(const x of year){peak=Math.max(peak,x.v);dd=Math.min(dd,100*(x.v/peak-1));}
+ let rsi=null;if(rows.length>=15){const r=rows.slice(-15);let gain=0,loss=0;
+  if(r.slice(1).every((x,i)=>watchSpanDays(r[i].date,x.date)<=7)){
+   for(let i=1;i<r.length;i++){const d=r[i].v-r[i-1].v;gain+=Math.max(0,d);loss+=Math.max(0,-d);}
+   rsi=loss===0?(gain===0?50:100):100-100/(1+gain/loss);
+  }
+ }
+ const defaultBenchmark=sym.endsWith('.L')?'^FTSE':sym.endsWith('.DE')?'^GDAXI':'^GSPC';
+ const benchSymbol=saved?.benchmark||defaultBenchmark;
+ const bench=qMap.get(benchSymbol),benchRows=histMap.get(benchSymbol)||[];
+ const currency=c.priceCurrency||indexedStocks.get(sym)?.currency||watchQuoteMap.get(sym)?.currency||'';
+ const same=bench&&watchCurrency(currency)===watchCurrency(bench.currency);
+ const ownDates=new Map(rows.map(x=>[x.date,x.v]));const aligned=[];
+ for(const b of benchRows){const a=ownDates.get(b.date);if(!(a>0&&b.v>0))continue;
+  const av=same?a:priceToGBP(a,currency,b.date),bv=same?b.v:priceToGBP(b.v,bench.currency,b.date);
+  if(av>0&&bv>0)aligned.push({date:b.date,a:av,b:bv});
+ }
+ aligned.sort((a,b)=>a.date.localeCompare(b.date));
+ const pair=end?aligned.filter(x=>watchSpanDays(x.date,end)<=365):[];
+ const xa=[],xb=[];for(let i=1;i<pair.length;i++){
+  const gap=watchSpanDays(pair[i-1].date,pair[i].date);if(gap<1||gap>7)continue;
+  const a=Math.log(pair[i].a/pair[i-1].a),b=Math.log(pair[i].b/pair[i-1].b);
+  if(Number.isFinite(a)&&Number.isFinite(b)){xa.push(a);xb.push(b);}
+ }
+ let beta=null,corr=null;
+ if(xa.length>=120&&watchSpanDays(pair[0].date,pair.at(-1).date)>=180){
+  const am=xa.reduce((t,x)=>t+x,0)/xa.length,bm=xb.reduce((t,x)=>t+x,0)/xb.length;
+  let va=0,vb=0,cov=0;for(let i=0;i<xa.length;i++){
+   const a=xa[i]-am,b=xb[i]-bm;va+=a*a;vb+=b*b;cov+=a*b;}
+  if(vb>1e-12)beta=cov/vb;
+  if(va>1e-12&&vb>1e-12)corr=cov/Math.sqrt(va*vb);
+ }
+ const fmtRisk=(v,d=1)=>v==null||!Number.isFinite(v)?'—':fmt(v,d);
+ const price=v=>v==null?'—':fmt(v,v>=100?1:2)+' '+currency;
+ const tiles=[
+  ['1Y VOLATILITY',vol==null?'—':fmtRisk(vol)+'%','Annualised daily price returns'],
+  ['BETA',fmtRisk(beta,2),'Matched daily returns · common currency'],
+  ['CORRELATION',fmtRisk(corr,2),'Pearson daily return correlation'],
+  ['MAX DRAWDOWN',year.length<20?'—':fmtRisk(dd)+'%',span>=300?'Last 12 months':'Available shorter period'],
+  ['RSI (14)',fmtRisk(rsi),'14 consecutive trading changes'],
+  ['20-DAY MOVING AVERAGE',price(avg(20)),'Simple moving average'],
+  ['50-DAY MOVING AVERAGE',price(avg(50)),'Simple moving average'],
+  ['200-DAY MOVING AVERAGE',price(avg(200)),'Simple moving average'],
+  ['DIVIDEND YIELD',c.dividendYieldPct==null?'—':fmtRisk(c.dividendYieldPct,2)+'%','Latest sourced company financial data'],
+  ['REFERENCE INDEX',bench?.name||benchSymbol,benchSymbol+' · broad-market proxy']
+ ];
+ for(const [label,value,info] of tiles)host.append(watchValTile(label,value,info));
+ $('company-risk-period').textContent=rows.length+' observed closes · '+(rows[0]?.date||'history unavailable')+' to '+(end||'—');
+ $('company-risk-note').textContent=(vol==null?'Insufficient daily history for one-year volatility. ':'')+
+  (beta==null?'Beta/correlation unavailable: insufficient matched history or benchmark FX data. ':'')+
+  'Missing values are deliberately left blank. Risk uses unadjusted prices; dividend-adjusted total returns are not implied.';
+ const range=$('company-benchmark-range').value||'1Y';
+ const cutoff=end?(range==='MAX'?'0000-01-01':startOf(end,range)):'9999-01-01';
+ const selected=aligned.filter(x=>x.date>=cutoff);
+ if(selected.length<2){empty('company-benchmark-chart',bench?'Not enough matching dated prices and FX rates to compare.':'Reference index history unavailable in this snapshot.');
+  $('company-benchmark-note').textContent='No comparable series available; no values have been estimated.';return;}
+ const a0=selected[0],ap=selected.map(x=>({date:x.date,v:100*x.a/a0.a})),bp=selected.map(x=>({date:x.date,v:100*x.b/a0.b}));
+ $('company-benchmark-note').textContent=selected[0].date+' to '+selected.at(-1).date+' · '+sym+' '+pc(ap.at(-1).v-100)+' vs '+
+  (bench?.name||benchSymbol)+' '+pc(bp.at(-1).v-100)+' · '+(same?'same quoted currency':'both converted to GBP on matching dates')+
+  ' · price returns only, excluding dividends'+(range!=='MAX'&&watchSpanDays(selected[0].date,selected.at(-1).date)<250&&range==='1Y'?' · PARTIAL HISTORY':'');
+ chart('company-benchmark-chart',[{name:sym+' rebased',pts:ap,color:AMBER},{name:(bench?.name||benchSymbol)+' rebased',pts:bp,color:AQUA}],
+  {format:v=>fmt(v,1),aria:sym+' against '+benchSymbol});
+}
+$('company-benchmark-range').addEventListener('change',()=>{if(state.companySymbol)renderCompanyRisk(ensureCompany(state.companySymbol));});
 function renderWatchlistRisk(w,q){
  const host=$('watchlist-risk-kpis');host.replaceChildren();const r=watchTechnical(w),unit=q?.currency||'';
  const val=(x,p=1)=>x==null||!Number.isFinite(x)?'—':fmt(x,p);
