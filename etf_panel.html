@@ -1,0 +1,38 @@
+<section class="panel" id="etf-tracker-panel">
+  <div class="row"><div><h2>LOW-COST ETF &amp; BOND TRACKERS</h2>
+    <p class="note">UK-accessible UCITS research candidates, including country and specialist funds. TER/replication details are editorial snapshots, not live issuer facts. Some exchange tickers require verification before trading.</p></div>
+    <span class="mini" id="etf-coverage">Catalogue loading</span></div>
+  <div class="research-stats" id="etf-stats"></div>
+  <div class="etf-controls inputs">
+    <label>FIND FUND<input id="etf-search" class="field" type="search" placeholder="Poland, India, DAX, sovereign…" aria-label="Filter ETF catalogue"></label>
+    <label>ASSET CLASS<select id="etf-category" class="field"><option value="all">All asset classes</option><option value="Equity">Equities</option><option value="Bonds">Bonds</option><option value="Thematic">Specialist equity themes</option><option value="Commodity ETC">Commodity ETCs</option></select></label>
+    <label>MARKET<select id="etf-market" class="field"><option value="all">All markets</option></select></label>
+    <label>REPLICATION<select id="etf-replication" class="field"><option value="all">All methods</option><option value="physical">Physical</option><option value="synthetic">Synthetic / swap</option><option value="unknown">Not verified</option></select></label>
+    <label>MAX OCF / TER %<input id="etf-maxfee" class="field" type="number" min="0" max="5" step="0.01" placeholder="No limit" aria-label="Maximum annual expense ratio"></label>
+    <label>SORT<select id="etf-sort" class="field"><option value="market">Market and cost</option><option value="fee">Lowest known fee</option><option value="one">Highest 1Y return</option><option value="three">Highest 3Y annualised</option><option value="five">Highest 5Y annualised</option><option value="name">Fund name</option></select></label>
+  </div>
+  <div class="row" style="margin-top:9px"><p class="mini" id="etf-result-count"></p><button id="etf-export" class="btn" type="button">EXPORT ETF LIST CSV</button></div>
+  <div class="etf-table-scroll"><table class="watch etf-table"><thead><tr>
+    <th>Fund / market</th><th>Ticker</th><th>Benchmark</th><th class="n">TER %</th><th>Replication</th><th>Pay-out</th><th class="n">Last price</th><th class="n">1Y*</th><th class="n">3Y*</th><th class="n">5Y*</th><th>Quote</th><th>Compare</th>
+  </tr></thead><tbody id="etf-rows"></tbody></table></div>
+  <p class="note">*Annualised historical performance in each fund's quoted currency, using Yahoo adjusted-close where supplied, otherwise price only. Not directly comparable across different currencies and not independently verified total returns. Unknown fees and replication methods are shown as unavailable, never zero.</p>
+  <section class="etf-detail" aria-label="Selected ETF research">
+    <div class="row"><div><h3 id="etf-selected">Select a fund</h3><p class="mini" id="etf-selected-meta"></p></div>
+      <div class="inputs"><a id="etf-facts-link" target="_blank" rel="noopener noreferrer" href="https://www.justetf.com/uk/">VERIFY FUND FACTS</a><a id="etf-quote-link" target="_blank" rel="noopener noreferrer" href="https://finance.yahoo.com/">QUOTE SOURCE</a></div></div>
+    <div id="etf-detail-stats" class="etf-stat-grid"></div>
+    <p class="note" id="etf-warning"></p>
+    <div class="row"><h3>HISTORICAL PERFORMANCE COMPARISON</h3><span class="mini" id="etf-chart-stamp"></span></div>
+    <div class="etf-plot-controls inputs">
+      <label>PERIOD<select id="etf-period" class="field"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="5Y" selected>5 years</option><option value="10Y">10 years</option><option value="MAX">Maximum</option></select></label>
+      <label>BASIS<select id="etf-basis" class="field"><option value="adjusted_gbp">Adjusted-close proxy in GBP</option><option value="price_gbp">Price only in GBP</option><option value="adjusted_local">Adjusted-close proxy in quoted currency</option><option value="price_local">Price only in quoted currency</option></select></label>
+      <label class="etf-check-label"><input id="etf-reference" type="checkbox"> Add market index/reference</label>
+      <button id="etf-clear-comparisons" class="btn" type="button">CLEAR COMPARISONS</button>
+    </div>
+    <div class="chart" id="etf-chart" role="img" aria-label="Selected ETFs rebased to 100"></div>
+    <p class="note" id="etf-chart-note">A chart reference may be a price index, performance index or another ETF. Its methodology may differ from the fund benchmark; this is NOT an official tracking-difference calculation. Total return, FX and distributions require separate verification.</p>
+    <div class="row"><h3>RISK, COST &amp; PEERS</h3><span class="mini">Risk uses observed price history, not models</span></div>
+    <div class="etf-stat-grid" id="etf-risk-stats"></div>
+    <div id="etf-cost-peers" class="etf-peer-box"></div>
+    <p class="note">OCF/TER does not include dealing spread, stamp duty where applicable, FX, platform charges or all tracking effects. Compare funds tracking the SAME index, on the SAME return and currency basis. Synthetic funds carry swap/counterparty and collateral risks; physical funds may use securities lending. Fund-level yield and tracking difference are not inferred from market prices.</p>
+  </section>
+</section>
