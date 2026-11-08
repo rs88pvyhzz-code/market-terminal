@@ -114,7 +114,7 @@ def main():
         print('  Backup:',backup.name)
     for filename in ('etf_catalog.csv','etf_tracker.py'):
         if (PACKAGE/filename).resolve() != (repo/filename).resolve():
-    shutil.copy2(PACKAGE/filename,repo/filename)
+                shutil.copy2(PACKAGE/filename,repo/filename)
     for name,content in updates.items():
         (repo/name).write_text(content,'utf-8')
     py_compile.compile(str(repo/'build_terminal.py'),doraise=True)
