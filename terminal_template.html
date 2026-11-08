@@ -282,8 +282,8 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
     <button type="button" role="tab" id="tab-equities" aria-controls="view-equities" data-workspace="equities" aria-selected="false">EQUITIES</button>
     <button type="button" role="tab" id="tab-companies" aria-controls="view-companies" data-workspace="companies" aria-selected="false">COMPANY RESEARCH</button>
     <button type="button" role="tab" id="tab-bonds" aria-controls="view-bonds" data-workspace="bonds" aria-selected="false">BONDS & RATES</button>
-    <button type="button" role="tab" id="tab-economics" aria-controls="view-economics" data-workspace="economics" aria-selected="false">ECONOMICS</button>
     <button type="button" role="tab" id="tab-analytics" aria-controls="view-analytics" data-workspace="analytics" aria-selected="false">ANALYTICS</button>
+    <button type="button" role="tab" id="tab-economics" aria-controls="view-economics" data-workspace="economics" aria-selected="false">ECONOMICS</button>
     <button type="button" role="tab" id="tab-watchlist" aria-controls="view-watchlist" data-workspace="watchlist" aria-selected="false">MY WATCHLIST</button>
     <button type="button" role="tab" id="tab-quality" aria-controls="view-quality" data-workspace="quality" aria-selected="false">DATA QUALITY</button>
   </nav>
@@ -1562,8 +1562,8 @@ function reorderSections(){
     ['equities','EQUITY MARKETS','Daily movers · full index constituents',['movers','equity-screener','constituents']],
     ['companies','COMPANY RESEARCH','Peer analysis · earnings diary · company financials',['peer-panel','company-events-panel','companies']],
     ['bonds','BONDS & RATES','Government bonds · corporate credit · yield curves',['gilts','us-treasuries','corporate-credit','rates','real','us-spread-panel','sovereign','cross-rates']],
-    ['economics','ECONOMIC DATA','GDP · inflation · actuals versus forecasts · calendar',['macro','macro-surprise','calendar']],
     ['analytics','VALUATIONS & MARKET ANALYTICS','Index valuations · comparisons · volatility · correlations',['market-valuations','compare','score-panel']],
+    ['economics','ECONOMIC DATA','GDP · inflation · actuals versus forecasts · calendar',['macro','macro-surprise','calendar']],
     ['watchlist','PERSONAL WATCHLIST','Selected securities · prices · news · fundamentals',['personal-watchlist-panel']],
     ['quality','DATA QUALITY & SOURCES','Quote coverage · stale data · missing fundamentals · source warnings',['quality-panel','sources']]
   ];
@@ -2066,7 +2066,7 @@ function initWatchlist(){
  $('watchlist-basis').onchange=e=>{watchState.basis=e.target.value;const w=watchlistRecords.find(r=>r.symbol===watchState.symbol);if(w){renderWatchlistChart(w,watchQuoteMap.get(w.symbol));renderWatchlistRelative(w,watchQuoteMap.get(w.symbol));}};
 }
 
-const WORKSPACES=['overview','fx','equities','companies','bonds','economics','analytics','watchlist','quality'];
+const WORKSPACES=['overview','fx','equities','companies','bonds','analytics','economics','watchlist','quality'];
 let activeWorkspace='overview', searchHits=[], searchCursor=0;
 const workspaceForSection={'personal-watchlist-panel':'watchlist','market-valuations':'analytics','corporate-credit':'bonds','company-events-panel':'companies','us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities','equity-screener':'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
 function paintWorkspace(key){
