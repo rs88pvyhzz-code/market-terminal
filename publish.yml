@@ -1,0 +1,86 @@
+name: Refresh and publish Market Terminal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '37 8,15,21 * * 1-5'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out files
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install financial data client
+        run: python -m pip install 'yfinance>=0.2.55,<1'
+
+      - name: Repair Eurostat macro sources
+        run: python market_terminal_cleanup.py --pre --repo .
+
+      - name: Download data and build terminal
+        run: >-
+          python install_etf_trackers.py --repo . && python etf_consolidation.py --repo . && python build_terminal.py --years 20
+          --workers 2 --cache-hours 0
+          --movers-markets FTSE100,FTSE250,SP500,NASDAQ100
+          --mover-history-limit 30
+          --company-news-limit 20
+          --price-history-batch 60
+          --companies AXON,CCH.L,SHAW.L,NFLX
+          --output terminal.html
+
+      - name: Check market data
+        run: python verify_snapshot.py terminal.html
+
+      - name: Improve research layout and comparisons
+        run: |
+          if test -f terminal_research_upgrade.py; then
+            python terminal_research_upgrade.py terminal.html
+          else
+            echo "Previous research upgrade was not uploaded; skipping it."
+          fi
+
+      - name: Improve market analysis, economics and data quality
+        run: python market_terminal_cleanup.py --post --html terminal.html
+
+      - name: Prepare website and persistent cache
+        run: |
+          mkdir -p public
+          cp terminal.html public/index.html
+          if test -f .terminal_fundamentals/fundamental_summaries.json; then
+            cp .terminal_fundamentals/fundamental_summaries.json public/fundamentals_cache.json
+          fi
+          python market_price_history.py --publish public
+          touch public/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+      - name: Publish website
+        id: deployment
+        uses: actions/deploy-pages@v4
