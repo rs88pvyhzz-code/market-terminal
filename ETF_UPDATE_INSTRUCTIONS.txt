@@ -1,0 +1,42 @@
+ETF SCREENSHOT DATA — MARKET TERMINAL
+========================================
+Observed repo: rs88pvyhzz-code/market-terminal, main, 8 November 2026.
+
+This is NOT yet installed: GitHub rejected the connector write with 403.
+For manual installation, upload these two files:
+  1) apply_etf_issuer_data.py -> repository root
+  2) publish_with_etf_data.yml -> replace .github/workflows/publish.yml
+     (RENAME to publish.yml when placing it there).
+
+Do not replace install_etf_trackers.py or your original dashboard.
+
+Why this works:
+- The workflow first runs the EXISTING install_etf_trackers.py.
+- It then runs apply_etf_issuer_data.py --repo .
+- The patch updates etf_catalog.csv and hooks the snapshot enrichment
+  immediately after the issuer feed and before terminal.html generation.
+- Existing issuer data have priority over dated screenshot fallback.
+- Fund size is identified by its real issuer fund, ISIN, currency and
+  reporting date. Uncertain AUM reporting dates are marked as such.
+- The patch is idempotent and makes an initial CSV backup on its first run.
+- Original company news, analytics and market panels remain unchanged.
+
+Photos:
+- 17 issuer-ISIN-matched UCITS records, of which 14 map to existing
+  catalogue names (SEMI.L is corrected to SMH.L) and 3 are new rows:
+  FLXK.L (Korea), KSA.L (Saudi), CG1.L (Amundi DAX).
+- US iShares IVV, IEFA, IEMG, AGG and other US-domiciled snapshots
+  have intentionally NOT been mis-mapped to UK UCITS securities.
+- Current source catalogue: 78 ETF rows; 37 blank editorial TER values.
+  After adding these photos: 81 ETF rows; 31 blank editorial TER values.
+  Runtime official issuer refresh can fill additional TER/AUM fields,
+  so these are catalogue counts, not confirmed live terminal blank counts.
+- Some ETFs still need official fee, AUM, replication and lending checks.
+- Issuer NAV tracking error (HSBC HMCX 3Y 0.07%) is kept separate
+  from indicative price-based tracking error.
+
+If upload only supports one file at a time, unzip this package and upload
+the Python file and revised publish.yml separately.
+
+Optional evidence CSV is included for audit/reconciliation; the Python
+file embeds the 17 rows, so CSV need not be uploaded for the build.
