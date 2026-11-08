@@ -37,7 +37,7 @@ jobs:
 
       - name: Download data and build terminal
         run: >-
-          python install_etf_trackers.py --repo . && python build_terminal.py --years 20
+          python install_etf_trackers.py --repo . && python etf_consolidation.py --repo . && python build_terminal.py --years 20
           --workers 2 --cache-hours 0
           --movers-markets FTSE100,FTSE250,SP500,NASDAQ100
           --mover-history-limit 30
