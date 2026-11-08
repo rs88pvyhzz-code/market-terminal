@@ -265,6 +265,19 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 .history-coverage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:8px}
 .history-coverage-grid .research-stat{border:1px solid #34343a}
 @media(max-width:570px){.screener-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.screener-actions{gap:5px}}
+
+/* Market analytics additions: compact desktop and iPad panels. */
+.analytic-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0}
+.analytic-stat{border:1px solid #35353b;background:#19191d;border-radius:5px;padding:11px;min-width:0;display:grid;gap:5px}
+.analytic-stat .key{font:11px var(--font);color:var(--amber)}
+.analytic-stat .val{font:20px var(--font);color:#eee;font-variant-numeric:tabular-nums}
+.analytic-stat .note{font-size:10px;margin:0}
+.analytic-scroll{max-width:100%;overflow-x:auto}.analytic-scroll .watch{min-width:690px}
+.analytic-scroll td{white-space:nowrap;font:11px var(--font)}
+.sector-bar{height:8px;background:#29272d;width:100px;max-width:100%;border-radius:3px;overflow:hidden}
+.sector-fill{height:100%;display:block;border-radius:3px}.sector-fill.plus{background:var(--up,#51d284)}.sector-fill.minus{background:var(--down,#ff665e)}
+@media(max-width:800px){.analytic-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){.analytic-stat .val{font-size:16px}}
 </style>
 </head>
 <body>
@@ -492,6 +505,30 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <p class="note" id="peer-coverage"></p>
   <div class="constituents-scroll" style="max-height:none"><div id="peer-table"></div></div>
   <p class="note">P/E, margins and yields can be compared across currencies; absolute revenue and profit amounts cannot. Values are unverified provider summaries, with different reporting periods and retrieval dates. Blank does not mean zero.</p>
+</section>
+<section class="panel" id="analytics-breadth">
+  <div class="row"><div><h2>MARKET BREADTH — CURRENT INDEX MEMBERS</h2><p class="note">Advances versus declines; 50-/200-day moving average breadth; closing-price 52-week highs and lows. Every metric shows its actual coverage.</p></div><label class="mini" for="breadth-index">INDEX</label><select id="breadth-index" class="field" aria-label="Choose market breadth index"></select></div>
+  <div class="analytic-cards" id="breadth-cards"></div>
+  <div class="analytic-scroll"><table class="watch"><thead><tr><th>Index</th><th>Quote date</th><th class="n">Quoted / listed</th><th class="n">Above 50D</th><th class="n">Above 200D</th><th class="n">52W highs / lows</th></tr></thead><tbody id="breadth-summary-rows"></tbody></table></div>
+  <p class="note" id="breadth-note"></p>
+</section>
+<section class="panel" id="analytics-sectors">
+ <div class="row"><div><h2>SECTOR RELATIVE PERFORMANCE</h2><p class="note">Current constituent price returns against their benchmark. Equal-weight sector sample, not a sector index; returns exclude dividends.</p></div></div>
+ <div class="research-controls"><label class="mini" for="sector-index">INDEX</label><select id="sector-index" class="field" aria-label="Choose index for sector returns"></select>
+  <label class="mini" for="sector-period">PERIOD</label><select id="sector-period" class="field" aria-label="Sector returns time frame"><option value="1M">1 month</option><option value="3M">3 months</option><option value="6M">6 months</option><option value="1Y">1 year</option></select></div>
+ <div class="analytic-scroll"><table class="watch"><thead><tr><th>Sector</th><th class="n">Covered / identified</th><th class="n">Sector price move</th><th class="n">Index price move</th><th class="n">Relative (pp)</th><th>Relative bar</th></tr></thead><tbody id="sector-rows"></tbody></table></div>
+ <p class="note" id="sector-note"></p>
+</section>
+<section class="panel" id="analytics-rolling">
+ <div class="row"><div><h2>ROLLING VOLATILITY & CORRELATION</h2><p class="note">Compare two indices or ETFs using observed daily closes. Rolling window recalculates continuously across the available history.</p></div></div>
+ <div class="research-controls"><label class="mini" for="rolling-primary">INSTRUMENT</label><select id="rolling-primary" class="field"></select>
+ <label class="mini" for="rolling-reference">AGAINST</label><select id="rolling-reference" class="field"></select>
+ <label class="mini" for="rolling-window">WINDOW</label><select id="rolling-window" class="field"><option value="30">30 trading days</option><option value="90">90 trading days</option><option value="252">252 trading days</option></select>
+ <label class="mini" for="rolling-basis">CURRENCY</label><select id="rolling-basis" class="field"><option value="local">Local quote units</option><option value="gbp">Both in GBP</option></select></div>
+ <div class="analytic-cards" id="rolling-kpis"></div>
+ <h3>ROLLING ANNUALISED VOLATILITY</h3><div id="rolling-vol-chart" class="chart"></div>
+ <h3>ROLLING CORRELATION</h3><div id="rolling-corr-chart" class="chart"></div>
+ <p id="rolling-note" class="note"></p>
 </section>
 <section class="panel" id="market-valuations">
   <div class="row"><div><h2>MARKET VALUATION DASHBOARD</h2>
@@ -1514,6 +1551,136 @@ function renderCredit(){
   $('credit-status').textContent='Latest observation: '+(choices[0]?.date||'not available')+'. Percentage spreads are converted to basis points; 1.00% = 100bp. Widening = greater credit risk premium. Snapshot data, not executable yields.';
   document.querySelectorAll('[data-credit-range]').forEach(b=>b.classList.toggle('active',b.dataset.creditRange===creditState.range));
 }
+// Expanded market analytics: sample breadth, sector relative PRICE moves and rolling risk.
+// All values are sourced from the dated build snapshot. Unavailable figures stay unavailable.
+const extraAnalytics = D.marketAnalytics || {breadth:[],sectorPerformance:[],historyCount:0};
+const analyticState={breadth:'SP500',sectorMarket:'SP500',sectorRange:'3M',rollingPrimary:'^GSPC',rollingReference:'^IXIC',rollingWindow:90,rollingBasis:'local'};
+function renderBreadth(){
+ const data=extraAnalytics.breadth||[],sel=$('breadth-index'),body=$('breadth-summary-rows'),host=$('breadth-cards');
+ if(!sel||!body||!host)return;
+ if(!sel.options.length){data.forEach(m=>sel.add(new Option(m.name,m.id)));}
+ if(!data.some(m=>m.id===analyticState.breadth)&&data.length)analyticState.breadth=data[0].id;
+ sel.value=analyticState.breadth;
+ const m=data.find(x=>x.id===analyticState.breadth);body.replaceChildren();host.replaceChildren();
+ for(const row of data){const tr=el('tr',row.id===analyticState.breadth?'selected':'');tr.style.cursor='pointer';
+  const coverage=(a,b)=>b?fmt(a/b*100,1)+'% ('+a+'/'+b+')':'—';
+  [row.name,row.date,row.quoted+' / '+row.members,coverage(row.above50,row.eligible50),coverage(row.above200,row.eligible200),row.high52+' / '+row.low52].forEach((v,i)=>td(tr,String(v),i>=2?'n':''));
+  tr.onclick=()=>{analyticState.breadth=row.id;renderBreadth();};body.append(tr);
+ }
+ if(!m){host.append(el('p','note','No index breadth data. Historical constituent prices are collected progressively during scheduled updates.'));$('breadth-note').textContent='';return;}
+ const quote=m.quoted||0,valid=m.advancers+m.decliners+m.unchanged;
+ const cards=[['Advancing / declining',m.advancers+' / '+m.decliners,valid+' same-day changes; unchanged '+m.unchanged],
+  ['Above 50-day average',m.eligible50?fmt(100*m.above50/m.eligible50,1)+'%':'—',m.above50+' / '+m.eligible50+' valid 50-day histories'],
+  ['Above 200-day average',m.eligible200?fmt(100*m.above200/m.eligible200,1)+'%':'—',m.above200+' / '+m.eligible200+' valid 200-day histories'],
+  ['52-week closing highs / lows',m.eligible52?m.high52+' / '+m.low52:'—',m.eligible52+' qualifying 52-week histories']];
+ for(const [title,value,detail] of cards){const stat=el('div','analytic-stat');stat.append(el('div','key',title),el('div','val',value),el('div','note',detail));host.append(stat);}
+ const breadthPct=m.members?100*m.eligible200/m.members:0;
+ $('breadth-note').textContent=m.name+' · '+m.date+' · '+quote+'/'+m.members+' same-day quotes; '+m.eligible200+'/'+m.members+' complete 200-day histories ('+fmt(breadthPct,1)+'% coverage). Percentages are calculated ONLY among eligible shares, not all index members. Current membership is used, introducing survivorship bias. 52-week highs and lows use daily closes, not intraday prices. '+(breadthPct<70?'LOW COVERAGE — not representative of the whole index.':'');
+}
+function renderSectors(){
+ const rows=extraAnalytics.sectorPerformance||[],market=$('sector-index'),period=$('sector-period'),body=$('sector-rows');
+ if(!market||!body||!period)return;
+ if(!market.options.length)rows.forEach(m=>market.add(new Option(m.name,m.id)));
+ if(!rows.some(m=>m.id===analyticState.sectorMarket)&&rows.length)analyticState.sectorMarket=rows[0].id;
+ market.value=analyticState.sectorMarket;period.value=analyticState.sectorRange;
+ const m=rows.find(x=>x.id===analyticState.sectorMarket),range=analyticState.sectorRange;
+ body.replaceChildren();if(!m){const tr=el('tr');const c=td(tr,'No sector classifications/history available yet.');c.colSpan=6;body.append(tr);$('sector-note').textContent='';return;}
+ const sectors=[...m.sectors].sort((a,b)=>{const av=a.periods?.[range]?.relativePp,bv=b.periods?.[range]?.relativePp;
+  return av==null?1:bv==null?-1:bv-av||a.sector.localeCompare(b.sector);});
+ for(const item of sectors){const d=item.periods?.[range]||{},n=d.covered||0,ratio=item.sectorMembers?fmt(n/item.sectorMembers*100,0)+'%':'—',tr=el('tr');
+  td(tr,item.sector);td(tr,n+' / '+item.sectorMembers+' ('+ratio+')','n');
+  td(tr,d.sectorReturnPct==null?'—':pc(d.sectorReturnPct),'n '+tone(d.sectorReturnPct));
+  td(tr,d.indexReturnPct==null?'—':pc(d.indexReturnPct),'n');
+  td(tr,d.relativePp==null?'—':(d.relativePp>0?'+':'')+fmt(d.relativePp,2)+'pp','n '+tone(d.relativePp));
+  const cell=td(tr,'');if(d.relativePp!=null){const bar=el('div','sector-bar');const fill=el('span','sector-fill '+(d.relativePp>=0?'plus':'minus'));
+   fill.style.width=Math.min(100,Math.abs(d.relativePp)/20*100)+'%';bar.append(fill);cell.append(bar);}
+  body.append(tr);
+ }
+ if(!sectors.length){const tr=el('tr');const c=td(tr,'No sectors reported by the free provider for this index.');c.colSpan=6;body.append(tr);}
+ const hasData=sectors.filter(x=>x.periods?.[range]?.covered>0).length;
+ $('sector-note').textContent=m.name+' · quote date '+m.date+' · reference '+m.benchmark+' · sector identified for '+m.sectorIdentified+'/'+m.members+' members; '+hasData+'/'+sectors.length+' sectors with '+range+' returns. Equal-weight average of available constituent PRICE returns minus the CAP-weight index PRICE return (percentage-point gap). This is a covered-sample proxy, NOT an official sector index or total return. Current members and sectors introduce survivorship bias; prices are quoted locally; weekends/holidays and split anomalies are filtered.';
+}
+function rollingSeries(symbol,basis){
+ const q=qMap.get(symbol),rows=histMap.get(symbol)||[];
+ if(!q)return [];
+ const r=[];
+ for(const p of rows){let v=p.v;
+  if(basis==='gbp')v=priceToGBP(v,q.currency,p.date);
+  if(Number.isFinite(v)&&v>0)r.push({date:p.date,v});}
+ return r;
+}
+function calcRollingStats(entries){
+ if(entries.length<2)return null;
+ const a=entries.map(x=>x.a),b=entries.map(x=>x.b),n=a.length;
+ const ma=a.reduce((x,y)=>x+y,0)/n,mb=b.reduce((x,y)=>x+y,0)/n;
+ let va=0,vb=0,cov=0;
+ for(let i=0;i<n;i++){const x=a[i]-ma,y=b[i]-mb;va+=x*x;vb+=y*y;cov+=x*y;}
+ const vola=Math.sqrt(252*va/(n-1))*100,volb=Math.sqrt(252*vb/(n-1))*100;
+ return {volA:vola,volB:volb,beta:vb>1e-12?cov/vb:null,corr:va>1e-12&&vb>1e-12?cov/Math.sqrt(va*vb):null};
+}
+function calculateRollingAnalytics(primary,reference,basis,windowSize){
+ const pa=rollingSeries(primary,basis),pb=rollingSeries(reference,basis),refDates=new Map(pb.map(x=>[x.date,x.v]));
+ const common=pa.filter(p=>refDates.has(p.date)).map(p=>({date:p.date,a:p.v,b:refDates.get(p.date)}));
+ if(common.length<windowSize+12)return {error:'Insufficient matched daily history for this window.'};
+ const daily=[];
+ for(let i=1;i<common.length;i++){
+  const previous=common[i-1],current=common[i];
+  const gap=(Date.parse(current.date+'T00:00:00Z')-Date.parse(previous.date+'T00:00:00Z'))/86400000;
+  if(gap>5||gap<1||Math.abs(current.a/previous.a-1)>0.55||Math.abs(current.b/previous.b-1)>0.55){daily.push(null);continue;}
+  daily.push({date:current.date,a:Math.log(current.a/previous.a),b:Math.log(current.b/previous.b)});
+ }
+ const latestDate=common.at(-1).date;
+ const minPlot=Date.parse(latestDate+'T00:00:00Z')-730*86400000;
+ const volA=[],volB=[],correlation=[],beta=[];
+ for(let i=windowSize-1;i<daily.length;i++){
+  const win=daily.slice(i-windowSize+1,i+1);
+  if(win.some(x=>x==null))continue;
+  const from=Date.parse(win[0].date+'T00:00:00Z'),to=Date.parse(win.at(-1).date+'T00:00:00Z');
+  if((to-from)/86400000>windowSize*2.0+12||from>to)continue;
+  const v=calcRollingStats(win),date=win.at(-1).date;
+  if(!v)continue;
+  if(to>=minPlot){volA.push({date,v:v.volA});volB.push({date,v:v.volB});if(v.corr!=null)correlation.push({date,v:v.corr});if(v.beta!=null)beta.push({date,v:v.beta});}
+ }
+ const last=volA.at(-1);
+ if(!last)return {error:'No qualifying continuous daily-return window. Data may be missing, weekly or split affected.'};
+ const lastDate=last.date;
+ const vIdx=volA.length-1,latestVolB=volB[vIdx]?.v,latestCorr=correlation.at(-1),latestBeta=beta.at(-1);
+ return {volA,volB,correlation,beta,asOf:lastDate,latest:{volA:last.v,volB:latestVolB,corr:latestCorr?.date===lastDate?latestCorr.v:null,beta:latestBeta?.date===lastDate?latestBeta.v:null},matched:common.length};
+}
+function renderRolling(){
+ const sels=[['rolling-primary','rollingPrimary'],['rolling-reference','rollingReference']];
+ for(const [id,key] of sels){const select=$(id);if(!select)return;
+  if(!select.options.length){(D.quotes||[]).filter(q=>['index','etf'].includes(q.kind)&&((histMap.get(q.symbol)||[]).length>=100)).forEach(q=>select.add(new Option(q.name+' ['+q.symbol+']',q.symbol)));}
+  if(!select.options.length){$('rolling-note').textContent='No saved benchmark price histories.';empty('rolling-vol-chart','No data.');empty('rolling-corr-chart','No data.');return;}
+  if(![...select.options].some(o=>o.value===analyticState[key]))analyticState[key]=select.options[0].value;
+  select.value=analyticState[key];}
+ $('rolling-window').value=String(analyticState.rollingWindow);$('rolling-basis').value=analyticState.rollingBasis;
+ const primary=analyticState.rollingPrimary,reference=analyticState.rollingReference,
+  q1=qMap.get(primary),q2=qMap.get(reference),host=$('rolling-kpis');host.replaceChildren();
+ if(primary===reference){$('rolling-note').textContent='Choose two different instruments.';empty('rolling-vol-chart','Choose different instruments.');empty('rolling-corr-chart','Choose different instruments.');return;}
+ const result=calculateRollingAnalytics(primary,reference,analyticState.rollingBasis,analyticState.rollingWindow);
+ if(result.error){$('rolling-note').textContent=result.error;empty('rolling-vol-chart',result.error);empty('rolling-corr-chart',result.error);return;}
+ for(const [key,val,dec] of [['Primary annual volatility',result.latest.volA,1],['Reference annual volatility',result.latest.volB,1],['Rolling beta',result.latest.beta,2],['Rolling correlation',result.latest.corr,2]]){
+  const unit=key.includes('volatility')?'%':'';const item=el('div','analytic-stat');item.append(el('div','key',key),el('div','val',Number.isFinite(val)?fmt(val,dec)+unit:'—'));host.append(item);}
+ chart('rolling-vol-chart',[{name:q1.name,color:AMBER,pts:result.volA},{name:q2.name,color:BLUE,pts:result.volB}],{format:v=>fmt(v,1)+'%',aria:'Rolling annualised price-return volatility'});
+ chart('rolling-corr-chart',[{name:q1.name+' vs '+q2.name,color:AQUA,pts:result.correlation}],{format:v=>fmt(v,2),aria:'Rolling Pearson correlation of daily price returns'});
+ const cross=(q1.currency||'')!==(q2.currency||'');
+ $('rolling-note').textContent=analyticState.rollingWindow+' matched daily returns per observation · latest '+result.asOf+' · '+result.matched+' common dated closes. Historical charts show up to two years of rolling estimates. '+
+   (analyticState.rollingBasis==='gbp'?'Both converted using dated historical GBP FX; missing conversion dates excluded.':cross?'Different quote currencies: metrics are based on LOCAL returns, not GBP investor returns. Select GBP-adjusted for a common currency.':'Same quoted currency; dividends excluded.')+
+   ' Volatility annualised (252 trading days); beta and correlation on exactly matched dates. Volatility/beta are price-based. A short 30-day window is noisy. A large split or data gap makes that window unavailable.';
+}
+function initExpandedAnalytics(){
+ for(const id of ['breadth-index','sector-index','sector-period','rolling-primary','rolling-reference','rolling-window','rolling-basis']){
+  const select=$(id);if(!select)continue;
+  select.onchange=()=>{
+   const key={'breadth-index':'breadth','sector-index':'sectorMarket','sector-period':'sectorRange','rolling-primary':'rollingPrimary','rolling-reference':'rollingReference','rolling-window':'rollingWindow','rolling-basis':'rollingBasis'}[id];
+   analyticState[key]=id==='rolling-window'?Number(select.value):select.value;
+   if(id==='breadth-index')renderBreadth();else if(id.startsWith('sector-'))renderSectors();else renderRolling();
+  };
+ }
+ renderBreadth();renderSectors();renderRolling();
+}
+
 function renderValuations(){
   const rows=D.market_valuations||[],host=$('valuation-rows');host.replaceChildren();
   const populated=rows.filter(r=>r.trailingPEProxy!=null).length;
@@ -1562,7 +1729,7 @@ function reorderSections(){
     ['equities','EQUITY MARKETS','Daily movers · full index constituents',['movers','equity-screener','constituents']],
     ['companies','COMPANY RESEARCH','Peer analysis · earnings diary · company financials',['peer-panel','company-events-panel','companies']],
     ['bonds','BONDS & RATES','Government bonds · corporate credit · yield curves',['gilts','us-treasuries','corporate-credit','rates','real','us-spread-panel','sovereign','cross-rates']],
-    ['analytics','VALUATIONS & MARKET ANALYTICS','Index valuations · comparisons · volatility · correlations',['market-valuations','compare','score-panel']],
+    ['analytics','VALUATIONS & MARKET ANALYTICS','Breadth · sectors · rolling risk · valuations · comparisons',['analytics-breadth','analytics-sectors','analytics-rolling','market-valuations','compare','score-panel']],
     ['economics','ECONOMIC DATA','GDP · inflation · actuals versus forecasts · calendar',['macro','macro-surprise','calendar']],
     ['watchlist','PERSONAL WATCHLIST','Selected securities · prices · news · fundamentals',['personal-watchlist-panel']],
     ['quality','DATA QUALITY & SOURCES','Quote coverage · stale data · missing fundamentals · source warnings',['quality-panel','sources']]
@@ -2068,7 +2235,7 @@ function initWatchlist(){
 
 const WORKSPACES=['overview','fx','equities','companies','bonds','analytics','economics','watchlist','quality'];
 let activeWorkspace='overview', searchHits=[], searchCursor=0;
-const workspaceForSection={'personal-watchlist-panel':'watchlist','market-valuations':'analytics','corporate-credit':'bonds','company-events-panel':'companies','us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities','equity-screener':'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
+const workspaceForSection={'personal-watchlist-panel':'watchlist','analytics-breadth':'analytics','analytics-sectors':'analytics','analytics-rolling':'analytics','market-valuations':'analytics','corporate-credit':'bonds','company-events-panel':'companies','us-treasuries':'bonds',gilts:'bonds',news:'overview',headline:'overview',monitor:'fx',movers:'equities','equity-screener':'equities',constituents:'equities',companies:'companies','peer-panel':'companies',rates:'bonds',real:'bonds',sovereign:'bonds',macro:'economics',calendar:'economics',compare:'analytics','quality-panel':'quality',sources:'quality'};
 function paintWorkspace(key){
   switch(key){
     case 'overview': renderNews(); renderPulse(); break;
@@ -2077,7 +2244,7 @@ function paintWorkspace(key){
     case 'bonds': renderGilts(); renderCredit(); renderRates(); usSpread(); renderReal(); renderSovereign(); break;
     case 'economics': renderMacro(); renderEconomicPrints(); renderCalendar(); break;
     case 'fx': renderMain(); renderWatch(); break;
-    case 'analytics': renderValuations(); renderCompare(); renderScore(); break;
+    case 'analytics': renderBreadth(); renderSectors(); renderRolling(); renderValuations(); renderCompare(); renderScore(); break;
     case 'watchlist': renderWatchlist(); break;
     case 'quality': renderDataQuality(); sources(); break;
   }
@@ -2396,7 +2563,7 @@ function init(){setLatest();reorderSections();
   $('company-go').onclick=()=>selectCompany($('company-query').value);
   $('company-query').onkeydown=e=>{if(e.key==='Enter')selectCompany(e.target.value);};
   $('add-compare').onclick=()=>{if(!qMap.has(state.sym))return;let slot=state.compare.findIndex(s=>!s);if(slot<0)slot=3;state.compare[slot]=state.sym;$('cmp'+slot).value=state.sym;activateWorkspace('analytics',{scroll:false});renderCompare();$('compare').scrollIntoView({behavior:'smooth'});};
-  renderCredit();renderValuations();renderCompanyEvents();initWatchlist();renderWatchlist();renderDataQuality();renderEconomicPrints();headlines();renderNews();renderCalendar();renderMain();renderWatch();renderMovers();renderConstituents();renderCompany();renderCompare();renderRates();usSpread();renderScore();renderMacro();renderReal();renderSovereign();sources();initWorkspace();
+  initExpandedAnalytics();renderCredit();renderValuations();renderCompanyEvents();initWatchlist();renderWatchlist();renderDataQuality();renderEconomicPrints();headlines();renderNews();renderCalendar();renderMain();renderWatch();renderMovers();renderConstituents();renderCompany();renderCompare();renderRates();usSpread();renderScore();renderMacro();renderReal();renderSovereign();sources();initWorkspace();
 }
 init();
 })();

@@ -33,6 +33,7 @@ import regional_data
 import market_intelligence
 import market_fundamentals
 import market_price_history
+import market_analytics
 import gilt_market
 import us_treasury_market
 import economic_forecasts
@@ -380,6 +381,7 @@ def build(opts):
         demo_profiles={c['symbol']:c for c in demo['companies']}
         demo_hist={}
         for r in demo.get('company_history',[]):demo_hist.setdefault(r['symbol'],[]).append(r)
+        demo['marketAnalytics']={'breadth':[],'sectorPerformance':[],'historyCount':0,'generatedDate':today_utc().date().isoformat()}
         demo['personalWatchlist']=watchlist
         demo['watchlist_quotes']=[{'symbol':w['symbol'],'name':w['name'],'kind':'equity','price':demo_profiles[w['symbol']]['price'],
             'currency':demo_profiles[w['symbol']]['priceCurrency'],'changePct':demo_profiles[w['symbol']]['changePct'],
@@ -508,6 +510,12 @@ def build(opts):
         cache_dir=ROOT/'.terminal_price_history', batch=opts.price_history_batch, watchlist=watchlist)
     warnings.extend(history_warnings)
     market_history_metrics=market_price_history.screener_metrics(ROOT/'.terminal_price_history')
+    market_analytics_data=market_analytics.build(
+        movers, fundamentals, hist, ROOT/'.terminal_price_history'/market_price_history.CACHE_NAME,
+        today=today_utc().date().isoformat())
+    print('Market analytics: '+str(len(market_analytics_data['breadth']))+
+          ' breadth indices and '+str(sum(len(m['sectors']) for m in market_analytics_data['sectorPerformance']))+
+          ' sector groups', flush=True)
     print('History coverage: '+str(history_coverage.get('available',0))+'/'+str(history_coverage.get('eligible',0))+' available; '+str(history_coverage.get('fullFiveYears',0))+' span five years',flush=True)
     # Official FedInvest U.S. Treasury security quotations; dated, not live.
     us_bonds,us_treasury_history,ust_warnings,ust_cached=us_treasury_market.collect(sys.modules[__name__],opts)
@@ -539,6 +547,7 @@ def build(opts):
 'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
             'priceHistorySymbols':history_symbols,'priceHistoryCoverage':history_coverage,
             'marketHistoryMetrics':market_history_metrics,
+            'marketAnalytics':market_analytics_data,
             'company_news':company_news,
             'news':news,'calendar':calendar,'us_real':us_real,'sovereign_yields':sovereign,
         'companies':companies,'company_history':company_history,
