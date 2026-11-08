@@ -1,0 +1,38 @@
+/* Market Terminal: data-first research layout; 2026-11-08 */
+:root{--mt-line:rgba(180,180,190,.15)}
+.mt-bond-nav{position:sticky;top:0;z-index:18;display:flex;gap:7px;flex-wrap:wrap;padding:10px 0;background:#0c0c0f;border-bottom:1px solid var(--mt-line);margin:0 0 12px}
+.mt-bond-nav .btn{font-size:11px;white-space:nowrap}
+#view-bonds > .panel{scroll-margin-top:75px}
+.mt-collapse,.mt-quality-drilldown,.mt-advanced{margin:12px 0;border:1px solid var(--mt-line);border-radius:6px;padding:12px;background:rgba(255,255,255,.017)}
+.mt-collapse > summary,.mt-quality-drilldown > summary,.mt-advanced > summary{cursor:pointer;color:#ffa028;font-size:12px;font-weight:bold;letter-spacing:.03em}
+.mt-collapse[open] > summary,.mt-advanced[open] > summary{margin-bottom:12px}
+.mt-advanced{grid-column:1/-1}
+#view-bonds #gilt-stats{min-width:0}
+#mt-gilt-tax .note{margin:6px 0 12px}
+#mt-gilt-tax .field{margin-left:8px}
+#mt-gilt-tax .small-scroll{max-height:330px;overflow:auto}
+#mt-gilt-tax th,#mt-gilt-tax td{font-variant-numeric:tabular-nums;white-space:nowrap}
+.mt-inline-notice{font-size:12px;color:#b0b0bb;padding:8px 11px;border-left:2px solid #8a7255;background:rgba(255,160,40,.035);margin:10px 0}
+.mt-no-consensus table th:nth-child(5),.mt-no-consensus table th:nth-child(6),.mt-no-consensus table td:nth-child(5),.mt-no-consensus table td:nth-child(6){display:none}
+#mt-risk-comparison{margin-bottom:16px}
+#mt-risk-comparison .small-scroll{overflow-x:auto}
+#mt-risk-comparison table{width:100%}
+#mt-risk-comparison th,#mt-risk-comparison td{font-variant-numeric:tabular-nums;padding:8px 12px}
+.mt-quality-summary{margin:12px 0 18px}.mt-quality-summary h3{margin:0 0 10px}
+.mt-quality-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.mt-quality-card{border:1px solid var(--mt-line);padding:11px;border-radius:5px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.mt-quality-card span{font-size:12px;color:#aaa}.mt-quality-card strong{font-variant-numeric:tabular-nums;font-size:15px;color:#ececec}
+.mt-quality-alerts>summary{cursor:pointer;font-size:12px;color:#ffa028}
+.mt-quality-alerts ul{padding:0 15px;font-size:12px;line-height:1.7;color:#aaa}
+#peer-table table.watch{width:100%;table-layout:fixed}
+#peer-table table.watch th:first-child,#peer-table table.watch td:first-child{width:22%;text-align:left}
+#peer-table table.watch th:not(:first-child),#peer-table table.watch td:not(:first-child){width:auto;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#peer-table table.watch td:not(:first-child){white-space:normal}
+#peer-table .mt-peer-group td{background:#222028;color:#ffa028;text-align:left!important;padding:9px 11px}
+#mt-peer-currency{min-width:155px}
+#view-bonds .constituents-scroll table{font-variant-numeric:tabular-nums}
+#view-quality .small-scroll{max-width:100%}
+@media(max-width:950px){.mt-quality-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mt-bond-nav{position:static}.mt-bond-nav .btn{padding:8px 9px}#peer-table table.watch th{font-size:10px}}
+@media(max-width:600px){.mt-quality-grid{grid-template-columns:1fr}.mt-quality-card{padding:8px}.mt-risk-table{font-size:11px}}
+
+#gilt-chart[hidden],#gilt-period[hidden],#mt-gilt-tax[hidden]{display:none!important}
