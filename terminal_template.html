@@ -328,7 +328,8 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
   <div class="period-controls watchlist-ranges" id="watchlist-ranges" aria-label="Share price history period"></div>
   <div class="chart" id="watchlist-chart" role="img" aria-label="Historical security price"></div>
   <section class="watchlist-risk" aria-label="Risk and momentum analysis">
-    <div class="row"><h3>RISK, MOMENTUM &amp; BENCHMARK</h3><span id="watchlist-risk-period" class="mini">Based on observed prices only</span></div>
+    <div class="row"><h3>RISK, MOMENTUM &amp; BENCHMARK</h3><div class="inputs"><label class="mini" for="watchlist-risk-range">RISK PERIOD</label><select class="field" id="watchlist-risk-range" aria-label="Risk statistics period"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="5Y">5 years</option><option value="MAX">All available</option></select></div></div>
+    <p class="mini" id="watchlist-risk-period">Based on observed prices only</p>
     <p id="watchlist-risk-note" class="note">Beta, volatility and correlation require enough matching daily observations. Missing values remain blank.</p>
     <div id="watchlist-anomaly" class="watchlist-risk-alert" hidden></div>
     <div class="watchlist-kpis" id="watchlist-risk-kpis"></div>
@@ -366,6 +367,7 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
 <section class="panel" id="news">
   <div class="row"><div><h2>MARKET HEADLINES</h2><p class="note">Latest retrieved market and economic headlines, selected automatically from news search feeds. Click through to publisher coverage.</p></div><span id="news-stamp" class="mini"></span></div>
   <div class="pills" id="news-pills" aria-label="Market news categories"></div>
+  <div class="company-news-links" style="margin:8px 0 10px"><a href="https://www.bbc.co.uk/news/business" target="_blank" rel="noopener noreferrer">BBC BUSINESS NEWS</a><a href="https://news.google.com/?hl=en-GB&amp;gl=GB&amp;ceid=GB%3Aen" target="_blank" rel="noopener noreferrer">GOOGLE BUSINESS NEWS</a></div>
   <div id="news-list" class="news-grid"></div>
 </section>
 <div class="tiles" id="headline"></div>
@@ -446,26 +448,27 @@ h2{font:600 15px/1.35 var(--font);color:var(--amber);margin:0}h3{font:500 13px v
     <a id="company-source" class="company-link" target="_blank" rel="noopener noreferrer" href="https://finance.yahoo.com/">CHECK SOURCE QUOTE</a>
   </div>
     <div class="company-kpis" id="company-kpis"></div>
-  <section class="company-news-panel" id="company-insight" aria-label="Share price movement and related company news">
-    <div class="row"><h3>WHY HAS IT MOVED? · COMPANY NEWS</h3><span class="mini" id="company-news-stamp"></span></div>
-    <p id="company-move-summary" class="company-move-summary">Select a company to inspect its latest price move and related headlines.</p>
-    <p class="note">Related headlines are <b>not proof of causation</b>. Check company announcements, dividends, splits and the quote date before attributing a move to a story.</p>
-    <div id="company-news-list" class="company-news-list"></div>
-    <div class="company-news-links"><a id="company-google-news" target="_blank" rel="noopener noreferrer" href="https://news.google.com/">SEARCH LATEST COMPANY NEWS</a><a id="company-yahoo-news" target="_blank" rel="noopener noreferrer" href="https://finance.yahoo.com/">YAHOO FINANCE COMPANY PAGE</a></div>
-  </section>
   <div class="company-stat-note" id="company-dates">Price data and accounts may have different reporting dates and currencies.</div>
   <div class="company-main">
     <div><div class="row"><h3>SHARE PRICE HISTORY</h3><span class="mini" id="company-price-date"></span></div><div class="period-controls" id="company-period"></div><p class="note" id="company-performance">Choose a time period.</p><div class="chart" id="company-chart"></div></div>
     <div class="company-fin"><h3>ANNUAL INCOME STATEMENT</h3><div id="company-annual"></div><p class="note" style="padding-top:9px">Revenue, operating profit and net profit are reported accounting figures, NOT necessarily trailing 12 months. All amounts use the company's financial reporting currency.</p></div>
   </div>
   <section class="watchlist-risk" id="company-risk-panel" aria-label="Company performance, risk and momentum">
-    <div class="row"><h3>PERFORMANCE, RISK &amp; MOMENTUM</h3><span class="mini" id="company-risk-period">Historical closing prices</span></div>
+    <div class="row"><h3>PERFORMANCE, RISK &amp; MOMENTUM</h3><div class="inputs"><label class="mini" for="company-risk-range">RISK PERIOD</label><select class="field" id="company-risk-range" aria-label="Company risk statistics period"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="5Y">5 years</option><option value="MAX">All available</option></select></div></div>
+    <p class="mini" id="company-risk-period">Historical closing prices</p>
     <p class="note" id="company-risk-note">Risk statistics use observed closing prices only. Missing or insufficient data is not estimated.</p>
     <div class="watchlist-kpis" id="company-risk-kpis"></div>
     <div class="row"><h3>COMPANY VS REFERENCE INDEX</h3><select class="field" id="company-benchmark-range" aria-label="Benchmark comparison period"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="5Y">5 years</option><option value="MAX">All available</option></select></div>
     <p class="note" id="company-benchmark-note">Both series are rebased to 100 on their first shared trading date, using a common currency.</p>
     <div class="chart" id="company-benchmark-chart" role="img" aria-label="Company performance compared with reference index"></div>
-    <p class="note">The reference is a broad-market proxy, not necessarily an official sector benchmark. These are price returns excluding dividends. Beta and correlation require at least 120 matched daily returns spanning 180 calendar days. Technical indicators are not investment recommendations.</p>
+    <p class="note">The reference is a broad-market proxy, not necessarily an official sector benchmark. These are price returns excluding dividends. Beta and correlation require sufficient matched daily observations over the selected period; unavailable statistics stay blank. Technical indicators are not investment recommendations.</p>
+  </section>
+  <section class="company-news-panel" id="company-insight" aria-label="Share price movement and related company news">
+    <div class="row"><h3>WHY HAS IT MOVED? · COMPANY NEWS</h3><span class="mini" id="company-news-stamp"></span></div>
+    <p id="company-move-summary" class="company-move-summary">Select a company to inspect its latest price move and related headlines.</p>
+    <p class="note">Related headlines are <b>not proof of causation</b>. Check company announcements, dividends, splits and the quote date before attributing a move to a story.</p>
+    <div id="company-news-list" class="company-news-list"></div>
+    <div class="company-news-links"><a id="company-google-news" target="_blank" rel="noopener noreferrer" href="https://news.google.com/">SEARCH LATEST COMPANY NEWS</a><a id="company-yahoo-news" target="_blank" rel="noopener noreferrer" href="https://finance.yahoo.com/">YAHOO FINANCE COMPANY PAGE</a></div>
   </section>
   <p class="note">Search covers the saved constituents of the S&amp;P 500, Nasdaq 100, FTSE 100 and FTSE 250. The collector prioritises companies with large daily moves, storing up to 10 years of share-price history for a small selection and gathering up to 40 new financial summaries per scheduled run. Historical accounts remain limited to preselected detailed profiles. The website is a static snapshot, not a live on-demand data API. Missing figures are shown as —; financial reports and share prices can use different currencies.</p>
 </section>
@@ -1110,7 +1113,7 @@ function companyNewsSearch(name){return 'https://news.google.com/search?'+new UR
 function renderCompanyInsight(c){
   const panel=$('company-news-list');panel.replaceChildren();
   const snapshot=(D.company_news||[]).find(item=>item.symbol===c.symbol);
-  const rows=snapshot?.articles||[];
+  const rows=snapshot?.articles?.length?snapshot.articles:(watchNewsMap.get(c.symbol)?.articles||[]);
   const q=indexedStocks.get(c.symbol);
   const when=c.priceAsOf||q?.asOf||'date unavailable';
   let message=c.changePct==null?'No confirmed daily share-price move in this snapshot.':
@@ -1582,7 +1585,7 @@ function renderNews(){
   if(!chosen.length){host.append(el('div','empty', 'No recent news was retrieved for this category. Re-run the Python collector, or check a source directly.'));return;}
   chosen.forEach(item=>{const card=el('article','news-item');const label=el('div','label',item.category||'MARKET');
     const link=el('a','',item.title);link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';
-    card.append(label,link,el('div','meta',(item.source||'News aggregator')+' · '+(item.published||'date unavailable')));host.append(card);});
+    card.append(label,link,el('div','meta',(item.source||'News aggregator')+' · '+(item.published||'date unavailable')+(item.restored?' · ARCHIVED: CURRENT RSS UNAVAILABLE':'')));host.append(card);});
 }
 function renderCalendar(){
   const host=$('calendar-items'),filters=$('calendar-filters');filters.replaceChildren();host.replaceChildren();
@@ -1647,7 +1650,7 @@ const watchlistRecords=Array.isArray(D.personalWatchlist)?D.personalWatchlist:[]
 const watchQuoteMap=new Map((D.watchlist_quotes||[]).map(q=>[q.symbol,q]));
 const watchHistoryMap=new Map((D.watchlist_history||[]).map(h=>[h.symbol,h.points||[]]));
 const watchNewsMap=new Map((D.watchlist_news||[]).map(n=>[n.symbol,n]));
-const watchState={symbol:watchlistRecords[0]?.symbol||'',query:'',kind:'all',sort:'original',range:'1Y',basis:'price_local'};
+const watchState={symbol:watchlistRecords[0]?.symbol||'',query:'',kind:'all',sort:'original',range:'1Y',riskRange:'1Y',basis:'price_local'};
 const WATCH_RANGES=['1M','3M','6M','YTD','1Y','3Y','5Y','10Y','MAX'];
 function watchProfile(symbol){return companyMap.get(symbol)||fundamentalsMap.get(symbol)||null;}
 function watchFmtQuote(q){if(!q||q.price==null)return '—';return fmt(q.price,q.price>=1000?1:2)+' '+(q.currency||'');}
@@ -1688,74 +1691,86 @@ function watchAligned(w,q,range='1Y',adjusted=false){
 }
 function watchReturns(rows,key){const out=[];for(let i=1;i<rows.length;i++){
  const gap=watchSpanDays(rows[i-1].date,rows[i].date);
- if(gap<1||gap>7)continue;
+ if(gap<1||gap>5)continue;
  const r=Math.log(rows[i][key]/rows[i-1][key]);if(Number.isFinite(r))out.push(r);
  }return out;
 }
 function watchSampleVol(xs){if(xs.length<2)return null;let mean=xs.reduce((a,b)=>a+b,0)/xs.length;
  return Math.sqrt(252*xs.reduce((z,x)=>z+(x-mean)**2,0)/(xs.length-1))*100;
 }
-function watchTechnical(w){
- const rows=(watchHistoryMap.get(w.symbol)||[]).filter(x=>Array.isArray(x)&&x[1]>0)
+// All period-based risk metrics use the same daily-price method in
+// Company Research and My Watchlist. Sparse weekly/monthly archives are
+// ineligible for daily annualisation, rather than being multiplied by 252.
+const RISK_PERIODS={
+ '1Y':{label:'1 year',minDays:295,minReturns:120},
+ '3Y':{label:'3 years',minDays:970,minReturns:450},
+ '5Y':{label:'5 years',minDays:1630,minReturns:750},
+ 'MAX':{label:'all available history',minDays:180,minReturns:120}
+};
+function riskWindowStats(prices,paired,range='1Y'){
+ const target=RISK_PERIODS[range]||RISK_PERIODS['1Y'];
+ const sorted=(prices||[]).filter(x=>Number.isFinite(x.v)&&x.v>0&&x.date).slice().sort((a,b)=>a.date.localeCompare(b.date));
+ const end=sorted.at(-1)?.date||'';
+ const cutoff=end?(range==='MAX'?'0000-01-01':startOf(end,range)):'9999-01-01';
+ const rows=sorted.filter(x=>x.date>=cutoff);
+ const span=rows.length>1?watchSpanDays(rows[0].date,rows.at(-1).date):0;
+ const daily=watchReturns(rows.map(r=>({date:r.date,a:r.v})),'a');
+ const enough=span>=target.minDays&&daily.length>=target.minReturns;
+ const vol=enough?watchSampleVol(daily):null;
+ let top=0,drawdown=0;for(const x of rows){top=Math.max(top,x.v);drawdown=Math.min(drawdown,100*(x.v/top-1));}
+ const periodMove=enough&&rows.length>1?100*(rows.at(-1).v/rows[0].v-1):null;
+ const common=(paired||[]).filter(x=>x.date>=cutoff&&x.date<=end);
+ const xa=[],xb=[];
+ for(let i=1;i<common.length;i++){
+   const days=watchSpanDays(common[i-1].date,common[i].date);
+   if(days<1||days>5)continue;
+   const a=Math.log(common[i].a/common[i-1].a),b=Math.log(common[i].b/common[i-1].b);
+   if(Number.isFinite(a)&&Number.isFinite(b)){xa.push(a);xb.push(b);}
+ }
+ const commonSpan=common.length>1?watchSpanDays(common[0].date,common.at(-1).date):0;
+ let beta=null,corr=null;
+ if(xa.length>=target.minReturns&&commonSpan>=target.minDays){
+   const ma=xa.reduce((t,x)=>t+x,0)/xa.length,mb=xb.reduce((t,x)=>t+x,0)/xb.length;
+   let va=0,vb=0,cov=0;
+   for(let i=0;i<xa.length;i++){const a=xa[i]-ma,b=xb[i]-mb;va+=a*a;vb+=b*b;cov+=a*b;}
+   if(vb>1e-12)beta=cov/vb;
+   if(va>1e-12&&vb>1e-12)corr=cov/Math.sqrt(va*vb);
+ }
+ return {range,label:target.label,rows:rows.length,span,from:rows[0]?.date||'',to:end,
+   dailyReturns:daily.length,matchedReturns:xa.length,volatility:vol,beta,corr,
+   drawdown:enough?drawdown:null,periodMove,enough,benchmarkEnough:beta!=null&&corr!=null};
+}
+function watchTechnical(w,range='1Y'){
+ const rows=(watchHistoryMap.get(w.symbol)||[]).filter(x=>Array.isArray(x)&&Number(x[1])>0)
    .map(x=>({date:x[0],v:Number(x[1])})).sort((a,b)=>a.date.localeCompare(b.date));
- if(rows.length<2)return {bars:0,span:0,sma20:null,sma50:null,sma200:null,rsi:null,drawdown:null,volatility:null,beta:null,corr:null,obs:0,bench:null};
- const last=rows.at(-1).date;
- const sample=rows.filter(r=>watchSpanDays(r.date,last)<=365);
- const len=sample.length,span=watchSpanDays(sample[0].date,last);
  const avg=n=>rows.length>=n?rows.slice(-n).reduce((a,b)=>a+b.v,0)/n:null;
  let rsi=null;
  if(rows.length>=15){const last15=rows.slice(-15);let gain=0,loss=0;
-  for(let i=1;i<last15.length;i++){let d=last15[i].v-last15[i-1].v;gain+=Math.max(0,d);loss+=Math.max(0,-d);}
-  // 14-session RSI. An unbroken, non-thinned last 14 sessions is required.
-  const gaps=last15.slice(1).every((p,i)=>watchSpanDays(last15[i].date,p.date)<=7);
-  if(gaps)rsi=loss===0?(gain===0?50:100):100-100/(1+gain/loss);
+  const gaps=last15.slice(1).every((p,i)=>watchSpanDays(last15[i].date,p.date)<=5);
+  if(gaps){for(let i=1;i<last15.length;i++){const d=last15[i].v-last15[i-1].v;gain+=Math.max(0,d);loss+=Math.max(0,-d);}
+   rsi=loss===0?(gain===0?50:100):100-100/(1+gain/loss);}
  }
- let high=0,minDD=0;for(const x of sample){high=Math.max(high,x.v);minDD=Math.min(minDD,(x.v/high-1)*100);}
- const recentReturns=watchReturns(sample.map(r=>({date:r.date,a:r.v})),'a');
- const enough=len>=120&&span>=180;
- const vol=enough?watchSampleVol(recentReturns):null;
- const benchPair=watchAligned(w,watchQuoteMap.get(w.symbol),'1Y',false);
- const paired=benchPair.rows;
- let beta=null,corr=null,observations=0;
- const xa=[],xb=[];
- for(let i=1;i<paired.length;i++){
-  if(watchSpanDays(paired[i-1].date,paired[i].date)>7)continue;
-  const x=Math.log(paired[i].a/paired[i-1].a),y=Math.log(paired[i].b/paired[i-1].b);
-  if(Number.isFinite(x)&&Number.isFinite(y)){xa.push(x);xb.push(y);}
- }
- observations=xa.length;
- const alignedSpan=paired.length>1?watchSpanDays(paired[0].date,paired.at(-1).date):0;
- if(observations>=120&&alignedSpan>=180){
-  const av=xa.reduce((a,b)=>a+b,0)/observations,bv=xb.reduce((a,b)=>a+b,0)/observations;
-  let va=0,vb=0,cov=0;for(let i=0;i<observations;i++){
-    let da=xa[i]-av,db=xb[i]-bv;va+=da*da;vb+=db*db;cov+=da*db;}
-  beta=vb>1e-12?cov/vb:null;corr=va>1e-12&&vb>1e-12?cov/Math.sqrt(va*vb):null;
- }
- return {bars:len,span,sma20:avg(20),sma50:avg(50),sma200:avg(200),rsi,
-   drawdown:len>=20?minDD:null,drawdownLabel:span>=300?'Last 12 months':'Available period only',
-   volatility:vol,beta,corr,obs:observations,bench:benchPair.bench,
-   currencyBasis:benchPair.converted?'GBP converted':watchCurrency(watchQuoteMap.get(w.symbol)?.currency),
-   benchError:benchPair.reason||null};
+ const pair=watchAligned(w,watchQuoteMap.get(w.symbol),range,false);
+ const stats=riskWindowStats(rows,pair.rows,range);
+ return {...stats,bars:stats.rows,sma20:avg(20),sma50:avg(50),sma200:avg(200),rsi,
+   obs:stats.matchedReturns,bench:pair.bench,benchError:pair.reason||null,
+   currencyBasis:pair.converted?'GBP converted':watchCurrency(watchQuoteMap.get(w.symbol)?.currency),
+   drawdownLabel:stats.enough?'Observed '+stats.label:'Insufficient daily history'};
 }
 // Shared risk mathematics: Company Research and My Watchlist use the same
 // observed-price volatility, return alignment, beta and correlation conventions.
 function renderCompanyRisk(c){
  const host=$('company-risk-kpis');host.replaceChildren();
- const sym=c.symbol, saved=watchlistRecords.find(w=>w.symbol===sym);
- const firstTrade=saved?.firstTradeDate||'';
+ const range=$('company-risk-range').value||'1Y';
+ const sym=c.symbol,saved=watchlistRecords.find(w=>w.symbol===sym),firstTrade=saved?.firstTradeDate||'';
  const stored=companyHistory.get(sym)||[];
- const own=saved&&(watchHistoryMap.get(sym)||[]).length>stored.length
-   ?(watchHistoryMap.get(sym)||[]).map(x=>({date:x[0],v:Number(x[1])})):stored;
+ const watch=(watchHistoryMap.get(sym)||[]).map(x=>({date:x[0],v:Number(x[1])}));
+ const own=watch.length>stored.length?watch:stored;
  const rows=own.filter(x=>x.date>=firstTrade&&x.v>0&&Number.isFinite(x.v)).sort((a,b)=>a.date.localeCompare(b.date));
  const end=rows.at(-1)?.date;
- const year=end?rows.filter(x=>watchSpanDays(x.date,end)<=365):[];
- const span=year.length>1?watchSpanDays(year[0].date,end):0;
  const avg=n=>rows.length>=n?rows.slice(-n).reduce((t,x)=>t+x.v,0)/n:null;
- const ret=watchReturns(year.map(x=>({date:x.date,a:x.v})),'a');
- const vol=year.length>=120&&span>=180?watchSampleVol(ret):null;
- let peak=0,dd=0;for(const x of year){peak=Math.max(peak,x.v);dd=Math.min(dd,100*(x.v/peak-1));}
  let rsi=null;if(rows.length>=15){const r=rows.slice(-15);let gain=0,loss=0;
-  if(r.slice(1).every((x,i)=>watchSpanDays(r[i].date,x.date)<=7)){
+  if(r.slice(1).every((x,i)=>watchSpanDays(r[i].date,x.date)<=5)){
    for(let i=1;i<r.length;i++){const d=r[i].v-r[i-1].v;gain+=Math.max(0,d);loss+=Math.max(0,-d);}
    rsi=loss===0?(gain===0?50:100):100-100/(1+gain/loss);
   }
@@ -1771,75 +1786,86 @@ function renderCompanyRisk(c){
   if(av>0&&bv>0)aligned.push({date:b.date,a:av,b:bv});
  }
  aligned.sort((a,b)=>a.date.localeCompare(b.date));
- const pair=end?aligned.filter(x=>watchSpanDays(x.date,end)<=365):[];
- const xa=[],xb=[];for(let i=1;i<pair.length;i++){
-  const gap=watchSpanDays(pair[i-1].date,pair[i].date);if(gap<1||gap>7)continue;
-  const a=Math.log(pair[i].a/pair[i-1].a),b=Math.log(pair[i].b/pair[i-1].b);
-  if(Number.isFinite(a)&&Number.isFinite(b)){xa.push(a);xb.push(b);}
- }
- let beta=null,corr=null;
- if(xa.length>=120&&watchSpanDays(pair[0].date,pair.at(-1).date)>=180){
-  const am=xa.reduce((t,x)=>t+x,0)/xa.length,bm=xb.reduce((t,x)=>t+x,0)/xb.length;
-  let va=0,vb=0,cov=0;for(let i=0;i<xa.length;i++){
-   const a=xa[i]-am,b=xb[i]-bm;va+=a*a;vb+=b*b;cov+=a*b;}
-  if(vb>1e-12)beta=cov/vb;
-  if(va>1e-12&&vb>1e-12)corr=cov/Math.sqrt(va*vb);
- }
+ const risk=riskWindowStats(rows,aligned,range);
  const fmtRisk=(v,d=1)=>v==null||!Number.isFinite(v)?'—':fmt(v,d);
  const price=v=>v==null?'—':fmt(v,v>=100?1:2)+' '+currency;
  const tiles=[
-  ['1Y VOLATILITY',vol==null?'—':fmtRisk(vol)+'%','Annualised daily price returns'],
-  ['BETA',fmtRisk(beta,2),'Matched daily returns · common currency'],
-  ['CORRELATION',fmtRisk(corr,2),'Pearson daily return correlation'],
-  ['MAX DRAWDOWN',year.length<20?'—':fmtRisk(dd)+'%',span>=300?'Last 12 months':'Available shorter period'],
-  ['RSI (14)',fmtRisk(rsi),'14 consecutive trading changes'],
-  ['20-DAY MOVING AVERAGE',price(avg(20)),'Simple moving average'],
-  ['50-DAY MOVING AVERAGE',price(avg(50)),'Simple moving average'],
-  ['200-DAY MOVING AVERAGE',price(avg(200)),'Simple moving average'],
-  ['DIVIDEND YIELD',c.dividendYieldPct==null?'—':fmtRisk(c.dividendYieldPct,2)+'%','Latest sourced company financial data'],
+  [range+' PRICE MOVE',risk.periodMove==null?'—':pc(risk.periodMove),'Observed price move, dividends excluded'],
+  [range+' VOLATILITY',risk.volatility==null?'—':fmtRisk(risk.volatility)+'%','Annualised daily price returns'],
+  [range+' BETA',fmtRisk(risk.beta,2),'Matched daily returns · common currency'],
+  [range+' CORRELATION',fmtRisk(risk.corr,2),'Pearson daily return correlation'],
+  [range+' MAX DRAWDOWN',risk.drawdown==null?'—':fmtRisk(risk.drawdown)+'%','Peak-to-trough decline within selected window'],
+  ['RSI (14)',fmtRisk(rsi),'Latest 14 consecutive trading-day changes'],
+  ['20-DAY MOVING AVERAGE',price(avg(20)),'Latest 20 trading closes · unaffected by period'],
+  ['50-DAY MOVING AVERAGE',price(avg(50)),'Latest 50 trading closes · unaffected by period'],
+  ['200-DAY MOVING AVERAGE',price(avg(200)),'Latest 200 trading closes · unaffected by period'],
+  ['DIVIDEND YIELD',c.dividendYieldPct==null?'—':fmtRisk(c.dividendYieldPct,2)+'%','Latest sourced yield · unaffected by period'],
   ['REFERENCE INDEX',bench?.name||benchSymbol,benchSymbol+' · broad-market proxy']
  ];
  for(const [label,value,info] of tiles)host.append(watchValTile(label,value,info));
- $('company-risk-period').textContent=rows.length+' observed closes · '+(rows[0]?.date||'history unavailable')+' to '+(end||'—');
- $('company-risk-note').textContent=(vol==null?'Insufficient daily history for one-year volatility. ':'')+
-  (beta==null?'Beta/correlation unavailable: insufficient matched history or benchmark FX data. ':'')+
-  'Missing values are deliberately left blank. Risk uses unadjusted prices; dividend-adjusted total returns are not implied.';
- const range=$('company-benchmark-range').value||'1Y';
- const cutoff=end?(range==='MAX'?'0000-01-01':startOf(end,range)):'9999-01-01';
+ $('company-risk-period').textContent=range+' · '+risk.rows+' prices, '+risk.dailyReturns+' eligible daily returns · '+(risk.from||'unavailable')+' to '+(end||'—');
+ $('company-risk-note').textContent=(risk.enough?'':'Insufficient daily observations for '+risk.label+'; period measures deliberately left blank. ')+
+  (risk.beta==null?'Beta/correlation unavailable: insufficient matched daily data or benchmark FX. ':'')+
+  'RSI and moving averages retain their standard 14/20/50/200-trading-day windows. Unadjusted price changes are not dividend-adjusted returns.';
+ const chartRange=$('company-benchmark-range').value||'1Y';
+ const cutoff=end?(chartRange==='MAX'?'0000-01-01':startOf(end,chartRange)):'9999-01-01';
  const selected=aligned.filter(x=>x.date>=cutoff);
  if(selected.length<2){empty('company-benchmark-chart',bench?'Not enough matching dated prices and FX rates to compare.':'Reference index history unavailable in this snapshot.');
   $('company-benchmark-note').textContent='No comparable series available; no values have been estimated.';return;}
  const a0=selected[0],ap=selected.map(x=>({date:x.date,v:100*x.a/a0.a})),bp=selected.map(x=>({date:x.date,v:100*x.b/a0.b}));
  $('company-benchmark-note').textContent=selected[0].date+' to '+selected.at(-1).date+' · '+sym+' '+pc(ap.at(-1).v-100)+' vs '+
   (bench?.name||benchSymbol)+' '+pc(bp.at(-1).v-100)+' · '+(same?'same quoted currency':'both converted to GBP on matching dates')+
-  ' · price returns only, excluding dividends'+(range!=='MAX'&&watchSpanDays(selected[0].date,selected.at(-1).date)<250&&range==='1Y'?' · PARTIAL HISTORY':'');
+  ' · price returns only, excluding dividends'+(chartRange!=='MAX'&&watchSpanDays(selected[0].date,selected.at(-1).date)<250&&chartRange==='1Y'?' · PARTIAL HISTORY':'');
  chart('company-benchmark-chart',[{name:sym+' rebased',pts:ap,color:AMBER},{name:(bench?.name||benchSymbol)+' rebased',pts:bp,color:AQUA}],
   {format:v=>fmt(v,1),aria:sym+' against '+benchSymbol});
 }
 $('company-benchmark-range').addEventListener('change',()=>{if(state.companySymbol)renderCompanyRisk(ensureCompany(state.companySymbol));});
+$('company-risk-range').addEventListener('change',()=>{if(state.companySymbol)renderCompanyRisk(ensureCompany(state.companySymbol));});
+const watchArchiveLoading=new Set(),watchArchiveLoaded=new Set(),watchArchiveFailed=new Set();
+function loadWatchlistDailyArchive(symbol){
+ if(!historicAvailable.has(symbol)||watchArchiveLoaded.has(symbol)||watchArchiveLoading.has(symbol)||watchArchiveFailed.has(symbol))return;
+ watchArchiveLoading.add(symbol);
+ fetch('stock_history/'+encodeURIComponent(symbol)+'.json?v='+encodeURIComponent(D.generatedAt||'1'))
+ .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+ .then(data=>{
+   if(data.symbol!==symbol||!Array.isArray(data.points))throw new Error('Wrong ticker in history archive');
+   const raw=(watchHistoryMap.get(symbol)||[]),adjusted=new Map(raw.filter(x=>Array.isArray(x)).map(x=>[x[0],x[2]??null]));
+   const rows=data.points.filter(x=>Array.isArray(x)&&/^\d{4}-\d{2}-\d{2}$/.test(x[0])&&Number(x[1])>0)
+     .map(x=>[x[0],Number(x[1]),adjusted.get(x[0])??null]).sort((a,b)=>a[0].localeCompare(b[0]));
+   if(rows.length<2)throw new Error('Insufficient price history');
+   // Preserve adjusted closes already sourced from the watchlist collector.
+   const prior=raw.map(x=>[x[0],Number(x[1]),x[2]??null]);
+   const merged=new Map([...prior,...rows].map(x=>[x[0],x]));
+   const fresh=[...merged.values()].sort((a,b)=>a[0].localeCompare(b[0]));
+   if(fresh.length>raw.length)watchHistoryMap.set(symbol,fresh);
+   watchArchiveLoaded.add(symbol);
+   if(watchState.symbol===symbol){const w=watchlistRecords.find(x=>x.symbol===symbol);if(w)renderWatchlist();}
+ }).catch(()=>watchArchiveFailed.add(symbol)).finally(()=>watchArchiveLoading.delete(symbol));
+}
 function renderWatchlistRisk(w,q){
- const host=$('watchlist-risk-kpis');host.replaceChildren();const r=watchTechnical(w),unit=q?.currency||'';
+ const host=$('watchlist-risk-kpis');host.replaceChildren();
+ const period=watchState.riskRange||'1Y',r=watchTechnical(w,period),unit=q?.currency||'';
  const val=(x,p=1)=>x==null||!Number.isFinite(x)?'—':fmt(x,p);
  const showPrice=x=>x==null?'—':fmt(x,x>=100?1:2)+' '+unit;
  const rsi=r.rsi==null?'Insufficient trading sessions':r.rsi>=70?'Above 70 · strong momentum':r.rsi<=30?'Below 30 · weak momentum':'Neutral momentum band';
  const entries=[
-  ['ANNUALISED VOLATILITY',r.volatility==null?'—':val(r.volatility)+'%','1Y daily log returns · ≥120 samples'],
-  ['BETA TO REFERENCE',val(r.beta,2),'Daily matched price returns · '+(r.currencyBasis||'common currency')],
-  ['CORRELATION TO REFERENCE',val(r.corr,2),'Pearson daily return correlation'],
-  ['MAX DRAWDOWN',r.drawdown==null?'—':val(r.drawdown)+'%',r.drawdownLabel||'Based on available prices'],
+  [period+' PRICE MOVE',r.periodMove==null?'—':pc(r.periodMove),'Price only; excludes dividends'],
+  [period+' ANNUALISED VOLATILITY',r.volatility==null?'—':val(r.volatility)+'%','Daily log price returns, annualised'],
+  [period+' BETA TO REFERENCE',val(r.beta,2),'Matched daily price returns · '+(r.currencyBasis||'common currency')],
+  [period+' CORRELATION',val(r.corr,2),'Pearson daily return correlation'],
+  [period+' MAX DRAWDOWN',r.drawdown==null?'—':val(r.drawdown)+'%',r.drawdownLabel||'Based on observed prices'],
   ['RSI (14)',val(r.rsi,1),rsi],
-  ['20-DAY MOVING AVERAGE',showPrice(r.sma20),'Last 20 trading closes · SMA'],
-  ['50-DAY MOVING AVERAGE',showPrice(r.sma50),'Last 50 trading closes · SMA'],
-  ['200-DAY MOVING AVERAGE',showPrice(r.sma200),'Last 200 trading closes · SMA'],
-  ['BETA OBSERVATIONS',String(r.obs||0),'Matched daily pairs in latest 12 months'],
+  ['20-DAY MOVING AVERAGE',showPrice(r.sma20),'Latest 20 trading closes · SMA'],
+  ['50-DAY MOVING AVERAGE',showPrice(r.sma50),'Latest 50 trading closes · SMA'],
+  ['200-DAY MOVING AVERAGE',showPrice(r.sma200),'Latest 200 trading closes · SMA'],
+  ['BETA OBSERVATIONS',String(r.obs||0),'Matched daily price-return pairs in selected period'],
   ['REFERENCE INDEX',r.bench?.name||w.benchmark||'—',(r.bench?.symbol||w.benchmark||'')+' · comparison proxy']
  ];
  for(const [label,value,info] of entries)host.append(watchValTile(label,value,info));
- const from=watchHistoryMap.get(w.symbol)?.[0]?.[0]||'unknown';
- $('watchlist-risk-period').textContent=r.bars+' daily closes in latest year · earliest '+from;
- $('watchlist-risk-note').textContent='One-year realised risk uses unadjusted daily prices; at least 120 daily returns over 180 calendar days are required for volatility, beta and correlation. ' +
-  (r.volatility==null?'Insufficient observations: these measures are deliberately blank. ':'')+
-  'RSI and moving averages use available daily closes. Benchmark: '+(r.bench?.name||w.benchmark||'not available')+'.';
+ $('watchlist-risk-period').textContent=period+' · '+r.bars+' closes / '+r.dailyReturns+' eligible daily changes · '+(r.from||'unavailable')+' to '+(r.to||'unavailable');
+ $('watchlist-risk-note').textContent=(r.enough?'':'Insufficient daily price history for '+r.label+'; no period risk statistics were estimated. ')+
+  (r.benchError?'Benchmark: '+r.benchError+' ':'')+
+  'Moving averages and RSI always use their latest fixed trading-day windows. Risk uses unadjusted prices; dividends are excluded.';
  const warning=q?.historyWarning||q?.anomalyWarning||'';
  $('watchlist-anomaly').hidden=!warning;$('watchlist-anomaly').textContent=warning;
 }
@@ -1974,6 +2000,7 @@ function renderWatchlist(){
   $('watchlist-kpis').replaceChildren();empty('watchlist-chart','No symbols are saved in the watchlist.');$('watchlist-news-stories').replaceChildren();$('watchlist-events').replaceChildren();return;}
  watchState.symbol=w.symbol;
  const q=watchQuoteMap.get(w.symbol),c=watchProfile(w.symbol)||{},fundCcy=c.financialCurrency||'';
+ if(['3Y','5Y','MAX'].includes(watchState.riskRange))loadWatchlistDailyArchive(w.symbol);
  $('watchlist-selected-name').textContent=w.name+' · '+w.symbol;
  $('watchlist-selected-meta').textContent=[w.assetType.replace('_',' '),c.sector,c.industry,q?.asOf?'Quote '+q.asOf:(w.assetType==='fund'?'Fund platform code: no exchange market quote':'Quote unavailable')].filter(Boolean).join(' · ');
  const kpis=$('watchlist-kpis');kpis.replaceChildren();
@@ -2028,6 +2055,11 @@ function renderWatchlist(){
  renderWatchlistChart(w,q);renderWatchlistRisk(w,q);renderWatchlistRelative(w,q);watchlistNews(w,q);renderWatchlistEvents(w);
 }
 function initWatchlist(){
+ $('watchlist-risk-range').onchange=e=>{
+   watchState.riskRange=e.target.value;
+   const w=watchlistRecords.find(x=>x.symbol===watchState.symbol);
+   if(w){renderWatchlistRisk(w,watchQuoteMap.get(w.symbol));loadWatchlistDailyArchive(w.symbol);}
+ };
  $('watchlist-search').oninput=e=>{watchState.query=e.target.value.trim().toLowerCase();renderWatchRows();};
  $('watchlist-kind').onchange=e=>{watchState.kind=e.target.value;renderWatchRows();};
  $('watchlist-sort').onchange=e=>{watchState.sort=e.target.value;renderWatchRows();};

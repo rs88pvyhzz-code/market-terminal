@@ -155,9 +155,21 @@ def collect_news(core,opts,watchlist,limit=35):
             raw,cached,msg=core.get_bytes(url,'personal_watch_news_'+re.sub(r'[^A-Za-z0-9]','_',symbol),opts.offline,opts.cache_hours)
             articles=market_intelligence.rss_articles(raw,'COMPANY',generated=now)[:4]
             warn='Watchlist '+symbol+': stale news cache' if 'stale cache' in msg else None
-            return articles,int(cached),warn
+            if articles or opts.offline:return articles,int(cached),warn
         except Exception as exc:
-            return [],0,'Watchlist news '+symbol+': '+str(exc)[:130]
+            warn='Watchlist news '+symbol+': '+str(exc)[:130]
+            cached=0
+        # A separate provider is necessary: Google News RSS can be unavailable
+        # throughout an otherwise successful GitHub Actions build.
+        if not opts.offline:
+            try:
+                raw=market_intelligence.fetch_rss_once(market_intelligence.bing_news_url(query))
+                used=0
+                articles=market_intelligence.rss_articles(raw,'COMPANY',generated=now,default_source='Bing News')[:4]
+                return articles,int(cached)+int(used),warn
+            except Exception as exc:
+                return [],int(cached),str(warn or '')+'; alternative feed: '+str(exc)[:95]
+        return [],int(cached),warn
     selected=[w for w in watchlist if w['assetType']!='fund'][:limit]
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
         jobs={pool.submit(one,item):item for item in selected}
@@ -167,7 +179,7 @@ def collect_news(core,opts,watchlist,limit=35):
     for item in selected:
         articles,used,warning=result[item['symbol']]
         out.append({'symbol':item['symbol'],'name':item['name'],'retrievedAt':now.strftime('%Y-%m-%d %H:%M UTC'),
-                    'articles':articles,'source':'Google News RSS search (unofficial)'})
+                    'articles':articles,'source':'Google News / Bing RSS search (unofficial)'})
         cached+=used
         if warning:warnings.append(warning)
     return out,warnings,cached

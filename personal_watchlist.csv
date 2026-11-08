@@ -1,5 +1,4 @@
 symbol,name,asset_type,benchmark
-AXON,Axon Enterprise Inc,stock,^GSPC
 VAPX.L,Vanguard FTSE Developed Asia Pacific ex Japan ETF,etf,EFA
 VUAG.L,Vanguard S&P 500 UCITS ETF Accumulating,etf,^GSPC
 VUSA.L,Vanguard S&P 500 UCITS ETF Distributing,etf,^GSPC

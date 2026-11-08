@@ -8,6 +8,9 @@ import email.utils
 import json
 import random
 import re
+import os
+import pathlib
+import urllib.request
 import urllib.parse
 import xml.etree.ElementTree as ET
 
@@ -33,7 +36,7 @@ def _parse_rss_date(s):
         return d.astimezone(dt.timezone.utc)
     except (ValueError, TypeError, IndexError):return None
 
-def rss_articles(blob, category, generated=None):
+def rss_articles(blob, category, generated=None, default_source="Google News", max_age_days=4):
     generated=generated or dt.datetime.now(dt.timezone.utc)
     root=ET.fromstring(blob)
     results=[]
@@ -44,30 +47,148 @@ def rss_articles(blob, category, generated=None):
         if not title or not link.startswith('https://') or not when:continue
         # Prevent outdated material and future-dated RSS corruption.
         age=(generated-when).total_seconds()
-        if age < -300 or age>4*86400:continue
+        if age < -300 or age>max_age_days*86400:continue
         source_node=item.find('source')
-        source=source_node.text if source_node is not None and source_node.text else 'Google News'
+        source=source_node.text if source_node is not None and source_node.text else default_source
         results.append({'title':title[:220],'url':link,'source':source[:80],
                         'category':category,'published':when.strftime('%Y-%m-%d %H:%M UTC')})
     return results
 
+# Reliable public feeds are attempted after news-search feed errors. These are
+# editorial feeds rather than synthetic or algorithmically inferred headlines.
+NEWS_FALLBACK_FEEDS = {
+    'GLOBAL': [('BBC Business', 'https://feeds.bbci.co.uk/news/business/rss.xml'),
+               ('CNBC', 'https://www.cnbc.com/id/10001147/device/rss/rss.html')],
+    'UK': [('BBC Business', 'https://feeds.bbci.co.uk/news/business/rss.xml')],
+    'EUROPE': [('BBC Business', 'https://feeds.bbci.co.uk/news/business/rss.xml')],
+    'RATES': [('CNBC', 'https://www.cnbc.com/id/10000664/device/rss/rss.html')],
+    'COMPANIES': [('BBC Business', 'https://feeds.bbci.co.uk/news/business/rss.xml')],
+}
+
+
+def bing_news_url(query):
+    """Independent searchable RSS fallback. Availability is not guaranteed."""
+    return 'https://www.bing.com/news/search?' + urllib.parse.urlencode(
+        {'q':query.replace(' when:3d','').replace(' when:4d',''), 'format':'rss', 'setlang':'en-GB'})
+
+
+def fetch_rss_once(url, timeout=7):
+    """Bounded one-shot alternative RSS request; no long retry storms.
+
+    Uses distinct host(s) from the failing Google feed. Some environments
+    may block all of them; a failed feed must not block publishing.
+    """
+    req=urllib.request.Request(url, headers={
+        'User-Agent':'Mozilla/5.0 (compatible; MarketTerminal/1.0)',
+        'Accept':'application/rss+xml,application/xml,text/xml,*/*'})
+    with urllib.request.urlopen(req,timeout=timeout) as response:
+        raw=response.read(750_001)
+    if len(raw)>750_000:raise ValueError('RSS response exceeds safety bound')
+    if len(raw)<10:raise ValueError('Empty RSS response')
+    return raw
+
+
+def _published_news_archive():
+    """Recover dated headlines from the *last published* site after a feed outage.
+
+    Never report these as fresh. Ignore out-of-window, future, invalid URL or
+    synthetic entries. No account credentials or private data are involved.
+    """
+    repo=os.environ.get('GITHUB_REPOSITORY', 'rs88pvyhzz-code/market-terminal')
+    if '/' not in repo:return []
+    owner,project=repo.split('/',1)
+    url=f'https://{owner}.github.io/{project}/news_cache.json'
+    try:
+        req=urllib.request.Request(url,headers={'User-Agent':'MarketTerminal/1.0'})
+        with urllib.request.urlopen(req,timeout=8) as response:raw=response.read(400_001)
+        if len(raw)>400_000:raise ValueError('News archive too large')
+        obj=json.loads(raw.decode('utf-8'))
+        if not isinstance(obj,dict):return []
+        now=dt.datetime.now(dt.timezone.utc)
+        keep=[]
+        for item in obj.get('articles',[]):
+            if not isinstance(item,dict) or item.get('category') not in NEWS_QUERIES:continue
+            if not str(item.get('url','')).startswith('https://') or not item.get('title'):continue
+            try:when=dt.datetime.strptime(item['published'],'%Y-%m-%d %H:%M UTC').replace(tzinfo=dt.timezone.utc)
+            except (KeyError,ValueError,TypeError):continue
+            if -300 <= (now-when).total_seconds() <= 7*86400:
+                keep.append({k:item[k] for k in ('title','url','source','category','published') if k in item})
+        return keep[:100]
+    except Exception:
+        return []
+
+
+def _editorial_topic_matches(category, article):
+    """Avoid labelling a general business headline as UK/EU/rates news."""
+    if category=='GLOBAL':return True
+    text=(article.get('title') or '').lower()
+    words={
+      'UK':r'\b(uk|britain|british|england|scotland|london|ftse|gilts?|sterling|bank of england|pound)\b',
+      'EUROPE':r'\b(europe|eurozone|euro area|eu|ecb|germany|france|italy|spain|dax|euro)\b',
+      'RATES':r'\b(bonds?|yields?|treasur(?:y|ies)|interest rates?|central banks?|fed(?:eral reserve)?|ecb|gilts?)\b',
+      'COMPANIES':r'\b(shares?|stocks?|corporat(?:e|ion)|companies|profits?|earnings|results|dividends|revenue|merger|takeover)\b',
+    }
+    return bool(re.search(words.get(category,r'$^'),text))
+
+
 def collect_news(core,opts):
     reports=[];warnings=[];seen=set();cached=0
+    def add(items, archived=False):
+        for item in items:
+            signature=(item['category'],re.sub(r'[^a-z\d]+','',item['title'].casefold())[:100])
+            if signature in seen:continue
+            seen.add(signature)
+            if archived:item={**item,'restored':True}
+            reports.append(item)
     for category,query in NEWS_QUERIES.items():
         url='https://news.google.com/rss/search?'+urllib.parse.urlencode(
             {'q':query,'hl':'en-GB','gl':'GB','ceid':'GB:en'})
         try:
-            raw,is_cached,msg=core.get_bytes(url,'news_'+category.lower(),opts.offline,opts.cache_hours)
-            cached+=int(is_cached)
+            raw,used,msg=core.get_bytes(url,'news_'+category.lower(),opts.offline,opts.cache_hours)
+            cached+=int(used)
             if 'stale cache' in msg:warnings.append('News '+category+': stale cached articles')
-            items=rss_articles(raw,category)
-            for item in items:
-                signature=re.sub(r'[^a-z\d]+','',item['title'].casefold())[:100]
-                if signature not in seen:
-                    seen.add(signature);reports.append(item)
-        except Exception as e:warnings.append('News '+category+': '+str(e))
+            add(rss_articles(raw,category))
+        except Exception as exc:
+            warnings.append('News '+category+': '+str(exc)[:120])
+        # The Google News RSS feed has returned HTTP 503 in GitHub Actions.
+        # Bing's RSS search is independently hosted, followed by editorial feeds.
+        if any(r['category']==category for r in reports):continue
+        if getattr(opts,'offline',False):continue
+        try:
+            raw=fetch_rss_once(bing_news_url(query))
+            add(rss_articles(raw,category,default_source='Bing News'))
+        except Exception as exc:
+            warnings.append('News '+category+' Bing fallback: '+str(exc)[:90])
+        if any(r['category']==category for r in reports):continue
+        for name,feed in NEWS_FALLBACK_FEEDS[category]:
+            try:
+                raw=fetch_rss_once(feed)
+                add([x for x in rss_articles(raw,category,default_source=name) if _editorial_topic_matches(category,x)])
+            except Exception as exc:
+                warnings.append('News '+category+' '+name+' fallback: '+str(exc)[:90])
+            if any(r['category']==category for r in reports):break
+    # Do not repeatedly publish an empty dashboard when feeds are temporarily down.
+    # A prior headline stays eligible for no more than seven days after publication.
+    missing=set(NEWS_QUERIES)-{r['category'] for r in reports}
+    if missing and not getattr(opts,'offline',False):
+        earlier=_published_news_archive()
+        old=[x for x in earlier if x['category'] in missing]
+        if old:
+            add(old,archived=True)
+            warnings.append('News: some feeds unavailable; recovered dated articles from the previous published snapshot (up to seven days old)')
     reports.sort(key=lambda a:a['published'],reverse=True)
-    return reports[:80],warnings,cached
+    articles=reports[:80]
+    # Created during the build; the existing GitHub Pages publish step already
+    # uploads every file in public/, without requiring a workflow change.
+    if not getattr(opts,'offline',False):
+        try:
+            file=pathlib.Path(__file__).resolve().parent/'public'/'news_cache.json'
+            file.parent.mkdir(parents=True,exist_ok=True)
+            file.write_text(json.dumps({'retrievedAt':dt.datetime.now(dt.timezone.utc).isoformat(),
+                                        'articles':articles},ensure_ascii=False),encoding='utf-8')
+        except OSError as exc:
+            warnings.append('News cache could not be saved: '+str(exc)[:100])
+    return articles,warnings,cached
 
 def _extract_release_date(item):
     # The ONS RSS feeds vary in structure. Only return dates explicitly supplied
@@ -353,7 +474,13 @@ def collect_company_news(core, opts, movers, limit=12):
                 if 'stale cache' in msg:warnings.append('Company news '+symbol+': stale cache')
             except Exception as exc:
                 if len(warnings)<10:warnings.append('Company news '+symbol+': '+str(exc)[:120])
+        if not articles and not getattr(opts,'offline',False):
+            try:
+                raw=fetch_rss_once(bing_news_url(query))
+                articles=rss_articles(raw,'COMPANY',generated=now,default_source='Bing News')[:5]
+            except Exception as exc:
+                if len(warnings)<15:warnings.append('Company news '+symbol+' alternate RSS: '+str(exc)[:100])
         out.append({'symbol':symbol,'name':name,'articles':articles,
                     'retrievedAt':now.strftime('%Y-%m-%d %H:%M UTC'),
-                    'source':'Google News RSS search (unofficial)'})
+                    'source':'News RSS feeds (unofficial, selected by search)'})
     return out,warnings,cached
