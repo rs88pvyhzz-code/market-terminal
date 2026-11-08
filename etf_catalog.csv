@@ -1,0 +1,79 @@
+category,market,symbol,name,benchmark,terPct,replication,distribution,domicile,isin,hedged,reference,note
+Equity,Global,VWRP.L,Vanguard FTSE All-World Acc,FTSE All-World,0.19,Physical sampling,Acc,Ireland,IE00BK5BQT80,,ACWI,Developed plus emerging
+Equity,Global,VWRL.L,Vanguard FTSE All-World Dist,FTSE All-World,0.19,Physical sampling,Dist,Ireland,IE00B3RBWM25,,ACWI,Distributing line
+Equity,Global,FWRG.L,Invesco FTSE All-World,FTSE All-World,,,,,,,ACWI,Confirm current fee and replication with issuer
+Equity,Developed world,SWDA.L,iShares Core MSCI World,MSCI World,,,,,,,URTH,Developed only
+Equity,Developed world,SWRD.L,SPDR MSCI World,MSCI World,,,,,,,URTH,Developed only
+Equity,United States,CSPX.L,iShares Core S&P 500,S&P 500,,,,,,,^GSPC,
+Equity,United States,VUAG.L,Vanguard S&P 500 Acc,S&P 500,,,,,,,^GSPC,
+Equity,United States,IUSA.L,iShares S&P 500 Dist,S&P 500,,,,,,,^GSPC,
+Equity,US technology,CNDX.L,iShares Nasdaq 100 Acc,Nasdaq 100,,,,,,,QQQ,QQQ reference is a fund not official index
+Equity,US technology,EQQQ.L,Invesco Nasdaq 100 Dist,Nasdaq 100,,,,,,,QQQ,QQQ reference is a fund not official index
+Equity,US small cap,R2US.L,SPDR Russell 2000 US Small Cap,Russell 2000,,,,,,,^RUT,Check exchange ticker
+Equity,UK FTSE 100,VUKE.L,Vanguard FTSE 100,FTSE 100,0.09,Physical full,Dist,Ireland,IE00B810Q511,,^FTSE,
+Equity,UK FTSE 100,ISF.L,iShares Core FTSE 100,FTSE 100,,,,,,,^FTSE,
+Equity,UK FTSE 250,HMCX.L,HSBC FTSE 250,FTSE 250,0.09,Physical full,Dist,Ireland,IE00B64PTF05,,^FTMC,Low-cost alternative
+Equity,UK FTSE 250,VMIG.L,Vanguard FTSE 250 Acc,FTSE 250,0.10,Physical full,Acc,Ireland,IE00BFMXVQ44,,^FTMC,
+Equity,UK FTSE 250,VMID.L,Vanguard FTSE 250 Dist,FTSE 250,0.10,Physical full,Dist,Ireland,IE00BKX55Q28,,^FTMC,
+Equity,UK FTSE 250,MIDD.L,iShares FTSE 250,FTSE 250,0.40,Physical sampling,Dist,Ireland,IE00B00FV128,,^FTMC,
+Equity,Europe,VERX.L,Vanguard FTSE Developed Europe ex UK,FTSE Developed Europe ex UK,,,,,,,^STOXX,Proxy differs from official index
+Equity,Europe,IMEU.L,iShares Core MSCI Europe,MSCI Europe,,,,,,,^STOXX,Proxy differs from official index
+Equity,Eurozone,EUE.L,iShares EURO STOXX 50,EURO STOXX 50,,,,,,,^STOXX50E,
+Equity,Germany DAX,XDAX.L,Xtrackers DAX UCITS ETF,DAX,0.09,Physical full,Acc,Luxembourg,LU0274211480,,^GDAXI,Check London trading line
+Equity,Germany DAX,EXS1.DE,iShares Core DAX UCITS ETF,DAX,0.16,Physical full,Acc,Germany,DE0005933931,,^GDAXI,Xetra line
+Equity,Germany DAX,C001.DE,Amundi DAX UCITS ETF,DAX,0.08,Physical full,Dist,Luxembourg,LU2611732046,,^GDAXI,Check trading line
+Equity,France,CAC.PA,Amundi CAC 40 UCITS ETF,CAC 40,,,,,,,^FCHI,Verify Paris ticker
+Equity,Japan,SJPA.L,iShares Core MSCI Japan,MSCI Japan,,,,,,,^N225,Nikkei differs from MSCI Japan
+Equity,Japan,XMJP.L,Xtrackers MSCI Japan,MSCI Japan,,,,,,,^N225,Nikkei differs from MSCI Japan
+Equity,Asia Pacific ex Japan,VAPX.L,Vanguard FTSE Developed Asia Pacific ex Japan,FTSE Developed Asia Pacific ex Japan,,,,,,,EFA,EFA reference differs from tracked index
+Equity,Asia Pacific ex Japan,AEJL.L,Amundi MSCI Pacific ex Japan,MSCI Pacific ex Japan,0.60,Synthetic swap,Acc,Luxembourg,LU1900068328,,,Verify exchange ticker
+Equity,Emerging markets,EIMI.L,iShares Core MSCI Emerging Markets IMI,MSCI Emerging Markets IMI,,,,,,,EEM,EEM reference differs from IMI index
+Equity,Emerging markets,LEMA.L,Amundi MSCI Emerging Markets,MSCI Emerging Markets,0.14,Synthetic swap,Acc,Luxembourg,LU2573967036,,EEM,Verify exchange ticker
+Equity,Emerging markets,AEME.L,Amundi MSCI Emerging Markets,MSCI Emerging Markets,0.18,Physical full,Acc,Luxembourg,LU1437017350,,EEM,Verify exchange ticker
+Equity,EM ex China,XDEX.L,Xtrackers MSCI Emerging Markets ex China,MSCI EM ex China,0.16,Physical full,Acc,Ireland,IE00BM67HJ62,,EEM,EEM proxy includes China
+Equity,EM ex China,EMXN.L,Amundi MSCI EM ex China,MSCI EM ex China,0.15,Synthetic swap,Acc,Luxembourg,LU2009202107,,,Verify exchange ticker
+Equity,India,FRIN.L,Franklin FTSE India,FTSE India 30/18 Capped,0.19,Physical full,Acc,Ireland,IE00BHZRQZ17,,^NSEI,Nifty 50 differs from tracked FTSE index
+Equity,India,XCX5.L,Xtrackers MSCI India Swap,MSCI India,0.19,Synthetic swap,Acc,Luxembourg,LU0514695187,,^NSEI,Verify London ticker
+Equity,India,INDA.L,UBS MSCI India SF,MSCI India,0.15,Synthetic swap,Acc,Ireland,IE000N70F6V6,,^NSEI,Verify ticker. INDA without suffix is different US fund
+Equity,China,ICGA.L,iShares MSCI China A,MSCI China A,0.28,Physical full,Acc,Ireland,IE00BJ5JPG56,,000300.SS,CSI 300 differs from MSCI China A
+Equity,China,LCCG.L,Amundi MSCI China,MSCI China,0.29,Synthetic swap,Acc,Luxembourg,LU1841731745,,^HSI,Hang Seng differs from tracked index
+Equity,Taiwan,FRXT.L,Franklin FTSE Taiwan,FTSE Taiwan,0.19,Physical full,Acc,Ireland,IE000CM02H85,,^TWII,Index reference differs
+Equity,Taiwan,XTMT.L,Xtrackers MSCI Taiwan,MSCI Taiwan,0.21,Physical full,Dist,Luxembourg,LU2928641757,,^TWII,Verify ticker
+Equity,Latin America,LTAM.L,iShares MSCI EM Latin America,MSCI EM Latin America 10/40,0.20,Physical sampling,Dist,Ireland,IE00B27YCK28,,,Regional equity fund
+Equity,Latin America,XMLA.L,Xtrackers MSCI EM Latin America Swap,MSCI EM Latin America,0.40,Synthetic swap,Acc,Luxembourg,LU0292108619,,,Synthetic exposure
+Equity,Latin America,ALAU.PA,Amundi MSCI Emerging Latin America,MSCI EM Latin America,0.20,Synthetic swap,Acc,Luxembourg,LU1681045297,,,Verify Paris ticker
+Equity,Brazil,FVUB.L,Franklin FTSE Brazil,FTSE Brazil,0.19,Physical full,Acc,Ireland,IE00BHZRQY00,,^BVSP,Bovespa reference differs
+Equity,Brazil,XMBR.L,Xtrackers MSCI Brazil,MSCI Brazil,0.25,Physical full,Acc,Luxembourg,LU0292109344,,^BVSP,Bovespa reference differs
+Equity,Mexico,CMX1.L,iShares MSCI Mexico Capped,MSCI Mexico Capped,0.65,Physical full,Acc,Ireland,IE00B5WHFQ43,,^MXX,Mexico proxy differs
+Equity,Mexico,XMEX.L,Xtrackers MSCI Mexico,MSCI Mexico,0.65,Physical full,Acc,Luxembourg,LU0476289466,,^MXX,Verify ticker
+Equity,Poland,SPOL.L,iShares MSCI Poland,MSCI Poland,0.74,Physical full,Acc,Ireland,IE00B4M7GH52,,,Direct Poland
+Equity,Poland-heavy Eastern Europe,CECL.L,Amundi MSCI Emerging Eastern Europe ex Russia,MSCI Emerging Eastern Europe ex Russia,0.50,Synthetic swap,Acc,Luxembourg,LU1900066462,,,Poland weight 70.53% on 27 Feb 2026 only. Not current verified weight
+Equity,Turkey,TURL.L,Amundi MSCI Turkey,MSCI Turkey,0.45,Synthetic swap,Acc,Luxembourg,LU1900067601,,,Verify London ticker
+Equity,Turkey,ITKY.L,iShares MSCI Turkey,MSCI Turkey,0.74,Physical full,Dist,Ireland,IE00B1FZS574,,,Verify London ticker
+Equity,Africa,XMAF.L,Xtrackers MSCI Africa Top 50 Swap,MSCI Africa Top 50,0.65,Synthetic swap,Acc,Luxembourg,LU0592217524,,,Check listing and concentration
+Equity,Africa,LGQM.L,Amundi Pan Africa,Pan Africa,0.85,Synthetic swap,Acc,Luxembourg,LU1287022708,,,Check listing and underlying index
+Thematic,Semiconductors,SEMI.L,VanEck Semiconductor,MVIS US Listed Semiconductor,,,,,,,,Concentrated industry
+Thematic,Robotics,RBOT.L,iShares Automation and Robotics,STOXX Global Automation and Robotics,,,,,,,,Theme concentration
+Thematic,Clean energy,INRG.L,iShares Global Clean Energy,S&P Global Clean Energy,,,,,,,,High sector volatility
+Thematic,Cybersecurity,ISPY.L,L&G Cyber Security,ISE Cyber Security,,,,,,,,Theme concentration
+Bonds,UK gilts,VGOV.L,Vanguard UK Gilt,Bloomberg UK Government Float Adjusted,0.05,Physical sampling,Dist,Ireland,,,,UK duration risk
+Bonds,UK gilts,IGLT.L,iShares Core UK Gilts,FTSE Actuaries UK Conventional Gilts All Stocks,0.07,Physical sampling,Dist,Ireland,IE00B1FZSB30,,,Gilt duration varies
+Bonds,UK index linked,INXG.L,iShares Index-Linked Gilts,FTSE Actuaries UK Index Linked Gilts,0.10,Physical sampling,Dist,Ireland,IE00B1FZSD53,,,RPI duration risk
+Bonds,UK short gilts,IGLS.L,iShares UK Gilts 0-5yr,FTSE Actuaries UK Gilts 0-5 Years,,,,,,,,Shorter duration
+Bonds,Global aggregate GBP hedged,VAGP.L,Vanguard Global Aggregate Bond GBP Hedged,Bloomberg Global Aggregate GBP Hedged,0.08,Physical sampling,Dist,Ireland,IE00BG47KG48,GBP,,Currency-hedged bonds
+Bonds,Global aggregate GBP hedged,AGBP.L,iShares Core Global Aggregate Bond GBP Hedged,Bloomberg Global Aggregate GBP Hedged,,,,,,,GBP,Verify current details
+Bonds,US Treasury 0-1y,IB01.L,iShares US Treasury 0-1yr,ICE US Treasury Short Bond,0.07,Physical sampling,Acc,Ireland,IE00BGSF1X88,,,USD risk unless hedged
+Bonds,US Treasury 1-3y,IBTS.L,iShares US Treasury 1-3yr,ICE US Treasury 1-3 Year,,,,,,,,Short USD duration
+Bonds,US Treasury 7-10y,IBTM.L,iShares US Treasury 7-10yr,ICE US Treasury 7-10 Year,,,,,,,,Intermediate USD duration
+Bonds,US Treasury 20y+,IDTL.L,iShares USD Treasury Bond 20+yr,ICE US Treasury 20+ Year,,,,,,,,Long duration
+Bonds,US inflation linked,ITPS.L,iShares USD TIPS,Bloomberg US Treasury Inflation-Linked,,,,,,,,US CPI exposure
+Bonds,US inflation linked,TIP5.L,iShares USD TIPS 0-5yr,Bloomberg US TIPS 0-5yr,,,,,,,,Shorter TIPS duration
+Bonds,UK investment grade,SLXX.L,iShares Core GBP Corporate Bond,iBoxx GBP Liquid Corporates,0.20,Physical sampling,Dist,Ireland,IE00B00FV011,,,Credit and interest rate risk
+Bonds,USD investment grade,LQDE.L,iShares USD Corporate Bond,iBoxx USD Liquid IG,,,,,,,,USD investment grade
+Bonds,EUR investment grade,IEAC.L,iShares Core EUR Corporate Bond,Bloomberg Euro Corporate,,,,,,,,EUR IG credit
+Bonds,EUR high yield,IHYG.L,iShares EUR High Yield Corporate Bond,iBoxx EUR Liquid High Yield,,,,,,,,Default risk
+Bonds,USD high yield,SHYU.L,iShares USD Short Duration High Yield,USD High Yield Short Duration,,,,,,,,Default risk
+Bonds,EM sovereign debt,IEMB.L,iShares JPM USD EM Bond,JPM EMBI Global Core,,,,,,,,Hard currency EM sovereign
+Bonds,EM local currency debt,EMLC.L,VanEck JPM EM Local Currency Bond,JPM GBI EM Global Core,,,,,,,,Local FX and sovereign risk
+Bonds,Global government,IGLO.L,iShares Global Government Bond,FTSE G7 Government Bond,,,,,,,,Currency risk
+Bonds,USD floating rate,FLOT.L,iShares USD Floating Rate Bond,Bloomberg US Floating Rate Note,,,,,,,,Credit and rate risk

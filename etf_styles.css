@@ -1,0 +1,23 @@
+/* ETF Trackers — inherits the terminal's existing dark typography and palette. */
+.etf-controls{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:9px;align-items:end;margin-top:12px}
+.etf-controls label,.etf-plot-controls label{display:grid;gap:5px;font:10px/1.4 var(--font);color:var(--muted)}
+.etf-controls .field,.etf-plot-controls .field{width:100%;min-width:0}
+.etf-table-scroll{max-height:600px;overflow:auto;border:1px solid #35343b;border-radius:5px}
+.etf-table{min-width:1440px}.etf-table th{position:sticky;top:0;z-index:2;background:#17171b}
+.etf-table td{font-size:11px}.etf-table tbody tr{cursor:pointer}.etf-table tbody tr:hover{background:#29231a}
+.etf-table tr.etf-active td{background:#342516}.etf-table .etf-name{font-weight:600;color:#efe9dd}
+.etf-table .etf-market{font-size:10px;color:var(--muted);display:block;margin-top:2px}
+.etf-table .etf-unknown{color:#9b9290}.etf-table .etf-swap{color:#e2bc80}
+.etf-detail{border-top:1px solid #494047;margin-top:18px;padding-top:14px}
+.etf-detail h3{margin:0 0 5px;color:var(--amber);font-size:14px}
+.etf-detail a{color:#edb66e;font-size:11px}
+.etf-stat-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:10px 0}
+.etf-stat{background:#1c1c21;border:1px solid #37363e;border-radius:4px;padding:10px;min-width:0}
+.etf-stat .k{font:10px var(--font);color:var(--amber);text-transform:uppercase}.etf-stat .v{font:14px var(--font);margin-top:7px;overflow-wrap:anywhere}.etf-stat .d{font-size:10px;color:var(--muted);margin-top:5px}
+.etf-plot-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:11px 0}
+.etf-plot-controls label{min-width:160px}.etf-plot-controls .etf-check-label{display:flex;align-items:center;gap:8px;min-width:0;padding-bottom:8px}
+#etf-chart{min-height:330px}.etf-peer-box{overflow-x:auto;margin-top:10px}.etf-peer-box table{min-width:520px}
+.etf-swap-note{color:#f2ca92}
+@media(max-width:1400px){.etf-controls{grid-template-columns:repeat(3,minmax(0,1fr))}.etf-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:750px){.etf-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.etf-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:440px){.etf-controls{grid-template-columns:1fr}.etf-plot-controls{display:grid;grid-template-columns:1fr}.etf-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
