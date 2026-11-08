@@ -19,7 +19,7 @@ import re
 import shutil
 import sys
 
-ISSUER_CSV = 'symbol,isin,issuer,name,category,market,benchmark,reference,terPct,aum,aumCurrency,aumAsOf,issuerDate,replication,replicationDetail,distribution,domicile,riskIndicator,issuerTe3,lendingReturnPct,note,sourceUrl\nINRG.L,IE00B1XNHC34,iShares,,,,,"Fund AUM $2,975.29m; distinct from share class $2,600.26m.",0.65,2975290000,USD,2026-10-31,2026-11-04,,"Physical, replication detail not specified",,Ireland,7,,,,https://www.ishares.com/uk/individual/en/products/251911/\nITKY.L,IE00B1FZS574,iShares,,,,,,0.74,101850000,USD,2026-10-31,2026-11-04,,"Physical, replication detail not specified",,Ireland,7,,,,https://www.ishares.com/uk/individual/en/products/251879/\nSPOL.L,IE00B4M7GH52,iShares,,,,,,0.74,1120830000,USD,2026-10-31,2026-11-04,,"Physical, replication detail not specified",,Ireland,7,,,,https://www.ishares.com/uk/individual/en/products/251875/\nCMX1.L,IE00B5WHFQ43,iShares,,,,,,0.65,116480000,USD,2026-10-31,2026-11-04,,"Physical, replication detail not specified",,Ireland,6,,,,https://www.ishares.com/uk/individual/en/products/253734/\nLTAM.L,IE00B27YCK28,iShares,,,,,,0.2,1921140000,USD,2026-10-31,2026-11-04,Physical sampling,Physical optimised; matches sampling classification,Dist,Ireland,,,,,https://www.ishares.com/uk/individual/en/products/251856/\nFWRG.L,IE000716YHJ7,Invesco,Invesco FTSE All-World UCITS ETF Acc,,,FTSE All-World,,0.15,5184690000,USD,2026-09-30,2026-09-30,,"Physical, replication detail not specified",Acc,Ireland,,,,,https://www.invesco.com/content/dam/invesco/emea/en/product-documents/etf/share-class/factsheet/IE000716YHJ7_factsheet_en.pdf\nEQQQ.L,IE0032077012,Invesco,,,,,,0.3,21610380000,USD,2026-09-30,2026-09-30,,"Physical, replication detail not specified",,,,,,,https://www.invesco.com/content/dam/invesco/emea/en/product-documents/etf/share-class/factsheet/IE0032077012_factsheet_en.pdf\nHMCX.L,IE00B64PTF05,HSBC,,,,FTSE 250 Gross,"Issuer\'s reported 3Y NAV tracking error, not indicative price-based TE.",0.09,60311075,GBP,2026-09-30,2026-09-30,Physical full,Physical full; 3-year tracking error is 0.07%,Dist,Ireland,,0.07,,,\nISPY.L,IE00BYPLS672,L&G,,,,,,0.69,3924100000,USD,2026-11-05,2026-11-05,Physical full,Physical full,,,,,,,\nSMH.L,IE00BMC38736,VanEck,VanEck Semiconductor UCITS ETF,Thematic,Semiconductors,MarketVector US Listed Semiconductor 10% Capped Screened,USD LSE listing SMH; GBP LSE listing SMGB. Old SEMI.L line was not evidenced.,0.35,8324900000,USD,2026-10-31,2026-10-31,Physical full,Physical full,Acc,Ireland,,,,,https://www.vaneck.com/uk/en/library/fact-sheets/smh-fact-sheet.pdf\nFRIN.L,IE00BHZRQZ17,Franklin Templeton,,,,,FRIN is the GBP LSE ticker; USD LSE listing is FLXI.,0.19,2400000000,USD,2026-11-06,2026-11-06,Physical full,Physical full,,,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/27853/SINGLCLASS/IE00BHZRQZ17\nFRXT.L,IE000CM02H85,Franklin Templeton,,,,,FRXT is the GBP LSE ticker; USD LSE listing is FLXT.,0.19,1120000000,USD,2026-11-06,2026-11-06,Physical full,Physical full,,,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/32637/SINGLCLASS/IE000CM02H85\nFVUB.L,IE00BHZRQY00,Franklin Templeton,,,,,FVUB is the GBP LSE ticker; USD LSE listing is FLXB.,0.19,229440000,USD,2026-11-06,2026-11-06,Physical full,Physical full,,,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/27851/SINGLCLASS/IE00BHZRQY00\nFLXK.L,IE00BHZRR030,Franklin Templeton,Franklin FTSE Korea UCITS ETF,Equity,South Korea,FTSE Korea 30/18 Capped,^KS11,0.09,4030000000,USD,2026-11-06,2026-11-06,Physical full,Physical full,Acc,Ireland,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/27854/SINGLCLASS/IE00BHZRR030\nKSA.L,IE000C7DDDX4,Franklin Templeton,Franklin FTSE Saudi Arabia UCITS ETF,Equity,Saudi Arabia,FTSE Saudi Arabia 30/18 Capped,"KSA is the LSE USD ticker, FLXS is the Xetra ticker; very small fund.",0.39,5780000,USD,2026-11-06,2026-11-06,Physical full,Physical full,Acc,Ireland,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/41675/SINGLCLASS/IE000C7DDDX4\nCG1.L,FR0010655712,Amundi,Amundi DAX UCITS ETF,Equity,Germany DAX,DAX,"Amount €1,446.41m captured 8 November; exact NAV date not visible. Different ISIN from C001.DE.",.10,1446410000,EUR,,2026-11-08,,Direct physical; full vs sampled unspecified,Mixed,,,,,,https://www.amundietf.co.uk/en/individual/products/equity/amundi-dax-ucits-etf/fr0010655712\nCACX.L,FR0007052782,Amundi,Amundi CAC 40 UCITS ETF Dist,Equity,France,CAC 40,^FCHI,.25,4233280000,EUR,,2026-11-08,,Direct physical; full vs sampled unspecified,Dist,France,,,,,https://www.amundietf.co.uk/en/professional/products/equity/amundi-cac-40-ucits-etf-dist/fr0007052782\nRBOT.L,IE00BYZK4552,iShares,iShares Automation & Robotics UCITS ETF Acc,Thematic,Robotics,STOXX Global Automation & Robotics Net USD,,0.4,5525810000,USD,2026-10-31,2026-11-08,Physical sampling,,Acc,Ireland,6,,,"Physical optimised. Fund AUM differs from USD share-class assets $5,187.98m.",\nXMJP.L,LU0274209740,Xtrackers,Xtrackers MSCI Japan UCITS ETF 1C,Equity,Japan,MSCI Japan,^N225,0.12,6470000000,GBP,2026-11-05,2026-11-05,Physical full,Physical full,Acc,Luxembourg,,,0.0634,"Fund AUM as of 5 Nov, distinct from fund base JPY.",\nXDWD.L,IE00BJ0KDQ92,Xtrackers,Xtrackers MSCI World UCITS ETF 1C,Equity,Developed world,MSCI World,URTH,0.12,22510000000,GBP,,2026-11-08,Physical full,Physical full,Acc,Ireland,,,,Issuer page/secondary listing verified USD LSE line XDWD; same ISIN GBX XWLD.,\nXDEW.L,IE00BLNMYC90,Xtrackers,Xtrackers S&P 500 Equal Weight UCITS ETF 1C,Equity,US equal weight,S&P 500 Equal Weight,^GSPC,0.15,11900000000,GBP,,2026-11-08,Physical full,Physical full,Acc,Ireland,,,,Issuer LSE USD line XDEW; GBX line XDWE. SP500 price index is not fund benchmark.,https://etf.dws.com/en-gb/IE00BLNMYC90-s-p-500-equal-weight-ucits-etf-1c/\nXMTD.L,LU0292109187,Xtrackers,Xtrackers MSCI Taiwan UCITS ETF 1C,Equity,Taiwan,MSCI Taiwan 20-35 Custom,^TWII,0.65,711890000,USD,2026-09-30,2026-09-30,Physical full,Physical full,Acc,Luxembourg,,,,Different share class/ISIN from XTMT.L; GBX line XMTW.,https://etf.dws.com/en-gb/LU0292109187-msci-taiwan-ucits-etf-1c/\nXMBR.L,LU0292109344,Xtrackers,Xtrackers MSCI Brazil UCITS ETF 1C,Equity,Brazil,MSCI Brazil TRN,^BVSP,0.25,283540000,USD,2026-09-30,2026-09-30,,Physical; subtype unverified,Acc,Luxembourg,,,,Issuer factsheet 30 Sept 2026,\nXMEX.L,LU0476289466,Xtrackers,Xtrackers MSCI Mexico UCITS ETF 1C,Equity,Mexico,MSCI Mexico TRN,^MXX,0.65,306900000,USD,2026-09-30,2026-09-30,,Physical; subtype unverified,Acc,Luxembourg,,,,Issuer factsheet 30 Sept 2026,\nXMLA.L,LU0292108619,Xtrackers,Xtrackers MSCI EM Latin America Swap UCITS ETF 1C,Equity,Latin America,MSCI EM Latin America TRN,,0.4,130930000,USD,2026-09-30,2026-09-30,Synthetic swap,Synthetic swap,Acc,Luxembourg,,,,Benchmark switched 1 June 2026; earlier index not directly comparable; benchmarkChangeDate=2026-06-01,\nXMAF.L,LU0592217524,Xtrackers,Xtrackers MSCI Africa Top 50 Swap UCITS ETF 1C,Equity,Africa,MSCI EFM Africa Top 50 Capped TRN,,0.65,85700000,USD,2026-09-30,2026-09-30,Synthetic swap,Synthetic swap,Acc,Luxembourg,,,,Emerging and frontier exposure,\nXDEX.L,IE00BM67HJ62,Xtrackers,Xtrackers MSCI EM ex China UCITS ETF 1C,Equity,EM ex China,MSCI EM ex China,EEM,0.16,131500000,GBP,2026-09-30,2026-09-30,,Physical; subtype unverified,Acc,Ireland,,,,Benchmark changed July 2024; EEM proxy includes China; benchmarkChangeDate=2024-07-31,https://etf.dws.com/en-gb/IE00BM67HJ62-msci-emerging-markets-ex-china-ucits-etf-1c/\nXDAX.L,LU0274211480,Xtrackers,Xtrackers DAX UCITS ETF 1C,Equity,Germany DAX,DAX,^GDAXI,0.09,6090000000,GBP,,2026-11-08,,Physical; subtype unverified,Acc,Luxembourg,,,0.0008,Issuer current listing screenshot AUM £6.09bn,\nLSPX.L,LU0496786657,Amundi,Amundi Core S&P 500 Swap UCITS ETF USD Dist,Equity,United States,S&P 500,,.05,32749140000,USD,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nSP5G.L,LU1950341179,Amundi,Amundi Core S&P 500 Swap UCITS ETF GBP Hedged Dist,Equity,United States,S&P 500,,.05,24301510000,GBP,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMEUD.L,LU0908500753,Amundi,Amundi Core STOXX Europe 600 UCITS ETF Acc,Equity,Europe,STOXX Europe 600,,.07,22784870000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nLCJP.L,LU1781541252,Amundi,Amundi Core MSCI Japan UCITS ETF Acc,Equity,Japan,MSCI Japan,,.12,1080070450000,JPY,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nLCJG.L,LU1781541682,Amundi,Amundi Core MSCI Japan UCITS ETF GBP Hedged Acc,Equity,Japan,MSCI Japan GBP Hedged,,.20,5076750000,GBP,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nBNKE.L,LU1829219390,Amundi,Amundi Euro Stoxx Banks UCITS ETF Acc,Equity,Eurozone,EURO STOXX Banks,,.30,6009750000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMSED.L,LU1681047236,Amundi,Amundi Core EURO STOXX 50 UCITS ETF EUR Acc,Equity,Eurozone,EURO STOXX 50,,.09,5162590000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMSEX.L,FR0012399772,Amundi,Amundi EURO STOXX 50 II UCITS ETF GBP Hedged Acc,Equity,Eurozone,EURO STOXX 50 GBP Hedged,,.20,4057940000,GBP,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nEMXN.L,LU2009202107,Amundi,Amundi MSCI Emerging ex China Swap UCITS ETF Acc,Equity,EM ex China,MSCI EM ex China,,.15,4268790000,USD,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nTNOG.L,LU0533033741,Amundi,Amundi MSCI World Information Technology UCITS ETF USD Acc,Thematic,Technology,MSCI World Information Technology,,.30,3207220000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nGILS.L,LU1407892592,Amundi,Amundi Core UK Government Bond UCITS ETF Dist,Bonds,UK gilts,UK Government Bonds,,.05,2019950000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nU71G.L,LU1407888053,Amundi,Amundi US Treasury Bond 7-10Y UCITS ETF Dist,Bonds,US Treasury 7-10y,US Treasury 7-10Y,,.06,2306940000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nLCUK.L,LU1781541096,Amundi,Amundi UK Equity All Cap UCITS ETF Dist,Equity,UK FTSE All Share,UK All Cap,,.04,1697040000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCOMG.L,LU1829218749,Amundi,Amundi Bloomberg Equal-weight Commodity ex-Agriculture UCITS ETF Acc,Commodity ETC,Broad commodities,Bloomberg Equal-weight Commodity ex Agriculture,,.30,1846480000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Classified as commodity ETF; derivative replication not confirmed.",\nWATL.L,FR0010527275,Amundi,Amundi MSCI Water UCITS ETF Dist,Thematic,Water,MSCI Water,,.60,1610060000,EUR,,2026-11-08,,,Dist,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMFEX.L,LU1646360971,Amundi,Amundi Core MSCI EMU UCITS ETF Dist,Equity,Eurozone,MSCI EMU,,.12,1406830000,EUR,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nTIPH.L,LU1452600601,Amundi,Amundi US TIPS UCITS ETF GBP Hedged Dist,Bonds,US inflation linked,US TIPS GBP Hedged,,.12,1170470000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nTIPG.L,LU1452600270,Amundi,Amundi US TIPS UCITS ETF Dist,Bonds,US inflation linked,US TIPS,,.09,1577340000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nMFDD.L,LU0908501132,Amundi,Amundi MSCI EMU ESG Broad Transition UCITS ETF Dist,Equity,Eurozone,MSCI EMU ESG Broad Transition,,.12,1399380000,EUR,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nDAXX.L,LU0252633754,Amundi,Amundi DAX II UCITS ETF Acc,Equity,Germany DAX,DAX,,.15,1398370000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nESGL.L,LU1940199711,Amundi,Amundi MSCI Europe ESG Selection UCITS ETF Acc,Equity,Europe,MSCI Europe ESG Selection,,.20,1273930000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCRPX.L,LU1829219127,Amundi,Amundi EUR Corporate Bond Climate Paris Aligned UCITS ETF Acc,Bonds,EUR investment grade,EUR Corporate Climate Paris Aligned,,.14,1144940000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCM9.PA,FR0010756114,Amundi,Amundi MSCI World Ex EMU UCITS ETF Acc,Equity,Developed world,MSCI World ex EMU,,.35,992120000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nC3M.PA,FR0010754200,Amundi,Amundi Euro Government Bond 0-6 M UCITS ETF Acc,Bonds,EUR government 0-6m,EUR Sovereign 0-6M,,.14,970890000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nINRL.L,FR0010375766,Amundi,Amundi MSCI India Swap UCITS ETF USD Acc,Equity,India,MSCI India,,.85,1032670000,USD,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nL100.L,LU1650492173,Amundi,Amundi Core FTSE 100 Swap UCITS ETF Acc,Equity,UK FTSE 100,FTSE 100,,.14,718000000,GBP,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nU13G.L,LU1407887162,Amundi,Amundi US Treasury Bond 1-3Y UCITS ETF Dist,Bonds,US Treasury 1-3y,US Treasury 1-3Y,,.06,914910000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nGIL5.L,LU1439943090,Amundi,Amundi UK Government Bond 0-5Y UCITS ETF Dist,Bonds,UK short gilts,UK Gilts 0-5Y,,.05,665400000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nJPNL.L,FR0010245514,Amundi,Amundi Japan TOPIX II UCITS ETF EUR Dist,Equity,Japan,TOPIX,,.45,633360000,EUR,,2026-11-08,,,Dist,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMEUG.L,FR0010261198,Amundi,Amundi MSCI Europe UCITS ETF Acc,Equity,Europe,MSCI Europe,,.25,627140000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nLGWU.DE,LU1598689153,Amundi,Amundi MSCI EMU Small Cap ESG Broad Transition UCITS ETF Dist,Equity,Eurozone,MSCI EMU Small Cap,,.40,563380000,EUR,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nU10G.L,LU1407890620,Amundi,Amundi US Treasury Bond Long Dated UCITS ETF Dist,Bonds,US Treasury long dated,US Treasury Long-Dated,,.06,596420000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nJPXX.L,LU1646359619,Amundi,Amundi MSCI Japan SRI Climate Paris Aligned UCITS ETF GBP Hedged Acc,Equity,Japan,MSCI Japan SRI GBP Hedged,,.20,428430000,GBP,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nC5E.PA,FR0010790980,Amundi,Amundi Stoxx Europe 50 UCITS ETF Acc,Equity,Europe,STOXX Europe 50,,.15,510230000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nASIL.L,LU1900068914,Amundi,Amundi MSCI China ESG Selection Extra UCITS ETF Acc,Equity,China,MSCI China ESG Selection,,.65,478480000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCLIM.L,LU1563454310,Amundi,Amundi Global Aggregate Green Bond UCITS ETF Acc,Bonds,Global green bonds,Global Aggregate Green Bond,,.25,402860000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nKLMG.L,LU1563455630,Amundi,Amundi Global Aggregate Green Bond UCITS ETF GBP Hedged Dist,Bonds,Global green bonds GBP hedged,Global Aggregate Green Bond GBP Hedged,,.30,335620000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCD8.PA,FR0010717090,Amundi,Amundi MSCI EMU High Dividend UCITS ETF Acc,Equity,Eurozone,MSCI EMU High Dividend,,.30,401320000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nDTEC.L,LU2023678282,Amundi,Amundi Global Memory Chips UCITS ETF Acc,Thematic,Semiconductors,Global Memory Chips,,.45,445110000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nU37G.L,LU1407888996,Amundi,Amundi US Treasury Bond 3-7Y UCITS ETF Dist,Bonds,US Treasury 3-7y,US Treasury 3-7Y,,.06,425560000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nGILI.L,LU1407893301,Amundi,Amundi UK Government Inflation-Linked Bond UCITS ETF Dist,Bonds,UK index linked,UK Government Inflation Linked,,.07,229850000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nANRJ.L,FR0010930644,Amundi,Amundi Global Hydrogen UCITS ETF Acc,Thematic,Hydrogen,Global Hydrogen,,.45,198890000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nGIST.L,LU1910939849,Amundi,Amundi Global Government Inflation-Linked Bond 1-10Y UCITS ETF Dist,Bonds,Global inflation-linked,Global Government Inflation Linked 1-10Y,,.09,165960000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nELCR.L,LU2023679090,Amundi,Amundi MSCI Smart Mobility UCITS ETF Acc,Thematic,Smart mobility,MSCI Smart Mobility,,.45,158470000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nUSIX.L,LU1285959703,Amundi,Amundi USD Corporate Bond Climate Paris Aligned UCITS ETF Dist,Bonds,USD investment grade,USD Corporate Climate Paris Aligned,,.14,128520000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nGHYU.L,LU2099295466,Amundi,Amundi Global High Yield Corporate Bond ESG UCITS ETF USD Acc,Bonds,USD high yield,Global High Yield ESG,,.25,110130000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nEBUY.L,LU2023678878,Amundi,Amundi MSCI Digital Economy UCITS ETF Acc,Thematic,Digital economy,MSCI Digital Economy,,.45,105030000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCNAL.L,FR0011720911,Amundi,Amundi MSCI China A UCITS ETF Acc,Equity,China,MSCI China A,,.35,95010000,USD,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nGEND.L,LU1691909508,Amundi,Amundi Global Gender Equality UCITS ETF Acc,Thematic,Gender equality,Global Gender Equality,,.20,50750000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMILL.L,LU2023678449,Amundi,Amundi Global Sport and eSport UCITS ETF Acc,Thematic,Sport & eSport,Global Sport & eSport,,.45,18970000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCFR.L,FR0010655704,Amundi,Amundi CAC Transition Climate UCITS ETF,Equity,France,CAC Climate Transition,,.25,11500000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\n'
+ISSUER_CSV = 'symbol,isin,issuer,name,category,market,benchmark,reference,terPct,aum,aumCurrency,aumAsOf,issuerDate,replication,replicationDetail,distribution,domicile,riskIndicator,issuerTe3,lendingReturnPct,note,sourceUrl\nINRG.L,IE00B1XNHC34,iShares,,,,,"Fund AUM $2,975.29m; distinct from share class $2,600.26m.",0.65,2975290000,USD,2026-10-31,2026-11-04,,"Physical, replication detail not specified",,Ireland,7,,,,https://www.ishares.com/uk/individual/en/products/251911/\nITKY.L,IE00B1FZS574,iShares,,,,,,0.74,101850000,USD,2026-10-31,2026-11-04,,"Physical, replication detail not specified",,Ireland,7,,,,https://www.ishares.com/uk/individual/en/products/251879/\nSPOL.L,IE00B4M7GH52,iShares,,,,,,0.74,1120830000,USD,2026-10-31,2026-11-04,,"Physical, replication detail not specified",,Ireland,7,,,,https://www.ishares.com/uk/individual/en/products/251875/\nCMX1.L,IE00B5WHFQ43,iShares,,,,,,0.65,116480000,USD,2026-10-31,2026-11-04,,"Physical, replication detail not specified",,Ireland,6,,,,https://www.ishares.com/uk/individual/en/products/253734/\nLTAM.L,IE00B27YCK28,iShares,,,,,,0.2,1921140000,USD,2026-10-31,2026-11-04,Physical sampling,Physical optimised; matches sampling classification,Dist,Ireland,,,,,https://www.ishares.com/uk/individual/en/products/251856/\nFWRG.L,IE000716YHJ7,Invesco,Invesco FTSE All-World UCITS ETF Acc,,,FTSE All-World,,0.15,5184690000,USD,2026-09-30,2026-09-30,,"Physical, replication detail not specified",Acc,Ireland,,,,,https://www.invesco.com/content/dam/invesco/emea/en/product-documents/etf/share-class/factsheet/IE000716YHJ7_factsheet_en.pdf\nEQQQ.L,IE0032077012,Invesco,,,,,,0.3,21610380000,USD,2026-09-30,2026-09-30,,"Physical, replication detail not specified",,,,,,,https://www.invesco.com/content/dam/invesco/emea/en/product-documents/etf/share-class/factsheet/IE0032077012_factsheet_en.pdf\nHMCX.L,IE00B64PTF05,HSBC,,,,FTSE 250 Gross,"Issuer\'s reported 3Y NAV tracking error, not indicative price-based TE.",0.09,60311075,GBP,2026-09-30,2026-09-30,Physical full,Physical full; 3-year tracking error is 0.07%,Dist,Ireland,,0.07,,,\nISPY.L,IE00BYPLS672,L&G,,,,,,0.69,3924100000,USD,2026-11-05,2026-11-05,Physical full,Physical full,,,,,,,\nSMH.L,IE00BMC38736,VanEck,VanEck Semiconductor UCITS ETF,Thematic,Semiconductors,MarketVector US Listed Semiconductor 10% Capped Screened,USD LSE listing SMH; GBP LSE listing SMGB. Old SEMI.L line was not evidenced.,0.35,8324900000,USD,2026-10-31,2026-10-31,Physical full,Physical full,Acc,Ireland,,,,,https://www.vaneck.com/uk/en/library/fact-sheets/smh-fact-sheet.pdf\nFRIN.L,IE00BHZRQZ17,Franklin Templeton,,,,,FRIN is the GBP LSE ticker; USD LSE listing is FLXI.,0.19,2400000000,USD,2026-11-06,2026-11-06,Physical full,Physical full,,,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/27853/SINGLCLASS/IE00BHZRQZ17\nFRXT.L,IE000CM02H85,Franklin Templeton,,,,,FRXT is the GBP LSE ticker; USD LSE listing is FLXT.,0.19,1120000000,USD,2026-11-06,2026-11-06,Physical full,Physical full,,,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/32637/SINGLCLASS/IE000CM02H85\nFVUB.L,IE00BHZRQY00,Franklin Templeton,,,,,FVUB is the GBP LSE ticker; USD LSE listing is FLXB.,0.19,229440000,USD,2026-11-06,2026-11-06,Physical full,Physical full,,,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/27851/SINGLCLASS/IE00BHZRQY00\nFLXK.L,IE00BHZRR030,Franklin Templeton,Franklin FTSE Korea UCITS ETF,Equity,South Korea,FTSE Korea 30/18 Capped,^KS11,0.09,4030000000,USD,2026-11-06,2026-11-06,Physical full,Physical full,Acc,Ireland,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/27854/SINGLCLASS/IE00BHZRR030\nKSA.L,IE000C7DDDX4,Franklin Templeton,Franklin FTSE Saudi Arabia UCITS ETF,Equity,Saudi Arabia,FTSE Saudi Arabia 30/18 Capped,"KSA is the LSE USD ticker, FLXS is the Xetra ticker; very small fund.",0.39,5780000,USD,2026-11-06,2026-11-06,Physical full,Physical full,Acc,Ireland,,,,,https://www.franklintempleton.co.uk/our-funds/etf/price-and-performance/products/41675/SINGLCLASS/IE000C7DDDX4\nCG1.L,FR0010655712,Amundi,Amundi DAX UCITS ETF,Equity,Germany DAX,DAX,"Amount €1,446.41m captured 8 November; exact NAV date not visible. Different ISIN from C001.DE.",.10,1446410000,EUR,,2026-11-08,,Direct physical; full vs sampled unspecified,Mixed,,,,,,https://www.amundietf.co.uk/en/individual/products/equity/amundi-dax-ucits-etf/fr0010655712\nCACX.L,FR0007052782,Amundi,Amundi CAC 40 UCITS ETF Dist,Equity,France,CAC 40,^FCHI,.25,4233280000,EUR,,2026-11-08,,Direct physical; full vs sampled unspecified,Dist,France,,,,,https://www.amundietf.co.uk/en/professional/products/equity/amundi-cac-40-ucits-etf-dist/fr0007052782\nRBOT.L,IE00BYZK4552,iShares,iShares Automation & Robotics UCITS ETF Acc,Thematic,Robotics,STOXX Global Automation & Robotics Net USD,,0.4,5525810000,USD,2026-10-31,2026-11-08,Physical sampling,,Acc,Ireland,6,,,"Physical optimised. Fund AUM differs from USD share-class assets $5,187.98m.",\nXMJP.L,LU0274209740,Xtrackers,Xtrackers MSCI Japan UCITS ETF 1C,Equity,Japan,MSCI Japan,^N225,0.12,6470000000,GBP,2026-11-05,2026-11-05,Physical full,Physical full,Acc,Luxembourg,,,0.0634,"Fund AUM as of 5 Nov, distinct from fund base JPY.",\nXDWD.L,IE00BJ0KDQ92,Xtrackers,Xtrackers MSCI World UCITS ETF 1C,Equity,Developed world,MSCI World,URTH,0.12,22510000000,GBP,,2026-11-08,Physical full,Physical full,Acc,Ireland,,,,Issuer page/secondary listing verified USD LSE line XDWD; same ISIN GBX XWLD.,\nXDEW.L,IE00BLNMYC90,Xtrackers,Xtrackers S&P 500 Equal Weight UCITS ETF 1C,Equity,US equal weight,S&P 500 Equal Weight,^GSPC,0.15,11900000000,GBP,,2026-11-08,Physical full,Physical full,Acc,Ireland,,,,Issuer LSE USD line XDEW; GBX line XDWE. SP500 price index is not fund benchmark.,https://etf.dws.com/en-gb/IE00BLNMYC90-s-p-500-equal-weight-ucits-etf-1c/\nXMTD.L,LU0292109187,Xtrackers,Xtrackers MSCI Taiwan UCITS ETF 1C,Equity,Taiwan,MSCI Taiwan 20-35 Custom,^TWII,0.65,711890000,USD,2026-09-30,2026-09-30,Physical full,Physical full,Acc,Luxembourg,,,,Different share class/ISIN from XTMT.L; GBX line XMTW.,https://etf.dws.com/en-gb/LU0292109187-msci-taiwan-ucits-etf-1c/\nXMBR.L,LU0292109344,Xtrackers,Xtrackers MSCI Brazil UCITS ETF 1C,Equity,Brazil,MSCI Brazil TRN,^BVSP,0.25,283540000,USD,2026-09-30,2026-09-30,,Physical; subtype unverified,Acc,Luxembourg,,,,Issuer factsheet 30 Sept 2026,\nXMEX.L,LU0476289466,Xtrackers,Xtrackers MSCI Mexico UCITS ETF 1C,Equity,Mexico,MSCI Mexico TRN,^MXX,0.65,306900000,USD,2026-09-30,2026-09-30,,Physical; subtype unverified,Acc,Luxembourg,,,,Issuer factsheet 30 Sept 2026,\nXMLA.L,LU0292108619,Xtrackers,Xtrackers MSCI EM Latin America Swap UCITS ETF 1C,Equity,Latin America,MSCI EM Latin America TRN,,0.4,130930000,USD,2026-09-30,2026-09-30,Synthetic swap,Synthetic swap,Acc,Luxembourg,,,,Benchmark switched 1 June 2026; earlier index not directly comparable; benchmarkChangeDate=2026-06-01,\nXMAF.L,LU0592217524,Xtrackers,Xtrackers MSCI Africa Top 50 Swap UCITS ETF 1C,Equity,Africa,MSCI EFM Africa Top 50 Capped TRN,,0.65,85700000,USD,2026-09-30,2026-09-30,Synthetic swap,Synthetic swap,Acc,Luxembourg,,,,Emerging and frontier exposure,\nXDEX.L,IE00BM67HJ62,Xtrackers,Xtrackers MSCI EM ex China UCITS ETF 1C,Equity,EM ex China,MSCI EM ex China,EEM,0.16,131500000,GBP,2026-09-30,2026-09-30,,Physical; subtype unverified,Acc,Ireland,,,,Benchmark changed July 2024; EEM proxy includes China; benchmarkChangeDate=2024-07-31,https://etf.dws.com/en-gb/IE00BM67HJ62-msci-emerging-markets-ex-china-ucits-etf-1c/\nXDAX.L,LU0274211480,Xtrackers,Xtrackers DAX UCITS ETF 1C,Equity,Germany DAX,DAX,^GDAXI,0.09,6090000000,GBP,,2026-11-08,,Physical; subtype unverified,Acc,Luxembourg,,,0.0008,Issuer current listing screenshot AUM £6.09bn,\nLSPX.L,LU0496786657,Amundi,Amundi Core S&P 500 Swap UCITS ETF USD Dist,Equity,United States,S&P 500,,.05,32749140000,USD,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nSP5G.L,LU1950341179,Amundi,Amundi Core S&P 500 Swap UCITS ETF GBP Hedged Dist,Equity,United States,S&P 500,,.05,24301510000,GBP,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMEUD.L,LU0908500753,Amundi,Amundi Core STOXX Europe 600 UCITS ETF Acc,Equity,Europe,STOXX Europe 600,,.07,22784870000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nLCJP.L,LU1781541252,Amundi,Amundi Core MSCI Japan UCITS ETF Acc,Equity,Japan,MSCI Japan,,.12,1080070450000,JPY,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nLCJG.L,LU1781541682,Amundi,Amundi Core MSCI Japan UCITS ETF GBP Hedged Acc,Equity,Japan,MSCI Japan GBP Hedged,,.20,5076750000,GBP,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nBNKE.L,LU1829219390,Amundi,Amundi Euro Stoxx Banks UCITS ETF Acc,Equity,Eurozone,EURO STOXX Banks,,.30,6009750000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMSED.L,LU1681047236,Amundi,Amundi Core EURO STOXX 50 UCITS ETF EUR Acc,Equity,Eurozone,EURO STOXX 50,,.09,5162590000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMSEX.L,FR0012399772,Amundi,Amundi EURO STOXX 50 II UCITS ETF GBP Hedged Acc,Equity,Eurozone,EURO STOXX 50 GBP Hedged,,.20,4057940000,GBP,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nEMXN.L,LU2009202107,Amundi,Amundi MSCI Emerging ex China Swap UCITS ETF Acc,Equity,EM ex China,MSCI EM ex China,,.15,4268790000,USD,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nTNOG.L,LU0533033741,Amundi,Amundi MSCI World Information Technology UCITS ETF USD Acc,Thematic,Technology,MSCI World Information Technology,,.30,3207220000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nGILS.L,LU1407892592,Amundi,Amundi Core UK Government Bond UCITS ETF Dist,Bonds,UK gilts,UK Government Bonds,,.05,2019950000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nU71G.L,LU1407888053,Amundi,Amundi US Treasury Bond 7-10Y UCITS ETF Dist,Bonds,US Treasury 7-10y,US Treasury 7-10Y,,.06,2306940000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nLCUK.L,LU1781541096,Amundi,Amundi UK Equity All Cap UCITS ETF Dist,Equity,UK FTSE All Share,UK All Cap,,.04,1697040000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCOMG.L,LU1829218749,Amundi,Amundi Bloomberg Equal-weight Commodity ex-Agriculture UCITS ETF Acc,Commodity ETC,Broad commodities,Bloomberg Equal-weight Commodity ex Agriculture,,.30,1846480000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Classified as commodity ETF; derivative replication not confirmed.",\nWATL.L,FR0010527275,Amundi,Amundi MSCI Water UCITS ETF Dist,Thematic,Water,MSCI Water,,.60,1610060000,EUR,,2026-11-08,,,Dist,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMFEX.L,LU1646360971,Amundi,Amundi Core MSCI EMU UCITS ETF Dist,Equity,Eurozone,MSCI EMU,,.12,1406830000,EUR,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nTIPH.L,LU1452600601,Amundi,Amundi US TIPS UCITS ETF GBP Hedged Dist,Bonds,US inflation linked,US TIPS GBP Hedged,,.12,1170470000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nTIPG.L,LU1452600270,Amundi,Amundi US TIPS UCITS ETF Dist,Bonds,US inflation linked,US TIPS,,.09,1577340000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nMFDD.L,LU0908501132,Amundi,Amundi MSCI EMU ESG Broad Transition UCITS ETF Dist,Equity,Eurozone,MSCI EMU ESG Broad Transition,,.12,1399380000,EUR,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nDAXX.L,LU0252633754,Amundi,Amundi DAX II UCITS ETF Acc,Equity,Germany DAX,DAX,,.15,1398370000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nESGL.L,LU1940199711,Amundi,Amundi MSCI Europe ESG Selection UCITS ETF Acc,Equity,Europe,MSCI Europe ESG Selection,,.20,1273930000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCRPX.L,LU1829219127,Amundi,Amundi EUR Corporate Bond Climate Paris Aligned UCITS ETF Acc,Bonds,EUR investment grade,EUR Corporate Climate Paris Aligned,,.14,1144940000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCM9.PA,FR0010756114,Amundi,Amundi MSCI World Ex EMU UCITS ETF Acc,Equity,Developed world,MSCI World ex EMU,,.35,992120000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nC3M.PA,FR0010754200,Amundi,Amundi Euro Government Bond 0-6 M UCITS ETF Acc,Bonds,EUR government 0-6m,EUR Sovereign 0-6M,,.14,970890000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nINRL.L,FR0010375766,Amundi,Amundi MSCI India Swap UCITS ETF USD Acc,Equity,India,MSCI India,,.85,1032670000,USD,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nL100.L,LU1650492173,Amundi,Amundi Core FTSE 100 Swap UCITS ETF Acc,Equity,UK FTSE 100,FTSE 100,,.14,718000000,GBP,,2026-11-08,Synthetic swap,Synthetic swap disclosed in product name; exposure amounts/counterparties unavailable.,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nU13G.L,LU1407887162,Amundi,Amundi US Treasury Bond 1-3Y UCITS ETF Dist,Bonds,US Treasury 1-3y,US Treasury 1-3Y,,.06,914910000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nGIL5.L,LU1439943090,Amundi,Amundi UK Government Bond 0-5Y UCITS ETF Dist,Bonds,UK short gilts,UK Gilts 0-5Y,,.05,665400000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nJPNL.L,FR0010245514,Amundi,Amundi Japan TOPIX II UCITS ETF EUR Dist,Equity,Japan,TOPIX,,.45,633360000,EUR,,2026-11-08,,,Dist,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMEUG.L,FR0010261198,Amundi,Amundi MSCI Europe UCITS ETF Acc,Equity,Europe,MSCI Europe,,.25,627140000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nLGWU.DE,LU1598689153,Amundi,Amundi MSCI EMU Small Cap ESG Broad Transition UCITS ETF Dist,Equity,Eurozone,MSCI EMU Small Cap,,.40,563380000,EUR,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nU10G.L,LU1407890620,Amundi,Amundi US Treasury Bond Long Dated UCITS ETF Dist,Bonds,US Treasury long dated,US Treasury Long-Dated,,.06,596420000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nJPXX.L,LU1646359619,Amundi,Amundi MSCI Japan SRI Climate Paris Aligned UCITS ETF GBP Hedged Acc,Equity,Japan,MSCI Japan SRI GBP Hedged,,.20,428430000,GBP,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nC5E.PA,FR0010790980,Amundi,Amundi Stoxx Europe 50 UCITS ETF Acc,Equity,Europe,STOXX Europe 50,,.15,510230000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nASIL.L,LU1900068914,Amundi,Amundi MSCI China ESG Selection Extra UCITS ETF Acc,Equity,China,MSCI China ESG Selection,,.65,478480000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCLIM.L,LU1563454310,Amundi,Amundi Global Aggregate Green Bond UCITS ETF Acc,Bonds,Global green bonds,Global Aggregate Green Bond,,.25,402860000,EUR,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nKLMG.L,LU1563455630,Amundi,Amundi Global Aggregate Green Bond UCITS ETF GBP Hedged Dist,Bonds,Global green bonds GBP hedged,Global Aggregate Green Bond GBP Hedged,,.30,335620000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCD8.PA,FR0010717090,Amundi,Amundi MSCI EMU High Dividend UCITS ETF Acc,Equity,Eurozone,MSCI EMU High Dividend,,.30,401320000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nDTEC.L,LU2023678282,Amundi,Amundi Global Memory Chips UCITS ETF Acc,Thematic,Semiconductors,Global Memory Chips,,.45,445110000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nU37G.L,LU1407888996,Amundi,Amundi US Treasury Bond 3-7Y UCITS ETF Dist,Bonds,US Treasury 3-7y,US Treasury 3-7Y,,.06,425560000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nGILI.L,LU1407893301,Amundi,Amundi UK Government Inflation-Linked Bond UCITS ETF Dist,Bonds,UK index linked,UK Government Inflation Linked,,.07,229850000,GBP,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nANRJ.L,FR0010930644,Amundi,Amundi Global Hydrogen UCITS ETF Acc,Thematic,Hydrogen,Global Hydrogen,,.45,198890000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nGIST.L,LU1910939849,Amundi,Amundi Global Government Inflation-Linked Bond 1-10Y UCITS ETF Dist,Bonds,Global inflation-linked,Global Government Inflation Linked 1-10Y,,.09,165960000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible. Yield to maturity and effective duration NOT obtained.",\nELCR.L,LU2023679090,Amundi,Amundi MSCI Smart Mobility UCITS ETF Acc,Thematic,Smart mobility,MSCI Smart Mobility,,.45,158470000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nUSIX.L,LU1285959703,Amundi,Amundi USD Corporate Bond Climate Paris Aligned UCITS ETF Dist,Bonds,USD investment grade,USD Corporate Climate Paris Aligned,,.14,128520000,USD,,2026-11-08,,,Dist,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nGHYU.L,LU2099295466,Amundi,Amundi Global High Yield Corporate Bond ESG UCITS ETF USD Acc,Bonds,USD high yield,Global High Yield ESG,,.25,110130000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nEBUY.L,LU2023678878,Amundi,Amundi MSCI Digital Economy UCITS ETF Acc,Thematic,Digital economy,MSCI Digital Economy,,.45,105030000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCNAL.L,FR0011720911,Amundi,Amundi MSCI China A UCITS ETF Acc,Equity,China,MSCI China A,,.35,95010000,USD,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nMILL.L,LU2023678449,Amundi,Amundi Global Sport and eSport UCITS ETF Acc,Thematic,Sport & eSport,Global Sport & eSport,,.45,18970000,USD,,2026-11-08,,,Acc,Luxembourg,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\nCFR.L,FR0010655704,Amundi,Amundi CAC Transition Climate UCITS ETF,Equity,France,CAC Climate Transition,,.25,11500000,EUR,,2026-11-08,,,Acc,France,,,,"Issuer product finder screenshot, captured 8 Nov 2026; the AUM reporting date was not visible.",\n'
 US_BONDS_JSON = [{'symbol': 'AGG', 'name': 'iShares Core U.S. Aggregate Bond ETF', 'netExpensePct': 0.03, 'assetsUsd': 139076000000, 'trailing12mYieldPct': 4.12, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'SGOV', 'name': 'iShares 0-3 Month Treasury Bond ETF', 'netExpensePct': 0.09, 'assetsUsd': 116516000000, 'trailing12mYieldPct': 3.63, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'MUB', 'name': 'iShares National Muni Bond ETF', 'netExpensePct': 0.05, 'assetsUsd': 55049000000, 'trailing12mYieldPct': 3.28, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'IUSB', 'name': 'iShares Core Universal USD Bond ETF', 'netExpensePct': 0.06, 'assetsUsd': 50428000000, 'trailing12mYieldPct': 4.34, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'TLT', 'name': 'iShares 20+ Year Treasury Bond ETF', 'netExpensePct': 0.15, 'assetsUsd': 48863000000, 'trailing12mYieldPct': 4.77, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'IEF', 'name': 'iShares 7-10 Year Treasury Bond ETF', 'netExpensePct': 0.15, 'assetsUsd': 44637000000, 'trailing12mYieldPct': 4.05, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'GOVT', 'name': 'iShares U.S. Treasury Bond ETF', 'netExpensePct': 0.05, 'assetsUsd': 43253000000, 'trailing12mYieldPct': 3.77, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'MBB', 'name': 'iShares MBS ETF', 'netExpensePct': 0.04, 'assetsUsd': 35962000000, 'trailing12mYieldPct': 4.42, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'LQD', 'name': 'iShares iBoxx $ Investment Grade Corporate Bond ETF', 'netExpensePct': 0.14, 'assetsUsd': 32950000000, 'trailing12mYieldPct': 4.83, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'SHY', 'name': 'iShares 1-3 Year Treasury Bond ETF', 'netExpensePct': 0.15, 'assetsUsd': 27537000000, 'trailing12mYieldPct': 3.6, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'USHY', 'name': 'iShares Broad USD High Yield Corporate Bond ETF', 'netExpensePct': 0.08, 'assetsUsd': 27505000000, 'trailing12mYieldPct': 7.14, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'IGSB', 'name': 'iShares 1-5 Year Investment Grade Corporate Bond ETF', 'netExpensePct': 0.04, 'assetsUsd': 23751000000, 'trailing12mYieldPct': 4.67, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'IGIB', 'name': 'iShares 5-10 Year Investment Grade Corporate Bond ETF', 'netExpensePct': 0.04, 'assetsUsd': 19618000000, 'trailing12mYieldPct': 5.07, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'USIG', 'name': 'iShares Broad USD Investment Grade Corporate Bond ETF', 'netExpensePct': 0.04, 'assetsUsd': 18048000000, 'trailing12mYieldPct': 4.93, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'HYG', 'name': 'iShares iBoxx $ High Yield Corporate Bond ETF', 'netExpensePct': 0.49, 'assetsUsd': 18024000000, 'trailing12mYieldPct': 6.09, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'BINC', 'name': 'iShares Flexible Income Active ETF', 'netExpensePct': 0.4, 'assetsUsd': 17051000000, 'trailing12mYieldPct': 5.75, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'IEI', 'name': 'iShares 3-7 Year Treasury Bond ETF', 'netExpensePct': 0.15, 'assetsUsd': 17047000000, 'trailing12mYieldPct': 3.79, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'STIP', 'name': 'iShares 0-5 Year TIPS Bond ETF', 'netExpensePct': 0.03, 'assetsUsd': 16866000000, 'trailing12mYieldPct': 4.61, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'TIP', 'name': 'iShares TIPS Bond ETF', 'netExpensePct': 0.18, 'assetsUsd': 14578000000, 'trailing12mYieldPct': 4.24, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'EMB', 'name': 'iShares J.P. Morgan USD Emerging Markets Bond ETF', 'netExpensePct': 0.39, 'assetsUsd': 13842000000, 'trailing12mYieldPct': 5.35, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'SUB', 'name': 'iShares Short-Term National Muni Bond ETF', 'netExpensePct': 0.07, 'assetsUsd': 13382000000, 'trailing12mYieldPct': 2.58, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'IAGG', 'name': 'iShares Core International Aggregate Bond ETF', 'netExpensePct': 0.07, 'assetsUsd': 13133000000, 'trailing12mYieldPct': 5.15, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'TLH', 'name': 'iShares 10-20 Year Treasury Bond ETF', 'netExpensePct': 0.15, 'assetsUsd': 12348000000, 'trailing12mYieldPct': 4.64, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'FLOT', 'name': 'iShares Floating Rate Bond ETF', 'netExpensePct': 0.15, 'assetsUsd': 11658000000, 'trailing12mYieldPct': 4.25, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'ICSH', 'name': 'iShares Ultra Short Duration Bond Active ETF', 'netExpensePct': 0.08, 'assetsUsd': 8902000000, 'trailing12mYieldPct': 4.12, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'SHYG', 'name': 'iShares 0-5 Year High Yield Corporate Bond ETF', 'netExpensePct': 0.3, 'assetsUsd': 7772000000, 'trailing12mYieldPct': 7.18, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'TFLO', 'name': 'iShares Treasury Floating Rate Bond ETF', 'netExpensePct': 0.15, 'assetsUsd': 7410000000, 'trailing12mYieldPct': 3.74, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'ICVT', 'name': 'iShares Convertible Bond ETF', 'netExpensePct': 0.2, 'assetsUsd': 6918000000, 'trailing12mYieldPct': 1.62, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}, {'symbol': 'CMF', 'name': 'iShares California Muni Bond ETF', 'netExpensePct': 0.08, 'assetsUsd': 5466000000, 'trailing12mYieldPct': 3.03, 'asOf': '2026-11-05', 'issuer': 'iShares US', 'domicile': 'US', 'ukRetailAccessible': 'Not established'}]
 
 # Supplemental 8 Nov 2026 audit, and Vanguard audited FY2026 fund-level disclosure.
@@ -64,7 +64,7 @@ def is_isin_valid(s):
 
 def validate():
     rows=facts()
-    assert len(rows)==79, ('Issuer row count altered',len(rows))
+    assert len(rows)==78, ('Issuer row count altered',len(rows))
     assert len({r['symbol'] for r in rows})==len(rows), 'Duplicate symbol in issuer CSV'
     assert len({r['isin'] for r in rows})==len(rows), 'Duplicate share class ISIN in issuer CSV'
     for r in rows:
@@ -228,6 +228,46 @@ def install_catalogue(catalog:pathlib.Path,dry_run=False):
     counts['vanguardIsinBackfills']=backfilled
     counts['vanguardClassCorrection']='VAGP distributes; VAGS accumulates'
     counts['excludedLondonListings']=list(EXCLUDED_LONDON_LINES)
+    return counts
+
+
+# Compact ETF v5 catalogue adjustments. Keep three markets geographically correct.
+_BASE_INSTALL_CATALOGUE_V4=install_catalogue
+
+def install_catalogue(catalog:pathlib.Path,dry_run=False):
+    counts=_BASE_INSTALL_CATALOGUE_V4(catalog,dry_run)
+    if dry_run:return counts
+    content=catalog.read_text('utf-8-sig')
+    reader=csv.DictReader(io.StringIO(content)); fields=reader.fieldnames
+    rows=[r for r in reader if r['symbol']!='GEND.L']
+    index={r['symbol']:r for r in rows}
+    for sym,market in [('XDEW.L','US equal weight'),('LCUK.L','UK FTSE All Share'),('KSA.L','Saudi Arabia')]:
+        if sym in index:index[sym]['market']=market
+    if 'MIDD.L' in index:
+        entry=index['MIDD.L']
+        if entry.get('isin') not in ('','IE00B00FV128'):
+            raise RuntimeError('MIDD ISIN conflict; refusing fee override')
+        entry.update(isin='IE00B00FV128',terPct='0.4',replication='Physical sampling',distribution='Dist')
+        note='Official iShares: 0.40% TER, physical optimised, ISIN IE00B00FV128.'
+        if note not in entry.get('note',''):entry['note']=((entry.get('note') or '')+' | '+note).strip(' |')
+    if 'XDEW.L' in index:
+        entry=index['XDEW.L']
+        if entry.get('isin') not in ('','IE00BLNMYC90'):
+            raise RuntimeError('XDEW ISIN conflict')
+        entry.update(isin='IE00BLNMYC90',terPct='0.15',replication='Physical full',
+            benchmark='S&P 500 Equal Weight',distribution='Acc')
+    if 'LCUK.L' in index:
+        entry=index['LCUK.L']
+        if entry.get('isin') not in ('','LU1781541096'):
+            raise RuntimeError('LCUK ISIN conflict')
+        # Amundi confirms direct physical; justETF describes full replication.
+        entry.update(isin='LU1781541096',terPct='0.04',replication='Physical full',distribution='Dist',
+            benchmark='Morningstar UK NR')
+    out=io.StringIO(newline='');writer=csv.DictWriter(out,fieldnames=fields,lineterminator='\n')
+    writer.writeheader();writer.writerows(rows)
+    if out.getvalue()!=content.replace('\r\n','\n'):catalog.write_text(out.getvalue(),encoding='utf-8')
+    counts['final']=len(rows);counts['netChange']=len(rows)-counts['original']
+    counts['removedFunds']=['GEND.L']
     return counts
 
 def inject_build(path:pathlib.Path,dry_run=False):
@@ -475,6 +515,52 @@ def enrich(data):
     data.setdefault('sources',[]).append('Vanguard audited FY2026 fund data as of 30 June 2026; 78-line user audit 8 Nov 2026 for indicative turnover. Neither constitutes a live quote or a current bid-ask spread.')
     return data
 
+
+_BASE_ENRICH_V4=enrich
+
+def enrich(data):
+    data=_BASE_ENRICH_V4(data)
+    known={
+      'MIDD.L':('IE00B00FV128',.40,'Physical sampling',
+          'Issuer iShares: physical optimised / sampling',
+          'https://www.ishares.com/uk/individual/en/products/251796/'),
+      'XDEW.L':('IE00BLNMYC90',.15,'Physical full',
+          'Issuer Xtrackers: direct physical, full replication',
+          'https://etf.dws.com/en-gb/IE00BLNMYC90-s-p-500-equal-weight-ucits-etf-1c/'),
+      'LCUK.L':('LU1781541096',.04,'Physical full',
+          'Amundi: physical; full replication separately reported by justETF',
+          'https://www.amundietf.lu/en/individual/products/equity/amundi-uk-equity-all-cap-ucits-etf-dist/lu1781541096'),
+    }
+    for f in data.get('funds',[]):
+        item=known.get(f.get('symbol'))
+        if item and str(f.get('isin') or '').upper()==item[0]:
+            isin,fee,method,detail,url=item
+            f['terPct']=fee
+            f['terStatus']='Issuer verified (dated reference)' if f.get('terStatus')!='Issuer confirmed' else f['terStatus']
+            if f.get('terStatus')!='Issuer confirmed':f['terCheckedAt']='2026-11-08'
+            f['terUrl']=url
+            f['replication']=method
+            f['replicationType']='Physical'
+            f['issuerReplicationDetail']=detail
+            f['replicationStatus']='Fund-specific issuer verified' if f['symbol']!='LCUK.L' else 'Issuer physical; full replication secondary-source verified'
+            f['structureSource']=url
+            if f['symbol']=='MIDD.L':
+                f['issuerLendingReturnAnnualPct']=0.07
+                f['issuerLendingReturnAsOf']='2026-06-30'
+        # Where first-party sources confirm physical but not sampling/full,
+        # show P and the uncertainty, rather than presenting an invented subtype.
+        if f.get('symbol') in ('XMBR.L','XMEX.L','XDEX.L') and f.get('isin') in (
+              'LU0292109344','LU0476289466','IE00BM67HJ62'):
+            if not f.get('replicationStatus','').startswith('Fund-specific issuer verified'):
+                f['replicationType']='Physical'
+                f['replicationStatus']='Issuer physical; full versus optimised unverified'
+                f['issuerReplicationDetail']='Direct physical; full versus sampling not established from supplied factsheet'
+    data.setdefault('issuerDatabaseCoverage',{})['issuerReplication']=sum(
+        ('issuer' in str(f.get('replicationStatus','')).lower() and
+         ('verified' in str(f.get('replicationStatus','')).lower() or 'physical' in str(f.get('replicationStatus','')).lower()))
+        for f in data.get('funds',[]))
+    return data
+
 FRONTEND_JS = r'''
 // Consolidated issuer facts, NAV tracking DIFFERENCE, and separate US bond references.
 const _origRenderEtfConsolidated=renderEtfTracker;
@@ -585,8 +671,327 @@ renderDataQuality=function(){
 renderUsBondReferences();
 '''
 
-COMPACT_ETF_CSS = '\n/* ETF COMPACT VIEW V4 — no sideways scrolling on ETF Research. */\n#etf-tracker-panel {width:100%;min-width:0;overflow-x:clip}\n#etf-tracker-panel .etf-table-scroll {width:100%;max-width:100%;overflow-x:hidden;overflow-y:auto}\n#etf-tracker-panel .etf-table {width:100%;min-width:0!important;max-width:100%;table-layout:fixed;border-collapse:collapse}\n#etf-tracker-panel .etf-table th,#etf-tracker-panel .etf-table td {box-sizing:border-box;padding:7px 5px;font-size:11px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle}\n#etf-tracker-panel .etf-table th {font-size:10px;line-height:1.25;white-space:normal}\n#etf-tracker-panel .etf-table th:nth-child(1) {width:38%}\n#etf-tracker-panel .etf-table th:nth-child(2) {width:9%}\n#etf-tracker-panel .etf-table th:nth-child(3) {width:7%}\n#etf-tracker-panel .etf-table th:nth-child(4) {width:15%}\n#etf-tracker-panel .etf-table th:nth-child(5) {width:11%}\n#etf-tracker-panel .etf-table th:nth-child(6) {width:11%}\n#etf-tracker-panel .etf-table th:nth-child(7) {width:9%}\n#etf-tracker-panel .etf-table .etf-compact-fund {display:block;font-weight:600;line-height:1.35}\n#etf-tracker-panel .etf-table .etf-compact-sub {font-size:10px;color:var(--muted);display:block;margin-top:3px;line-height:1.25}\n#etf-tracker-panel .etf-table .etf-compact-code {font-weight:750;text-align:center;letter-spacing:.02em}\n#etf-tracker-panel .etf-table .etf-compact-compare {text-align:center}\n#etf-tracker-panel .etf-table .etf-compact-compare input {width:15px;height:15px;margin:0;vertical-align:middle}\n#etf-tracker-panel .etf-table .etf-geo-group td {font-size:11px;padding:9px 6px}\n#etf-tracker-panel .etf-peer-box {min-width:0;max-width:100%;overflow-x:hidden}\n#etf-tracker-panel .etf-peer-box table {width:100%;min-width:0!important;max-width:100%;table-layout:fixed}\n#etf-tracker-panel .etf-peer-box th,#etf-tracker-panel .etf-peer-box td {white-space:normal!important;overflow-wrap:anywhere;font-size:11px;padding:6px 5px}\n#etf-tracker-panel .etf-peer-box .small-scroll {overflow-x:hidden}\n#etf-tracker-panel .etf-detail,#etf-tracker-panel .etf-plot-controls {min-width:0;max-width:100%}\n#etf-tracker-panel .etf-peer-box details {max-width:100%}\n@media(max-width:700px){\n #etf-tracker-panel .etf-table th,#etf-tracker-panel .etf-table td {font-size:10px;padding:7px 4px}\n #etf-tracker-panel .etf-table th:nth-child(5),#etf-tracker-panel .etf-table td:nth-child(5),\n #etf-tracker-panel .etf-table th:nth-child(6),#etf-tracker-panel .etf-table td:nth-child(6) {display:none}\n #etf-tracker-panel .etf-table th:nth-child(1) {width:53%}\n #etf-tracker-panel .etf-table th:nth-child(2) {width:12%}\n #etf-tracker-panel .etf-table th:nth-child(3) {width:9%}\n #etf-tracker-panel .etf-table th:nth-child(4) {width:19%}\n #etf-tracker-panel .etf-table th:nth-child(7) {width:7%}\n #etf-tracker-panel .etf-peer-box table {display:block;width:100%}\n #etf-tracker-panel .etf-peer-box table thead {display:none}\n #etf-tracker-panel .etf-peer-box table tbody {display:grid;gap:7px}\n #etf-tracker-panel .etf-peer-box table tbody tr {display:grid;gap:3px;min-width:0;padding:8px;border:1px solid var(--line);border-radius:5px}\n #etf-tracker-panel .etf-peer-box table tbody td {display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px;max-width:100%;width:100%;border:0;text-align:right!important;min-width:0}\n #etf-tracker-panel .etf-peer-box table tbody td::before {content:attr(data-compact-label);font-weight:600;color:var(--muted);text-align:left;flex:0 1 auto}\n #etf-tracker-panel .etf-peer-box table tbody td:first-child {font-weight:600}\n}\n@media(max-width:420px){\n #etf-tracker-panel .etf-table th:nth-child(4),#etf-tracker-panel .etf-table td:nth-child(4) {display:none}\n #etf-tracker-panel .etf-table th:nth-child(1) {width:65%}\n #etf-tracker-panel .etf-table th:nth-child(2) {width:14%}\n #etf-tracker-panel .etf-table th:nth-child(3) {width:11%}\n #etf-tracker-panel .etf-table th:nth-child(7) {width:10%}\n}\n'
-COMPACT_ETF_JS = "\n// ETF COMPACT VIEW V4: keeps TER, removes current price and 1Y indicative TE.\n// P = physical (full or sampling), S = synthetic, ? = unknown.\nfunction etfCompactReplication(f){\n  const m=String(f.replication||f.replicationType||'').toLowerCase();\n  if(m.includes('synthetic')||m.includes('swap'))return ['S',f.issuerReplicationDetail||f.replication||'Synthetic swap'];\n  if(m.includes('physical'))return ['P',f.issuerReplicationDetail||f.replication||'Physical, full or sampling'];\n  return ['?',f.issuerReplicationDetail||'Replication not verified'];\n}\nfunction etfCompactLabelPeers(){\n  const tables=document.querySelectorAll('#etf-tracker-panel .etf-peer-box table');\n  for(const table of tables){\n    const heads=[...table.querySelectorAll('thead th')].map(th=>th.textContent.trim());\n    for(const tr of table.querySelectorAll('tbody tr')){\n      [...tr.cells].forEach((td,i)=>{td.dataset.compactLabel=heads[i]||'Detail';});\n    }\n  }\n}\nconst _etfCompactOriginalRender=renderEtfTracker;\nrenderEtfTracker=function(){\n  _etfCompactOriginalRender(); // source, risk, charts and peer tables stay intact\n  const tbody=$('etf-rows');if(!tbody)return;\n  const table=tbody.closest('table'),thead=table?.querySelector('thead');\n  if(!table||!thead)return;\n  const tr=el('tr');\n  for(const title of ['Fund / ticker','TER','P/S','Fund AUM','3Y return','5Y return','Cmp']){\n    const th=el('th','',title);th.scope='col';\n    if(title==='P/S')th.title='P = physical (full or sampling), S = synthetic swap, ? = not verified';\n    if(title==='TER')th.title='Annual ongoing charge. This is NOT tracking error.';\n    if(title==='3Y return'||title==='5Y return')th.title='Annualised Yahoo adjusted-close proxy where available; not issuer-verified NAV total return';\n    tr.append(th);\n  }\n  thead.replaceChildren(tr);\n  const funds=etfFiltered();\n  const frag=document.createDocumentFragment();let lastGroup='';\n  for(const f of funds){\n    const group=(typeof etfRegion==='function'?etfRegion(f)[2]:f.market)||f.market;\n    if($('etf-sort')?.value==='market' && group!==lastGroup){\n      const gr=el('tr','etf-geo-group'),td=el('td','',group);td.colSpan=7;gr.append(td);frag.append(gr);lastGroup=group;\n    }\n    const row=el('tr',f.symbol===etfState.selected?'etf-active':'');\n    row.title='Select '+f.name;\n    const name=etfCell(row,'');\n    name.append(el('span','etf-compact-fund',f.name),\n      el('span','etf-compact-sub',f.symbol+' · '+f.market));\n    const fee=etfCell(row,etfFee(f),'n');fee.title=(f.terSource||f.terStatus||'Unverified')+(f.terCheckedAt?' · '+f.terCheckedAt:'');\n    const [code,explain]=etfCompactReplication(f);\n    const classification=etfCell(row,code,'etf-compact-code');\n    classification.title=explain+(f.replicationStatus?' · '+f.replicationStatus:'');\n    const aum=etfCell(row,etfFundSize(f),'n');\n    aum.title=(f.fundSizeSource||'AUM not independently verified')+(f.fundSizeAsOf?' · '+f.fundSizeAsOf:'');\n    etfCell(row,etfPct(f.return3Y),'n');etfCell(row,etfPct(f.return5Y),'n');\n    const cell=etfCell(row,'','etf-compact-compare');\n    const check=el('input');check.type='checkbox';check.checked=etfState.compared.has(f.symbol);\n    check.setAttribute('aria-label','Compare '+f.symbol);\n    check.onchange=()=>{\n      if(check.checked){if(etfState.compared.size>=5){check.checked=false;return;}etfState.compared.add(f.symbol);}\n      else etfState.compared.delete(f.symbol);\n      etfDrawChart();\n    };\n    cell.append(check);\n    row.onclick=e=>{if(e.target.closest('input,a'))return;etfState.selected=f.symbol;renderEtfTracker();};\n    frag.append(row);\n  }\n  tbody.replaceChildren(frag);\n  const count=$('etf-result-count');\n  if(count)count.textContent=funds.length+' funds · TER = annual fee · P physical / S synthetic · 3Y/5Y annualised return proxies';\n  etfCompactLabelPeers();\n};\n// Remove price and the 1Y tracking-error metric from the selected fund tiles,\n// without suppressing TER, 1Y volatility, 3Y NAV TE or other analytics.\nconst _etfCompactOriginalDetails=etfDetails;\netfDetails=function(){\n _etfCompactOriginalDetails();\n for(const id of ['etf-detail-stats','etf-risk-stats']){\n   const host=$(id);if(!host)continue;\n   for(const stat of [...host.querySelectorAll('.etf-stat')]){\n     const title=stat.querySelector('.k')?.textContent?.trim()||'';\n     if(/^(last quotation|current price|last price)$/i.test(title)||/^1Y tracking error/i.test(title))stat.remove();\n   }\n }\n etfCompactLabelPeers();\n};\n// Re-label tables after same-index selection changes independently of ETF row selection.\nif(typeof renderSameIndexETFs==='function'){\n const _etfCompactOriginalPeers=renderSameIndexETFs;\n renderSameIndexETFs=function(){_etfCompactOriginalPeers();etfCompactLabelPeers();};\n}\n"
+COMPACT_ETF_CSS = r"""
+/* ETF v5: fixed table grid, no sideways scroll, consistent group rows. */
+#etf-tracker-panel {min-width:0;max-width:100%;overflow-x:clip}
+#etf-tracker-panel .etf-table-scroll {width:100%;max-width:100%;overflow-x:hidden;overflow-y:auto}
+#etf-tracker-panel .etf-table {width:100%;max-width:100%;min-width:0!important;table-layout:fixed;border-collapse:collapse}
+#etf-tracker-panel .etf-table thead th {position:sticky;top:0;z-index:2;text-align:left;line-height:1.25;vertical-align:middle;white-space:normal;overflow-wrap:break-word;background:#17171b}
+#etf-tracker-panel .etf-table th,#etf-tracker-panel .etf-table td {box-sizing:border-box;font-size:11px;padding:8px 6px;vertical-align:middle;line-height:1.35;white-space:normal;overflow-wrap:break-word}
+#etf-tracker-panel .etf-table th:nth-child(1){width:41%}
+#etf-tracker-panel .etf-table th:nth-child(2){width:7%}
+#etf-tracker-panel .etf-table th:nth-child(3){width:6%}
+#etf-tracker-panel .etf-table th:nth-child(4){width:15%}
+#etf-tracker-panel .etf-table th:nth-child(5){width:8%}
+#etf-tracker-panel .etf-table th:nth-child(6){width:8%}
+#etf-tracker-panel .etf-table th:nth-child(7){width:8%}
+#etf-tracker-panel .etf-table th:nth-child(8){width:7%}
+#etf-tracker-panel .etf-table th:nth-child(n+2),#etf-tracker-panel .etf-table td:nth-child(n+2){text-align:right}
+#etf-tracker-panel .etf-table th:nth-child(3),#etf-tracker-panel .etf-table td:nth-child(3),#etf-tracker-panel .etf-table th:nth-child(8),#etf-tracker-panel .etf-table td:nth-child(8){text-align:center}
+#etf-tracker-panel .etf-table tr.etf-geo-group th {text-align:left!important;font-size:11px;font-weight:700;letter-spacing:.02em;color:#a0c4de;background:#15202b;border-top:1px solid #365069;padding:10px 8px;white-space:normal}
+#etf-tracker-panel .etf-table .etf-compact-fund{display:block;font-weight:650;line-height:1.3}
+#etf-tracker-panel .etf-table .etf-compact-sub{display:block;font-size:10px;margin-top:3px;color:var(--muted);line-height:1.3}
+#etf-tracker-panel .etf-table .etf-compact-code{font-weight:750;letter-spacing:.04em}
+#etf-tracker-panel .etf-table td.etf-compact-compare input{width:15px;height:15px;vertical-align:middle;margin:0;cursor:pointer}
+#etf-tracker-panel .etf-table tr.etf-active td{background:#342516}
+#etf-tracker-panel .etf-table tr[data-etf-symbol]{cursor:pointer}
+#etf-tracker-panel .etf-table tbody tr[data-etf-symbol]:hover td{background:#29231a}
+#etf-tracker-panel .etf-peer-box {min-width:0;max-width:100%;overflow-x:hidden}
+#etf-tracker-panel .etf-peer-box .small-scroll{max-width:100%;overflow-x:hidden}
+#etf-tracker-panel .etf-peer-box table {width:100%;max-width:100%;min-width:0!important;table-layout:fixed}
+#etf-tracker-panel .etf-peer-box td,#etf-tracker-panel .etf-peer-box th {font-size:11px;white-space:normal!important;overflow-wrap:anywhere;padding:7px 5px}
+#etf-tracker-panel .etf-detail {min-width:0;max-width:100%}
+#etf-tracker-panel .etf-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:9px 0 16px}
+#etf-tracker-panel .etf-compare-card {background:#1d2026;border:1px solid #373e48;border-radius:5px;padding:12px;min-width:0}
+#etf-tracker-panel .etf-compare-card.etf-current-card{border-color:#d09a4f}
+#etf-tracker-panel .etf-compare-card h4{font-size:12px;line-height:1.35;margin:0 0 5px;overflow-wrap:anywhere}
+#etf-tracker-panel .etf-compare-card .etf-card-meta{font-size:10px;line-height:1.35;color:var(--muted);margin-bottom:8px}
+#etf-tracker-panel .etf-card-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:7px 0}
+#etf-tracker-panel .etf-card-facts div{min-width:0}
+#etf-tracker-panel .etf-card-facts span{display:block;font-size:10px;color:var(--muted)}
+#etf-tracker-panel .etf-card-facts strong{display:block;font-size:12px;font-weight:600;overflow-wrap:anywhere}
+#etf-tracker-panel .etf-card-actions{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+#etf-tracker-panel .etf-card-actions button {background:#30343b;color:#f1e9db;border:1px solid #50525b;padding:5px 9px;border-radius:4px;cursor:pointer;font-size:11px}
+#etf-tracker-panel .etf-card-actions label{font-size:11px;display:flex;align-items:center;gap:5px}
+#etf-tracker-panel #etf-selected-comparisons,#etf-tracker-panel #etf-extra-index-funds{margin-top:13px}
+#etf-tracker-panel #etf-selected-comparisons h3,#etf-tracker-panel #etf-extra-index-funds h3{font-size:13px;color:var(--amber);margin:0 0 7px}
+#etf-tracker-panel .etf-compare-card .etf-card-source{font-size:10px;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
+@media(max-width:840px){
+ #etf-tracker-panel .etf-table th:nth-child(7),#etf-tracker-panel .etf-table td:nth-child(7){display:none!important}
+ #etf-tracker-panel .etf-table th:nth-child(1){width:43%}
+ #etf-tracker-panel .etf-table th:nth-child(2){width:9%}
+ #etf-tracker-panel .etf-table th:nth-child(3){width:7%}
+ #etf-tracker-panel .etf-table th:nth-child(4){width:17%}
+ #etf-tracker-panel .etf-table th:nth-child(5){width:9%}
+ #etf-tracker-panel .etf-table th:nth-child(6){width:9%}
+ #etf-tracker-panel .etf-table th:nth-child(8){width:6%}
+}
+@media(max-width:700px){
+ #etf-tracker-panel .etf-table th,#etf-tracker-panel .etf-table td{padding:7px 4px;font-size:10px}
+ #etf-tracker-panel .etf-table th:nth-child(5),#etf-tracker-panel .etf-table td:nth-child(5){display:table-cell!important}
+ #etf-tracker-panel .etf-table th:nth-child(6),#etf-tracker-panel .etf-table td:nth-child(6){display:none!important}
+ #etf-tracker-panel .etf-table th:nth-child(1){width:50%}
+ #etf-tracker-panel .etf-table th:nth-child(2){width:10%}
+ #etf-tracker-panel .etf-table th:nth-child(3){width:8%}
+ #etf-tracker-panel .etf-table th:nth-child(4){width:17%}
+ #etf-tracker-panel .etf-table th:nth-child(5){width:9%}
+ #etf-tracker-panel .etf-table th:nth-child(8){width:6%}
+ #etf-tracker-panel .etf-compare-grid{grid-template-columns:1fr}
+ #etf-tracker-panel .etf-peer-box table{display:block;width:100%}
+ #etf-tracker-panel .etf-peer-box table thead{display:none}
+ #etf-tracker-panel .etf-peer-box table tbody{display:grid;gap:7px}
+ #etf-tracker-panel .etf-peer-box table tbody tr{display:grid;gap:3px;min-width:0;padding:8px;border:1px solid var(--line);border-radius:5px}
+ #etf-tracker-panel .etf-peer-box table tbody td{display:flex;justify-content:space-between;gap:6px;max-width:100%;width:100%;border:0;text-align:right!important;min-width:0}
+ #etf-tracker-panel .etf-peer-box table tbody td::before{content:attr(data-compact-label);font-weight:600;color:var(--muted);text-align:left}
+}
+@media(max-width:470px){
+ #etf-tracker-panel .etf-table th:nth-child(4),#etf-tracker-panel .etf-table td:nth-child(4){display:none!important}
+ #etf-tracker-panel .etf-table th:nth-child(1){width:58%}
+ #etf-tracker-panel .etf-table th:nth-child(2){width:12%}
+ #etf-tracker-panel .etf-table th:nth-child(3){width:8%}
+ #etf-tracker-panel .etf-table th:nth-child(5){width:13%}
+ #etf-tracker-panel .etf-table th:nth-child(8){width:9%}
+ #etf-tracker-panel .etf-card-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+"""
+COMPACT_ETF_JS = r"""
+// ETF RESEARCH v5. The eight column positions and row cells are built together.
+// This code runs after the original research/issuer/chart code and does not remove its data.
+if (typeof ETF_GEO === 'object') {
+  Object.assign(ETF_GEO, {
+    'US equal weight':[1,3,'United States'],
+    'UK FTSE All Share':[2,2,'United Kingdom'],
+    'Saudi Arabia':[5,6,'Emerging markets']
+  });
+}
+function etfV5Kind(f){
+  // An issuer may confirm physical without identifying full versus sampling.
+  const type=String(f.replicationType||'').toLowerCase();
+  const status=String(f.replicationStatus||'').toLowerCase();
+  const method=String(f.replication||'').toLowerCase();
+  const issuerDetail=String(f.issuerReplicationDetail||'').toLowerCase();
+  const raw=[type,method,issuerDetail].join(' ');
+  if(raw.includes('synthetic')||raw.includes('swap'))return ['S','Synthetic / swap'];
+  if(raw.includes('physical') || (status.includes('physical')&&!status.includes('unknown'))){
+    let subtype=method.includes('sampling')||issuerDetail.includes('optimis')||issuerDetail.includes('sampling')?'Physical sampling / optimised':
+        status.includes('submethod')||status.includes('subtype')?'Physical (submethod not confirmed)':
+        method.includes('full')||issuerDetail.includes('full replication')?'Physical full replication':'Physical (submethod not confirmed)';
+    return ['P',subtype];
+  }
+  return ['?','Replication method not verified'];
+}
+function etfV5Key(f){
+  // Do not conflate hedged and unhedged share classes, nor a price proxy with a benchmark.
+  const b=String(f.benchmark||'').trim().toLowerCase().replace(/\s+/g,' ');
+  const h=String(f.hedged||'').trim().toLowerCase();
+  return b ? [f.category,b,h].join('|') : 'unknown:'+f.symbol;
+}
+function etfV5PickMain(){
+  const all=etfFiltered().filter(f=>f.symbol!=='GEND.L');
+  const groups=new Map();
+  for(const f of all){const key=etfV5Key(f);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(f);}
+  const keep=new Set();
+  for(const funds of groups.values()){
+    funds.sort((a,b)=> (a.terPct??Infinity)-(b.terPct??Infinity) ||
+       (etfAumUSD(b)??0)-(etfAumUSD(a)??0) || a.symbol.localeCompare(b.symbol));
+    // The selected ETF is always visible after choosing it in the comparison area.
+    const selected=funds.find(f=>f.symbol===etfState.selected);
+    const first=funds.slice(0,2);
+    if(selected && !first.includes(selected))first[1]=selected;
+    for(const f of first)keep.add(f.symbol);
+  }
+  return {all,shown:all.filter(f=>keep.has(f.symbol)),suppressed:all.length-keep.size};
+}
+function etfV5PeerLabels(){
+  for(const table of document.querySelectorAll('#etf-tracker-panel .etf-peer-box table')){
+    const titles=[...table.querySelectorAll('thead th')].map(th=>th.textContent.trim());
+    for(const row of table.querySelectorAll('tbody tr')){
+      [...row.cells].forEach((td,i)=>{td.dataset.compactLabel=titles[i]||'Detail';});
+    }
+  }
+}
+function etfV5Choose(symbol){
+  const fund=ETF_BY_SYMBOL.get(symbol);if(!fund)return;
+  etfState.selected=symbol;
+  if(typeof etfCompareBenchmark!=='undefined')etfCompareBenchmark=fund.benchmark||'';
+  renderEtfTracker();
+}
+function etfV5ChangeCompare(symbol,yes){
+  if(yes){
+    if(!etfState.compared.has(symbol)&&etfState.compared.size>=5){
+      const note=document.getElementById('etf-v5-compare-note');
+      if(note)note.textContent='Maximum five additional comparison funds. Untick one to add another.';
+      return false;
+    }
+    etfState.compared.add(symbol);
+    etfState.selected=symbol;
+    if(typeof etfCompareBenchmark!=='undefined')etfCompareBenchmark=ETF_BY_SYMBOL.get(symbol)?.benchmark||'';
+  }else{etfState.compared.delete(symbol);}
+  renderEtfTracker();
+  return true;
+}
+function etfV5Card(f,tag,withCheckbox=true){
+  const card=el('div','etf-compare-card'+(f.symbol===etfState.selected?' etf-current-card':''));
+  const title=el('h4','',f.name);card.append(title);
+  card.append(el('div','etf-card-meta',f.symbol+' · '+f.market+' · '+(f.benchmark||'Benchmark unknown')+' · '+(f.isin||'ISIN missing')));
+  if(tag)card.append(el('div','etf-card-meta',tag));
+  const metrics=el('div','etf-card-facts');
+  const [code,kind]=etfV5Kind(f);
+  const values=[['TER',etfFee(f)],['Structure',code+' · '+kind],['Fund AUM',etfFundSize(f)],
+                ['1Y',etfPct(f.return1Y)],['3Y',etfPct(f.return3Y)],['5Y',etfPct(f.return5Y)],
+                ['3Y NAV TE',f.officialTrackingError3Y!=null?etfPct(f.officialTrackingError3Y):'—'],
+                ['Income',f.distribution||'—'],['Domicile',f.domicile||'—']];
+  for(const [label,value] of values){const box=el('div');box.append(el('span','',label),el('strong','',value));metrics.append(box);}
+  card.append(metrics);
+  const buttons=el('div','etf-card-actions');
+  const button=el('button','','Details');button.type='button';button.setAttribute('aria-label','Full details for '+f.symbol);
+  button.onclick=()=>etfV5Choose(f.symbol);buttons.append(button);
+  if(withCheckbox){
+    const label=el('label');const input=el('input');input.type='checkbox';input.checked=etfState.compared.has(f.symbol);
+    input.onchange=()=>{if(!etfV5ChangeCompare(f.symbol,input.checked))input.checked=false;};
+    label.append(input,document.createTextNode('Compare'));buttons.append(label);
+  }
+  const url=f.issuerVerifiedUrl||f.terUrl||f.issuerFactsUrl;
+  if(url&&/^https:\/\//.test(url)){
+    const link=el('a','','Issuer / factsheet');link.href=url;link.target='_blank';link.rel='noopener noreferrer';buttons.append(link);
+  }
+  card.append(buttons);
+  const prov=el('div','etf-card-source',
+     'TER: '+(f.terStatus||'unverified')+(f.terCheckedAt?' · '+f.terCheckedAt:'')+
+     ' · Replication: '+(f.replicationStatus||'not checked')+
+     (f.fundSizeAsOf?' · AUM '+f.fundSizeAsOf:''));
+  card.append(prov);
+  return card;
+}
+function etfV5RenderSelectedComparisons(){
+  let root=$('etf-selected-comparisons');if(!root)return;
+  root.replaceChildren();
+  root.append(el('h3','','CHECKED ETF COMPARISON — DETAILED DATA'));
+  const msg=el('p','note','Tick Compare in the main table or benchmark section. Select Details to expand any fund. Up to five checked funds plus the selected fund can be plotted.');
+  root.append(msg);
+  const note=el('p','note','');note.id='etf-v5-compare-note';root.append(note);
+  const members=[...etfState.compared].map(s=>ETF_BY_SYMBOL.get(s)).filter(Boolean);
+  if(!members.length){root.append(el('p','mini','No ETFs selected.'));return;}
+  const wrap=el('div','etf-compare-grid');members.forEach(f=>wrap.append(etfV5Card(f,'Checked for chart comparison',true)));root.append(wrap);
+}
+// The selector continues to work, but same-benchmark funds not shown in the main
+// two-per-benchmark list live in this comparison section, with full details links.
+renderSameIndexETFs=function(){
+  const target=$('etf-same-index'),selector=$('etf-same-index-benchmark');if(!target||!selector)return;
+  const groups=new Map();
+  for(const f of ETF_FUNDS){if(f.symbol==='GEND.L'||!f.benchmark)continue;
+    if(!groups.has(f.benchmark))groups.set(f.benchmark,[]);groups.get(f.benchmark).push(f);}
+  const names=[...groups.keys()].filter(k=>groups.get(k).length>=2).sort();
+  const chosen=typeof etfCompareBenchmark!=='undefined'?etfCompareBenchmark:'';
+  const current=chosen&&names.includes(chosen)?chosen:
+    (names.includes(ETF_BY_SYMBOL.get(etfState.selected)?.benchmark)?ETF_BY_SYMBOL.get(etfState.selected).benchmark:(names[0]||''));
+  if(selector.options.length!==names.length||[...selector.options].some((o,i)=>o.value!==names[i])){
+    selector.replaceChildren(...names.map(k=>new Option(k+' ('+groups.get(k).length+')',k)));
+  }
+  selector.value=current;
+  target.replaceChildren();
+  const all=(groups.get(current)||[]).slice().sort((a,b)=>(a.terPct??Infinity)-(b.terPct??Infinity)||a.symbol.localeCompare(b.symbol));
+  if(!all.length)return;
+  const selection=etfV5PickMain().shown;
+  const main=new Set(selection.map(f=>f.symbol));
+  const extra=all.filter(f=>!main.has(f.symbol));
+  target.append(el('p','note',current+': '+all.length+' funds. The main list shows at most two per benchmark; other listings appear here. Exact benchmark identity matters; hedged funds can differ.'));
+  if(extra.length){
+    target.append(el('h4','','OTHER FUNDS ON THIS BENCHMARK'));
+    const cards=el('div','etf-compare-grid');for(const f of extra)cards.append(etfV5Card(f,'Not in main table',true));target.append(cards);
+  }
+  const allDetails=el('details');const sum=el('summary','','All '+all.length+' fund lines for '+current);allDetails.append(sum);
+  const wrap=el('div','etf-compare-grid');for(const f of all)wrap.append(etfV5Card(f,main.has(f.symbol)?'Main table':'Additional',true));
+  allDetails.append(wrap);target.append(allDetails);
+};
+const _etfV5PriorRender=renderEtfTracker;
+renderEtfTracker=function(){
+  _etfV5PriorRender(); // existing risk, issuer facts, chart, data-quality links preserved
+  const tbody=$('etf-rows'),table=tbody?.closest('table'),thead=table?.querySelector('thead');
+  if(!tbody||!table||!thead)return;
+  const labels=['Fund / ticker','TER','P/S','Fund AUM','1Y','3Y','5Y','Cmp'];
+  const head=el('tr');
+  for(const label of labels){const th=el('th','',label);th.scope='col';
+    if(label==='TER')th.title='Annual ongoing charge. Not tracking error.';
+    if(label==='Cmp')th.title='Tick to add this fund to the detailed comparison and display its expanded facts.';
+    if(label==='P/S')th.title='P: physical; S: synthetic; ?: unknown. Click a fund for the exact replication detail.';
+    if(['1Y','3Y','5Y'].includes(label))th.title='Annualised adjusted-close price proxy. Not certified NAV total return.';
+    head.append(th);
+  }
+  thead.replaceChildren(head);
+  const {all,shown,suppressed}=etfV5PickMain();
+  const frag=document.createDocumentFragment();let lastGroup='';
+  for(const f of shown){
+    const region=typeof etfRegion==='function'?etfRegion(f)[2]:f.market;
+    if($('etf-sort')?.value==='market'&&region!==lastGroup){
+      const gr=el('tr','etf-geo-group'),th=el('th','',region||f.market);th.colSpan=8;th.scope='rowgroup';gr.append(th);frag.append(gr);lastGroup=region;
+    }
+    const row=el('tr',f.symbol===etfState.selected?'etf-active':'');row.dataset.etfSymbol=f.symbol;
+    row.setAttribute('aria-label','View details of '+f.name);
+    const name=etfCell(row,'');name.append(el('span','etf-compact-fund',f.name),el('span','etf-compact-sub',f.symbol+' · '+f.market));
+    const fee=etfCell(row,etfFee(f),'n');fee.title=(f.terSource||f.terStatus||'Unverified')+(f.terCheckedAt?' · '+f.terCheckedAt:'');
+    const [code,label]=etfV5Kind(f);const codecell=etfCell(row,code,'etf-compact-code');codecell.title=label+' · '+(f.replicationStatus||'unverified');
+    const aum=etfCell(row,etfFundSize(f),'n');aum.title=(f.fundSizeSource||'Fund AUM unverified')+(f.fundSizeAsOf?' · '+f.fundSizeAsOf:'');
+    etfCell(row,etfPct(f.return1Y),'n');etfCell(row,etfPct(f.return3Y),'n');etfCell(row,etfPct(f.return5Y),'n');
+    const cell=etfCell(row,'','etf-compact-compare');
+    const check=el('input');check.type='checkbox';check.checked=etfState.compared.has(f.symbol);
+    check.setAttribute('aria-label','Compare '+f.symbol);check.onchange=()=>{if(!etfV5ChangeCompare(f.symbol,check.checked))check.checked=false;};cell.append(check);
+    row.onclick=(e)=>{if(e.target.closest('input,button,a'))return;etfV5Choose(f.symbol);};
+    frag.append(row);
+  }
+  tbody.replaceChildren(frag);
+  const label=$('etf-result-count');if(label)label.textContent=shown.length+' funds · '+suppressed+' same-index alternatives · 1Y/3Y/5Y annualised';
+  // Older wrappers used a seven-column layout; these eight match the headers.
+  etfV5RenderSelectedComparisons();
+  renderSameIndexETFs();
+  etfV5PeerLabels();
+};
+// The expanded facts must always read from ETF_BY_SYMBOL[etfState.selected].
+const _etfV5PriorDetails=etfDetails;
+etfDetails=function(){
+  _etfV5PriorDetails();
+  const f=ETF_BY_SYMBOL.get(etfState.selected);if(!f)return;
+  const detail=$('etf-detail-stats');
+  if(detail){
+    const nodes=[...detail.querySelectorAll('.etf-stat')];
+    for(const tile of nodes){
+      const name=tile.querySelector('.k')?.textContent?.trim()||'';
+      if(/^(last quotation|current price|last price|1Y tracking error)$/i.test(name)){tile.remove();continue;}
+      const val=tile.querySelector('.v'),description=tile.querySelector('.d');if(!val)continue;
+      if(/^Annual OCF\s*\/\s*TER$/i.test(name)){
+        val.textContent=etfFee(f);
+        if(description)description.textContent=(f.terStatus||'Unverified')+(f.terAsOf?' · '+f.terAsOf:'');
+      }else if(/^Replication$/i.test(name)){
+        const [code,method]=etfV5Kind(f);val.textContent=code+' — '+method;
+        if(description)description.textContent=f.replicationStatus||'Issuer replication not independently confirmed';
+      }else if(/^Fund size$/i.test(name)){
+        val.textContent=etfFundSize(f);
+        if(description)description.textContent=(f.fundSizeStatus||'AUM not verified')+(f.fundSizeAsOf?' · '+f.fundSizeAsOf:'');
+      }
+    }
+  }
+  const host=$('etf-structure-stats');if(host){
+    for(const tile of [...host.querySelectorAll('.etf-stat')]){
+      const label=tile.querySelector('.k')?.textContent?.trim()||'';
+      if(/^Replication type$/i.test(label)){
+        const v=tile.querySelector('.v');if(v)v.textContent=etfV5Kind(f)[1];
+      }
+    }
+  }
+  etfV5PeerLabels();
+};
+// Put checkbox comparison cards beside the selected-fund details, not in Data Quality.
+function etfV5InitComparisonHost(){
+  if($('etf-selected-comparisons'))return;
+  const anchor=$('etf-issuer-snapshot')||$('etf-cost-peers');if(!anchor)return;
+  const section=el('section','etf-peer-box');section.id='etf-selected-comparisons';
+  anchor.parentNode.insertBefore(section,anchor);
+}
+// init() calls renderEtfTracker; create the host once at script evaluation.
+etfV5InitComparisonHost();
+
+"""
 
 def inject_template(path:pathlib.Path,dry_run=False):
     source=path.read_text(encoding='utf-8')
