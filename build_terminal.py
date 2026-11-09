@@ -39,6 +39,12 @@ import us_treasury_market
 import economic_forecasts
 import market_additions
 import personal_watchlist
+import etf_tracker
+import etf_metrics
+import etf_structure
+import etf_issuer_db
+import etf_consolidation
+import company_profiles
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CACHE = ROOT / '.terminal_cache'
@@ -147,6 +153,22 @@ def prior_on_or_before(pts, cutoff):
     keys=[date for date,_ in pts]
     i=bisect_right(keys, cutoff)-1
     return pts[i][1] if i>=0 else None
+
+def fetch_intraday(symbol, opts):
+    """Last 5 trading days of 30-minute closes for the 1D / 1W chart views.
+    Snapshot at build time (3 builds a day), not a live feed."""
+    url=('https://query1.finance.yahoo.com/v8/finance/chart/'+urllib.parse.quote(symbol,safe='')+
+         '?range=5d&interval=30m&includePrePost=false')
+    try:
+        if not opts.offline: time.sleep(0.12)
+        b,_,_=get_bytes(url,'yfi_'+urllib.parse.quote(symbol,safe='').replace('%','_'),opts.offline,opts.cache_hours)
+        res=json.loads(b.decode('utf-8'))['chart']['result'][0]
+        closes=res['indicators']['quote'][0].get('close',[])
+        pts=[[int(t),round(v,5)] for t,v in zip(res.get('timestamp',[]),closes)
+             if safe_float(v) is not None and v>0]
+        return symbol,(pts if len(pts)>=4 else []),None
+    except Exception as exc:
+        return symbol,[],symbol+': '+str(exc)[:80]
 
 def fetch_quote(info, opts):
     group, symbol, name, kind=info
@@ -391,6 +413,7 @@ def build(opts):
         demo['watchlistCoverage']=personal_watchlist.coverage(watchlist,demo['watchlist_quotes'],[],demo['watchlist_history'],demo['companies'])
         demo['company_events']=[]
         demo['companyEventCoverage']={'detailedProfiles':len(demo['companies']),'datedEvents':0,'issuerSourced':0}
+        demo['etfTracker']=etf_tracker.demo(ROOT/'etf_catalog.csv')
         return demo
     # Persist the visible watchlist in source control; it contains symbols only.
     # The site's public repository must not receive personal position values.
@@ -410,6 +433,12 @@ def build(opts):
                 quotes.append(q);hist.extend(hh);cached_count+=int(q['cached'])
                 if 'stale cache' in (q.get('cacheDetail') or ''): warnings.append('Yahoo '+q['symbol']+': stale cached response')
             if i%10==0 or i==len(INSTRUMENTS): print(f'  {i}/{len(INSTRUMENTS)} checked; {len(quotes)} successful',flush=True)
+    intraday={}
+    if not opts.offline:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=opts.workers) as ex:
+            for sym,pts,err in ex.map(lambda r:fetch_intraday(r[1],opts),[r for r in INSTRUMENTS if r[1] in {q['symbol'] for q in quotes}]):
+                if pts:intraday[sym]=pts
+        print(f'Intraday 30-minute bars: {len(intraday)}/{len(quotes)} instruments',flush=True)
     order={rec[1]:i for i,rec in enumerate(INSTRUMENTS)}
     quotes.sort(key=lambda x:order[x['symbol']]);hist.sort(key=lambda x:(order[x['symbol']],x['date']))
     try:
@@ -504,6 +533,14 @@ def build(opts):
         movers,companies, ROOT/'.terminal_fundamentals', batch_size=opts.fundamentals_batch,
         offline=opts.offline or opts.no_fundamentals)
     warnings.extend(fwarnings)
+    # Full profiles (accounts, valuation, calendar) for FTSE 100 + the 100 largest US
+    # companies, refreshed in rotation and published for the next build to restore.
+    profiles,profile_coverage,profile_warnings=company_profiles.collect(
+        movers,fundamentals,companies,ROOT/'.terminal_profiles',batch=35,
+        offline=opts.offline or opts.no_fundamentals or opts.no_companies)
+    warnings.extend(profile_warnings)
+    company_profiles.publish(ROOT/'.terminal_profiles',ROOT/'public')
+    print(f'Company profiles: {profile_coverage["profiles"]}/{profile_coverage["universe"]} cached; {profile_coverage["fetchedThisRun"]} refreshed this run',flush=True)
     print(f'Fundamentals: {fcoverage["summaries"]} of {fcoverage["eligible"]} unique constituents have summaries; {fcoverage["available"]} have P/E',flush=True)
     history_symbols, history_coverage, history_warnings=market_price_history.collect(
         sys.modules[__name__], opts, movers, company_history,
@@ -533,15 +570,41 @@ def build(opts):
     market_valuations=market_additions.market_valuation(movers,fundamentals,companies,us,uk,asof=today_utc().date().isoformat())
     bulk_events,bulk_warnings=market_additions.collect_market_earnings(movers,companies,offline=opts.offline or opts.no_companies)
     warnings.extend(bulk_warnings)
-    company_events,event_warnings,event_coverage=market_additions.issuer_events(companies,ROOT/'company_events.csv',bulk_events=bulk_events)
+    # Earnings / dividend dates for every index constituent with a financial summary.
+    constituent_names={}
+    for market in movers:
+        for row in market.get('constituents') or []:
+            if row.get('symbol'):constituent_names.setdefault(str(row['symbol']).upper(),row.get('name') or row['symbol'])
+    summary_events=[]
+    for f in fundamentals:
+        sym=str(f.get('symbol') or '').upper()
+        if not sym:continue
+        for key,typ,title in (('nextEarningsDate','earnings','Earnings date (provider estimate)'),
+                              ('exDividendDate','ex-dividend','Ex-dividend date'),
+                              ('dividendPaymentDate','dividend-payment','Dividend payment date')):
+            if f.get(key):
+                summary_events.append({'symbol':sym,'company':constituent_names.get(sym,sym),'date':f[key],'endDate':None,
+                    'type':typ,'title':title,'time':None,'status':'Indicative — index summary',
+                    'source':'Yahoo Finance summary (unverified, refreshed fortnightly)',
+                    'sourceUrl':'https://finance.yahoo.com/quote/'+urllib.parse.quote(sym,safe='.')+'/'})
+    company_events,event_warnings,event_coverage=market_additions.issuer_events(companies+profiles,ROOT/'company_events.csv',bulk_events=bulk_events,summary_events=summary_events)
     warnings.extend(event_warnings)
     print(f'Credit: {len(credit_spreads)} / {len(market_additions.CREDIT_SERIES)} FRED series; market valuation: {len(market_valuations)} indices; issuer events: {len(company_events)}',flush=True)
+    etf_data,etf_warnings,etf_cached=etf_tracker.collect(sys.modules[__name__],opts,ROOT/'etf_catalog.csv',quotes,hist,watch_quotes,watch_history)
+    warnings.extend(etf_warnings);cached_count+=etf_cached
+    etf_data,metric_warnings,metric_cached=etf_metrics.enrich(etf_data,sys.modules[__name__],opts,hist)
+    warnings.extend(metric_warnings);cached_count+=metric_cached
+    etf_data,structure_warnings,structure_cached=etf_structure.enrich(etf_data,offline=opts.offline)
+    warnings.extend(structure_warnings);cached_count+=structure_cached
+    etf_data,issuer_warnings,issuer_cached=etf_issuer_db.enrich(etf_data,offline=opts.offline)
+    warnings.extend(issuer_warnings);cached_count+=issuer_cached
+    etf_data=etf_consolidation.enrich(etf_data)
     quality=build_quality(quotes,hist,movers,fundamentals,fcoverage,calendar,gilts,us_bonds,macro,warnings)
     quality['personalWatchlist']=watch_coverage
     quality['priceHistory']=history_coverage
-    return {'personalWatchlist':watchlist,'watchlist_quotes':watch_quotes,'watchlist_history':watch_history,
+    return {'etfTracker':etf_data,'personalWatchlist':watchlist,'watchlist_quotes':watch_quotes,'watchlist_history':watch_history,
             'watchlist_news':watch_news,'watchlistCoverage':watch_coverage,
-            'credit_spreads':credit_spreads,'market_valuations':market_valuations,'company_events':company_events,'companyEventCoverage':event_coverage,
+            'credit_spreads':credit_spreads,'market_valuations':market_valuations,'company_events':company_events,'companyEventCoverage':event_coverage,'companyProfiles':profiles,'companyProfilesCoverage':profile_coverage,
             'quality':quality,'economicPrints':economic_prints,'forecastCoverage':{'sourced':forecast_count,'series':len(economic_prints)},
             'us_treasuries':us_bonds,'us_treasury_history':us_treasury_history,'gilts':gilts,'gilt_history':gilt_history,
 'fundamentals':fundamentals,'fundamentalsCoverage':fcoverage,
@@ -551,7 +614,7 @@ def build(opts):
             'company_news':company_news,
             'news':news,'calendar':calendar,'us_real':us_real,'sovereign_yields':sovereign,
         'companies':companies,'company_history':company_history,
-       'movers':movers,'quotes':quotes,'history':hist,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
+       'movers':movers,'quotes':quotes,'history':hist,'intraday':intraday,'uk_rates':uk,'us_rates':us,'eu_rates':eu,'macro':macro,
        'generatedAt':today_utc().strftime('%Y-%m-%d %H:%M UTC'),'demo':False,
        'warnings':warnings,'sources':['Yahoo Finance (unofficial)','Bank of England','FRED graph CSV (unofficial download)','Office for National Statistics','Eurostat','European Central Bank','UK Debt Management Office D10B purchase/sale service prices (dated)','US Treasury FedInvest rates/prices (dated)','FRED / ICE BofA corporate OAS (third-party licensed)', 'Yahoo Finance / yfinance calendar (indicative issuer dates)','Personal watchlist: source tickers only; no holdings or valuations'],
        'yearsRequested':opts.years,'cachedSeries':cached_count}
@@ -569,7 +632,7 @@ def main():
     p.add_argument('--no-movers',action='store_true',help='skip constituent-level mover downloads')
     p.add_argument('--companies',default='',help='extra company tickers separated by commas (e.g. SHEL.L,MSFT)')
     p.add_argument('--no-companies',action='store_true',help='skip detailed company collection')
-    p.add_argument('--fundamentals-batch',type=int,default=40,help='maximum new constituent financial summaries per build (default 40)')
+    p.add_argument('--fundamentals-batch',type=int,default=150,help='maximum new constituent financial summaries per build (default 150)')
     p.add_argument('--mover-history-limit',type=int,default=12,help='up to 12 daily movers receive ten-year price history')
     p.add_argument('--price-history-batch',type=int,default=60,help='number of additional ten-year charts downloaded per update')
     p.add_argument('--company-news-limit',type=int,default=12,help='fetch related headlines for up to 12 large daily movers')
@@ -589,6 +652,9 @@ def main():
     if not payload['quotes'] and not payload['uk_rates'] and not payload['macro'] and not payload['us_rates']:
         raise SystemExit('No data was retrieved. Check internet access; use --demo to preview the interface.')
     template=(ROOT/'terminal_template.html').read_text('utf-8')
+    # Links to the repository (e.g. 'edit watchlist') follow whichever repo builds the site.
+    repo=__import__('os').environ.get('GITHUB_REPOSITORY')
+    if repo and '/' in repo: template=template.replace('rs88pvyhzz-code/market-terminal',repo)
     marker='/*__DATA__*/null'
     if template.count(marker)!=1: raise SystemExit('Missing template data placeholder')
     js=json.dumps(payload,ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
