@@ -24,8 +24,12 @@ import zipfile
 
 DMO_PAGE = 'https://www.dmo.gov.uk/data/pdfdatareport?reportCode=D10B'
 EXPORT = 'https://www.dmo.gov.uk/umbraco/surface/DataExport/GetDataExport'
-PUBLIC_LATEST = 'https://rs88pvyhzz-code.github.io/market-terminal/dmo_latest.json'
-PUBLIC_HISTORY = 'https://rs88pvyhzz-code.github.io/market-terminal/gilt_history_cache.json'
+import os as _os
+# Published-site cache location follows whichever repository runs the build.
+_REPO=_os.environ.get('GITHUB_REPOSITORY','rs88pvyhzz-code/market-terminal').split('/',1)
+_PAGES=f'https://{_REPO[0]}.github.io/{_REPO[1]}/'
+PUBLIC_LATEST = _PAGES+'dmo_latest.json'
+PUBLIC_HISTORY = _PAGES+'gilt_history_cache.json'
 ROOT = pathlib.Path(__file__).resolve().parent
 SEED = ROOT / 'dmo_gilt_prices.xlsx'
 LATEST = ROOT / '.terminal_dmo_latest.json'
@@ -189,11 +193,14 @@ def _recent_business_days(today, count=2):
 
 def collect(core,opts):
     warnings=[];candidates=[];downloaded=False
-    if SEED.exists():
+    # Any uploaded DMO D10B Excel file counts, whatever it is called: the newest
+    # report date wins. Upload the DMO download as-is; no renaming needed.
+    for book in sorted(ROOT.glob('*.xls*')):
         try:
-            seed_rows,day=parse_dmo_xlsx(SEED.read_bytes())
+            seed_rows,day=parse_dmo_xlsx(book.read_bytes())
             candidates.append({'asOf':day.isoformat(),'bonds':seed_rows})
-        except Exception as e:warnings.append('DMO spreadsheet could not be parsed: '+str(e)[:150])
+        except Exception as e:
+            if book==SEED:warnings.append('DMO spreadsheet could not be parsed: '+str(e)[:150])
     if LATEST.exists():
         try:
             p=_accept_snapshot(json.loads(LATEST.read_text('utf-8')))

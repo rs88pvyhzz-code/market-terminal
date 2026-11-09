@@ -16,8 +16,12 @@ import urllib.request
 ROOT = Path(__file__).resolve().parent
 LATEST = ROOT / '.terminal_us_treasury_latest.json'
 HISTORY = ROOT / '.terminal_us_treasury_history.json'
-PUBLIC_LATEST = 'https://rs88pvyhzz-code.github.io/market-terminal/us_treasury_latest.json'
-PUBLIC_HISTORY = 'https://rs88pvyhzz-code.github.io/market-terminal/us_treasury_history_cache.json'
+import os as _os
+# Published-site cache location follows whichever repository runs the build.
+_REPO=_os.environ.get('GITHUB_REPOSITORY','rs88pvyhzz-code/market-terminal').split('/',1)
+_PAGES=f'https://{_REPO[0]}.github.io/{_REPO[1]}/'
+PUBLIC_LATEST = _PAGES+'us_treasury_latest.json'
+PUBLIC_HISTORY = _PAGES+'us_treasury_history_cache.json'
 BASE = 'https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/fip_rates_prices'
 BACKUP_API = 'https://api.transparency.treasury.gov/services/api/fiscal_service/v1/accounting/od/fip_rates_prices'
 TODAY_PAGE = 'https://www.treasurydirect.gov/GA-FI/FedInvest/todaySecurityPriceDetail'
@@ -140,12 +144,18 @@ def public_json(url):
     return json.loads(raw)
 
 
+# The original site keeps its saved snapshot; a new repository falls back to it
+# until it has published its own.
+LEGACY_PAGES='https://rs88pvyhzz-code.github.io/market-terminal/'
+
 def prior_file(path,url):
     if path.exists():
         try:return json.loads(path.read_text('utf-8'))
         except (OSError,ValueError):pass
-    try:return public_json(url)
-    except Exception:return None
+    for candidate in (url,url.replace(_PAGES,LEGACY_PAGES)):
+        try:return public_json(candidate)
+        except Exception:continue
+    return None
 
 
 def collect(core,opts):
